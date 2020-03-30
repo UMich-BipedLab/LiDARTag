@@ -1,0 +1,85 @@
+<!-- Author: Bruce Huang
+     Email:  bjhuang@umich.edu
+     Date:   11/2018   -->
+
+<launch>
+
+    <!-- LiDARTag node -->
+      <group ns="LiDARTag">
+        <!-- valgrind /-/-tool=callgrind /-/-callgrind-out-file='callgrind.lidar_tag.%p'  -->
+        <node pkg="lidar_tag" launch-prefix="" type="lidar_tag_main" name="lidar_tag" output="screen" />
+
+            <!--  functionalities -->
+            <param name="sleep_to_display" type="int" value="1" /> 
+            <param name="sleep_time_for_visulization" type="double" value="0.01"/> 
+            <param name="valgrind_check" type="int" value="0" /> 
+            <param name="write_csv" type="bool" value="true" />
+
+            <!-- Analysis File Paths -->
+            <param name="stats_file_path" type="string" value="/home/chenxif/catkin_ws/src/LiDARTag/output/stats.txt" />
+            <param name="cluster_file_path" type="string" value="/home/chenxif/catkin_ws/src/LiDARTag/output/cluster.txt" />
+            <param name="mat_file_path" type="string" value="/home/chenxif/catkin_ws/src/LiDARTag/output/" />
+
+            <param name="adaptive_thresholding" type="int" value="0" /> 
+            <param name="collect_data" type="int" value="0" /> 
+            <param name="grid_viz" type="int" value="1" /> 
+
+
+            <!-- IN CONTROL ENV -->
+            <param name="decode_id" type="bool" value="false" /> 
+            <param name="assign_id" type="string" value="0010111011100111UL" /> 
+
+
+            <!-- Decode method -->
+            <param name="decode_method" type="int" value="1" /> 
+            <param name="fake_data" type="int" value="0" /> 
+
+
+            <!--  LiDAR system  -->
+            <param name="pointcloud_topic" type="string" value="/velodyne_points" /> 
+            <param name="camera_topic" type="string" value="/camera/color/image_raw" /> 
+            <param name="lidartag_detection_topic" value="/LiDARTag/lidar_tag/LiDARTagDetectionArray"/>
+            <param name="beam_number" type="int" value="32" /> 
+            <param name="vertical_fov" type="int" value="40" /> 
+
+
+            <!--  Tag family  -->
+            <param name="tag_family" type="int" value="16" /> 
+            <!-- param name="tag_size" type="double" value="0.155" /-->
+            <param name="tag_size" type="double" value="0.400"/>
+            <param name="tag_hamming_distance" type="int" value="5" /> 
+            <param name="black_border" type="int" value="1" /> 
+
+            <!-- To add to the giant hash table as well as request messive memory-->
+            <param name="max_decode_hamming" type="int" value="2" /> 
+
+
+            <!-- network -->
+            <param name="latest_model" type="string" value="-17655" /> 
+            <param name="weight_path" type="string" value="/weight/" /> 
+            <param name="max_points_on_payload" type="int" value="450" /> 
+            <param name="xyzri" type="int" value="4" /> 
+
+
+            <!-- Tunable (usually don't need to change) -->
+            <param name="distance_bound" type="double" value="17" /> 
+            <param name="intensity_bound" type="double" value="2" /> 
+            <param name="depth_bound" type="double" value="0.5" /> 
+            <param name="payload_intensity_threshold" type="double" value="2.0" /> 
+            <param name="fill_in_gap_threshold" type="int" value="200" /> 
+            <param name="points_threshold_factor" type="double" value="1.5" />
+            <param name="distance_to_plane_threshold" type="double" value="0.1" />
+            <param name="max_outlier_ratio" type="double" value="0.1" />
+            <!--  3*16 in this case, stands for expects 3 points for each cell  -->
+            <param name="min_retrun_per_grid" type="int" value="2" /> 
+
+
+            <!--  ============NOT USE SO FAR=========  -->
+            <param name="fine_cluster_threshold" type="int" value="20" /> 
+            <param name="fill_in_max_points_threshold" type="int" value="4500" /> 
+            <param name="line_intensity_bound" type="double" value="1000" /> 
+
+    </group>
+
+</launch>
+
