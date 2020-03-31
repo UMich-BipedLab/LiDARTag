@@ -8,8 +8,8 @@ Fiducial markers are widely used in navigation as well as vision-based simultane
 * Maintainer: [Bruce JK Huang](https://www.brucerobot.com/), brucejkh[at]gmail.com
 * Affiliation: [The Biped Lab](https://www.biped.solutions/), the University of Michigan
 
-This package has been tested under [ROS] Kinetic and Ubuntu 16.04.
-More detailed introduction will be updated shortly. Sorry for the inconvenient!
+This package has been tested under [ROS] Kinetic and Ubuntu 16.04.  
+**[Note]** More detailed introduction will be updated shortly. Sorry for the inconvenient!
 
 ## Abstract
 Image-based fiducial markers are widely used in robotics and computer vision problems such as object tracking in cluttered or textureless environments, camera (and multi-sensor) calibration tasks, or vision-based simultaneous localization and mapping (SLAM). The state-of-the-art fiducial marker detection algorithms rely on consistency of the ambient lighting. This paper introduces LiDARTag, a novel fiducial tag design and detection algorithm suitable for light detection and ranging LiDAR point clouds. The proposed tag runs in real-time and can process data faster than the currently available LiDAR sensors frequencies. Due to the nature of the LiDAR's sensor, rapidly changing ambient lighting will not affect detection of a LiDARTag; hence, the proposed fiducial marker can operate in a completely dark environment. In addition, the LiDARTag nicely complements available visual fiducial markers as the tag design is compatible with available techniques, such as AprilTags, allowing for efficient multi-sensor fusion and calibration tasks. The experimental results, verified by a motion capture system, confirm the proposed technique can reliably provide a tag's pose and its unique ID code. All implementations are done in C++ and available at: https://github.com/UMich-BipedLab/LiDARTag
@@ -28,12 +28,18 @@ Robust to lighting!!
 <img src="https://github.com/brucejk/LiDARTag/blob/master/figure/pipeline.png" width="960">
 
 
+## Speed Analysis
+<img src="https://github.com/UMich-BipedLab/LiDARTag/blob/release_v0/figure/LiDARTagAnalysis.png" width="960">
+
+
 ## Presentation and Video
 Introduction Video
 Please checkout the introduction [video](https://www.brucerobot.com/lidartag). It highlights some importants keypoints in the paper!  
 
 <img src="https://github.com/UMich-BipedLab/LiDARTag/blob/release_v0/figure/LiDARTagIntro.png" width="960">
 
+## Required packages
+Please download [_LiDARTag_msgs_](https://github.com/UMich-BipedLab/LiDARTag_msgs) and place them under a catkin workspace.
 
 ## Installation
 TODO
@@ -41,8 +47,11 @@ TODO
 ## Parameters
 TODO
 
-## Examples
-TODO
+## Dataset
+Please download from [here](https://drive.google.com/drive/folders/1MwA2dn6_U3rCWh9gxCe8OtWWgSxriVcW?usp=sharing).  
+
+## Running
+This package provides a launch file that you can directly run the package. 
 
 ## Citations
 The detail is described in: 
