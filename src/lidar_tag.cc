@@ -934,42 +934,8 @@ namespace BipedLab {
             // return true;
             if (_id_decoding){
                  ROS_ERROR_STREAM("Decoding ID is not supported yet. Please change decode_id in the launch file to false. Currently is " << _id_decoding);
-                // _timing.timing = clock();
-                // if (LiDARTag::_decodPayload(Cluster)){
-                //     _timing.payload_decoding_time += utils::spendTime(clock(), _timing.timing);
-
-                //     _timing.timing = clock();
-                //     Cluster.normal_vector = _estimateNormalVector(Cluster); 
-                //     _timing.normal_vector_time += utils::spendTime(clock(), _timing.timing);
-
-                //     _timing.timing = clock();
-                //     LiDARTag::_tagToRobot(Cluster.cluster_id, Cluster.normal_vector, 
-                //                         Cluster.pose, Cluster.transform, Cluster.average);
-                //     _timing.tag_to_robot_time += utils::spendTime(clock(), _timing.timing);
-                //     return true;
-                // }
-                // else {
-                //     return false;
-                // }
             }
             else {
-                // LiDARTag::_decodPayload(Cluster);
-
-                // directly assign ID
-                string Code(_assign_id);
-                uint64_t Rcode = stoull(Code, nullptr, 2);
-                BipedAprilLab::QuickDecodeCodeword(tf, Rcode, &Cluster.entry);
-                Cluster.cluster_id = 8888;
-
-                Cluster.normal_vector = _estimateNormalVector(Cluster); 
-                if (Cluster.average.y > 0) Cluster.cluster_id = 1;
-                else Cluster.cluster_id = 2;
-
-                // if(Cluster.average.y + 1.09448 > 0.1  && Cluster.average.y -2.92685 > 0.1)
-                // std::cout << "position : " << Cluster.average.x << ", "<<  Cluster.average.y <<std::endl;
-
-                LiDARTag::_tagToRobot(Cluster.cluster_id, Cluster.normal_vector, 
-                                    Cluster.pose, Cluster.transform, Cluster.average);
                 return true;
             }
         }
