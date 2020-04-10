@@ -64,11 +64,11 @@ add_definitions(${PCL_DEFINITIONS})
 
 # COMPILE THE SOURCE
 #========================================================================
-add_executable(lidar_tag_main src/main.cc src/lidar_tag.cc src/apriltag_utils.cc src/utils.cc src/tag49h14.cc src/tag16h5.cc src/lidar_tag_rviz.cc src/lidar_tag_cluster.cc src/lidar_tag_prune.cc)
+add_executable(lidartag_main src/main.cc src/lidar_tag.cc src/apriltag_utils.cc src/utils.cc src/tag49h14.cc src/tag16h5.cc src/lidar_tag_rviz.cc src/lidar_tag_cluster.cc src/lidar_tag_prune.cc)
 
-add_dependencies(lidar_tag_main ${${PROJECT_NAME}_EXPORTED_TARGETS}
+add_dependencies(lidartag_main ${${PROJECT_NAME}_EXPORTED_TARGETS}
     ${catkin_EXPORTED_TARGETS})
-target_link_libraries(lidar_tag_main 
+target_link_libraries(lidartag_main 
     ${catkin_LIBRARIES} 
     ${Boost_LIBRARIES}
     ${PCL_LIBRARIES}
