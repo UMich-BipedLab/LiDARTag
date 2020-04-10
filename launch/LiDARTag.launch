@@ -34,7 +34,7 @@
     <!-- LiDARTag node -->
       <group ns="LiDARTag">
         <!-- valgrind /-/-tool=callgrind /-/-callgrind-out-file='callgrind.lidar_tag.%p'  -->
-        <node pkg="lidar_tag" launch-prefix="" type="lidar_tag_main" name="lidar_tag" output="screen" />
+        <node pkg="lidartag" launch-prefix="" type="lidartag_main" name="lidartag" output="screen" />
 
             <!--  functionalities -->
             <param name="sleep_to_display" type="int" value="1" /> 
