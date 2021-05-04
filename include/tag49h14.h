@@ -31,7 +31,7 @@
 #ifndef _TAG49H14
 #define _TAG49H14
 
-#include "lidar_tag.h"
+#include "lidartag.h"
 
 BipedLab::GrizTagFamily_t *tag49h14_create();
 void tag49h14_destroy(BipedLab::GrizTagFamily_t *tf);

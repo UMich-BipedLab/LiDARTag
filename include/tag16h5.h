@@ -32,7 +32,7 @@
 #ifndef _TAG16H5
 #define _TAG16H5
 
-#include "lidar_tag.h"
+#include "lidartag.h"
 
 BipedLab::GrizTagFamily_t *tag16h5_create();
 void tag16h5_destroy(BipedLab::GrizTagFamily_t *tf);

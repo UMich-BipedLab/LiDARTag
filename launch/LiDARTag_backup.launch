@@ -1,0 +1,143 @@
+<!--
+ * Copyright (C) 2013-2025, The Regents of The University of Michigan.
+ * All rights reserved.
+ * This software was developed in the Biped Lab (https://www.biped.solutions/) 
+ * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may 
+ * be available under alternative licensing terms; contact the address above.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies,
+ * either expressed or implied, of the Regents of The University of Michigan.
+ * 
+ * AUTHOR: Bruce JK Huang (bjhuang[at]umich.edu)
+ * WEBSITE: https://www.brucerobot.com/
+-->
+
+<launch>
+
+    <!-- LiDARTag node -->
+      <group ns="LiDARTag">
+        <!-- valgrind /-/-tool=callgrind /-/-callgrind-out-file='callgrind.lidar_tag.%p'  -->
+        <node pkg="lidartag" launch-prefix="" type="lidartag_main" name="lidartag_main" output="screen" />
+
+            <!--  functionalities -->
+            <param name="sleep_to_display" type="int" value="1" /> 
+            <param name="sleep_time_for_visulization" type="double" value="0.5"/> 
+            <param name="valgrind_check" type="int" value="0" /> 
+            <param name="write_csv" type="bool" value="true" />
+
+            <!-- Analysis File Paths -->
+<!--             <param name="stats_file_path" type="string" value="/home/chenxif/automatic_lidar_camera_calibration/src/LiDARTag/output/stats.txt" />
+            <param name="cluster_file_path" type="string" value="/home/chenxif/automatic_lidar_camera_calibration/src/LiDARTag/output/cluster.txt" />
+            <param name="outputs_path" type="string" value="/home/chenxif/automatic_lidar_camera_calibration/src/LiDARTag/output" /> -->
+
+
+            <param name="stats_file_path" type="string" value="/home/alex/catkin_ws/src/LiDARTag/outputs/stats.txt" />
+            <param name="cluster_file_path" type="string" value="/home/alex/catkin_ws/src/LiDARTag/outputs/cluster.txt" />
+            <param name="pose_file_path" type="string" value="/home/alex/catkin_ws/src/LiDARTag/outputs/" />
+            <param name="outputs_path" type="string" value="/home/alex/catkin_ws/src/LiDARTag/outputs/" />
+            <param name="library_path" type="string" value="/home/alex/catkin_ws/src/LiDARTag/lib/" />
+
+            <!--
+            <param name="stats_file_path" type="string" value="/home/brucebot/workspace/catkin/src/LiDARTag/outputs/stats.txt" />
+            <param name="cluster_file_path" type="string" value="/home/brucebot/workspace/catkin/src/LiDARTag/outputs/cluster.txt" />
+            <param name="outputs_path" type="string" value="/home/brucebot/workspace/catkin/src/LiDARTag/outputs/" />
+            <param name="library_path" type="string" value="/home/brucebot/workspace/catkin/src/LiDARTag/lib/" />
+            -->
+            <param name="adaptive_thresholding" type="int" value="0" /> 
+            <param name="collect_data" type="int" value="1" /> 
+            <param name="grid_viz" type="int" value="1" /> 
+
+
+            <!-- IN CONTROL ENV -->
+            <param name="decode_id" type="bool" value="true" /> 
+            <param name="assign_id" type="string" value="0010111011100111UL" /> 
+
+
+            <!-- Decode method -->
+            <param name="decode_method" type="int" value="2" /> 
+            <param name="num_codes" type="int" value="5" /> 
+            <param name="fake_data" type="int" value="0" /> 
+
+            <!--  system mode  -->
+            <param name="print_info" type="bool" value="true" />
+            <param name="debug_info" type="bool" value="true" />
+            <param name="debug_time" type="bool" value="false" />
+            <param name="log_data" type="bool" value="true" />
+            <param name="num_threads" type="int" value="6" />
+            <param name="debug_decoding_time" type="bool" value="true" />
+            <param name="calibration" type="bool" value="false" />
+            <!--  LiDAR system  -->
+            <!-- <param name="pointcloud_topic" type="string" value="/rslidar_points" />  -->
+            <param name="pointcloud_topic" type="string" value="/velodyne_points" /> 
+            <!-- <param name="pointcloud_topic" type="string" value="/sync_cam_lidar/velodyne_points_sync" />  -->
+<!--             <param name="camera_topic" type="string" value="/sync_cam_lidar/image_sync" />  -->
+            <param name="lidartag_detection_topic" value="/LiDARTag/lidar_tag/LiDARTagDetectionArray"/>
+            <param name="beam_number" type="int" value="32" /> 
+            <param name="vertical_fov" type="int" value="40" /> 
+            <param name="optimization_solver" type="int" value="7" /> 
+
+            <!--  Tag family  -->
+            <param name="tag_family" type="int" value="16" /> 
+            <!-- param name="tag_size" type="double" value="0.155" /-->
+     <!--       <param name="tag_size" type="double" value="0.7"/>  -->
+            <!--<param name="tag_size_list" type="std::vector<double>" value=[0.158, 0.8051]/> -->
+            <rosparam param="tag_size_list"> [0.8051, 0.158, 1.22]</rosparam>
+            <param name="tag_hamming_distance" type="int" value="5" /> 
+            <param name="black_border" type="int" value="1"/> 
+
+            <!-- To add to the giant hash table as well as request messive memory-->
+            <param name="max_decode_hamming" type="int" value="2" /> 
+
+
+            <!-- network -->
+            <param name="latest_model" type="string" value="-17655" /> 
+            <param name="weight_path" type="string" value="/weight/" /> 
+            <param name="max_points_on_payload" type="int" value="450" /> 
+            <param name="xyzri" type="int" value="4" /> 
+
+
+            <!-- Tunable (usually don't need to change) -->
+            <param name="distance_threshold" type="double" value="12" /> 
+            <param name="distance_bound" type="double" value="17" /> 
+            <param name="intensity_bound" type="double" value="2" /> 
+            <param name="depth_bound" type="double" value="0.5" />
+            <param name="near_bound" type="double" value="0.1" />
+            <param name="num_points" type="int" value="3" />
+            <param name="number_points_ring" type="int" value="20" />
+            <param name="coefficient_threshold" type="double" value="1.0" />
+            <param name="optimize_percentage" type="double" value="10" />
+            <param name="payload_intensity_threshold" type="double" value="2.0" /> 
+            <param name="fill_in_gap_threshold" type="int" value="400" /> 
+            <param name="points_threshold_factor" type="double" value="1.5" />
+            <param name="distance_to_plane_threshold" type="double" value="0.05" />
+            <param name="max_outlier_ratio" type="double" value="0.35" />
+            <!--  3*16 in this case, stands for expects 3 points for each cell  -->
+            <param name="min_retrun_per_grid" type="int" value="2" /> 
+            <!-- <param name="decode_mode" type="int" value="5" /> -->
+
+            <!--  ============NOT USE SO FAR=========  -->
+            <param name="fine_cluster_threshold" type="int" value="20" /> 
+            <param name="fill_in_max_points_threshold" type="int" value="4500" /> 
+            <param name="line_intensity_bound" type="double" value="1000" /> 
+
+    </group>
+
+</launch>
+

@@ -29,7 +29,7 @@
  */
 
 #include <ros/ros.h>
-#include <lidar_tag.h>
+#include <lidartag.h>
 
 using namespace std;
 

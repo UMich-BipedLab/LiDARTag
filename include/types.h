@@ -27,6 +27,11 @@
  * AUTHOR: Bruce JK Huang (bjhuang@umich.edu)
  * WEBSITE: https://www.brucerobot.com/
  */
+#include <Eigen/Core>
+#include <Eigen/Sparse>
+#include <chrono> // high_resolution_clock
+#include "nanoflann.hpp"
+
 
 namespace BipedLab {
 	typedef velodyne_pointcloud::PointXYZIR PointXYZRI;
@@ -64,11 +69,40 @@ namespace BipedLab {
 		int max;
 	} MaxMin_t;
 
+    struct angleComparision {
+        bool operator() (const float &i, const float &j) const {
+            // if (std::abs(i - j) > 0.0017)
+            //     return true;
+            // else
+            //     return false;
+            // return (std::abs(i - j) > 0.004);
+            //return (std::abs(i - j) > 0.005);
+            // const int i_int = static_cast<int>(i * 1000); 
+            // const int j_int = static_cast<int>(j * 1000);
+            // return i_int < j_int;
+
+            float threshold = 0.3;
+            if (std::abs(i - j) < threshold) {
+                return false;
+            } else {
+                return i < j;
+            }
+        }
+        // bool operator() (const pair<float, float> &lhs, const pair<float,float> &rhs) const{
+        //     return (lhs.second - lhs.first > rhs.second - rhs.first);
+        // }
+    };
+
+
 	// Structure for LiDAR system
 	typedef struct LiDARSystem {
 		std::vector<std::vector<int>> point_count_table; // point per ring  PointCountTable[Scan][ring]
 		std::vector<MaxMin_t> max_min_table; // max min points in a scan
 		std::vector<MaxMin_t> ring_average_table; // max, min, average points in a ring, examed through out a few seconds 
+		// std::vector<float> angle_list; // store the angle of each point 
+        std::set<float, angleComparision> angle_list;
+
+
 		double points_per_square_meter_at_one_meter; // TODO: only assume place the tag at dense-point area
 		double beam_per_vertical_radian;
 		double point_per_horizontal_radian;
@@ -78,8 +112,9 @@ namespace BipedLab {
 	typedef struct LiDARPoints {
 		PointXYZRI point;
 		int index;
-		double depth_gradient; // only take abs value due to uncertain direction 
-		double intensity_gradient; // Also account for direction by knowing tag is white to black
+		int valid;
+		double tag_size; // only take abs value due to uncertain direction 
+		double box_width; // Also account for direction by knowing tag is white to black
 		double threshold_intensity;
 	} LiDARPoints_t;
 
@@ -122,10 +157,29 @@ namespace BipedLab {
 		float cy;
 	} Grid_t;
 
+    typedef struct RKHSDecoding{
+        Eigen::MatrixXf initial_template_points;
+        Eigen::MatrixXf template_points;
+        Eigen::MatrixXf template_points_xyz;
+        Eigen::VectorXf template_points_feat;
+        Eigen::MatrixXf template_points_3d;
+        Eigen::MatrixXf *associated_pattern_3d;
+        std::vector<float> score; 
+        int num_points;
+        int size_num;
+        int rotation_angle;
+        double ell;
+        double ave_intensity;
+        int id;
+        float id_score;
+    }RKHSDecoding_t;
+
 	typedef struct ClusterFamily {
 		// EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 		int cluster_id;
 		int valid;
+		int top_ring;
+		int bottom_ring;
 		PointXYZRI top_most_point;
 		PointXYZRI bottom_most_point;
 
@@ -138,7 +192,15 @@ namespace BipedLab {
 		PointXYZRI average; // Average point
 		PointXYZRI max_intensity; // Maximux intensity point
 		PointXYZRI min_intensity; // Minimum intensity point
-		pcl::PointCloud<LiDARPoints_t> data; 
+		pcl::PointCloud<LiDARPoints_t> data;     //data doesn't have edge points
+		pcl::PointCloud<LiDARPoints_t> edge_points;
+		pcl::PointCloud<LiDARPoints_t> transformed_edge_points;
+
+        // If the first point of the ring is the cluster.
+        // If so, the the indices fo the two sides will be far away 
+        int special_case; 
+        Eigen::MatrixXf merged_data;     // this includes edge and filled-in points
+        Eigen::MatrixXf merged_data_h;     // this includes edge and filled-in points
 
 		std::vector<MaxMin_t> max_min_index_of_each_ring;  // to fill in points between end points in this cluster
 		std::vector<std::vector<LiDARPoints_t*>> ordered_points_ptr;  // of the cluster (to find black margin of the tag)
@@ -149,14 +211,33 @@ namespace BipedLab {
 		std::vector<LiDARPoints_t*> payload_right_boundary_ptr;  // of the cluster (to find black margin of the tag)
 		std::vector<LiDARPoints_t*> payload_left_boundary_ptr;  // of the cluster (to find black margin of the tag)
 		std::vector<LiDARPoints_t*> payload_boundary_ptr;  // of the cluster (to find black margin of the tag)
-
+		int data_inliers;
+		int edge_inliers;
+		int inliers;
+		double percentages_inliers;
+		int boundary_pts;
+		int boundary_rings;
 		pcl::PointCloud<LiDARPoints_t*> payload; // payload points with boundary
+		pcl::PointCloud<LiDARPoints_t*> RLHS_decoding;  // payload points transformed
 		int payload_without_boundary; // size of payload points without boundary
+		double tag_size;
+		double box_width;
+
+		pcl::PointCloud<LiDARPoints_t> edge_group1;
+		pcl::PointCloud<LiDARPoints_t> edge_group2;
+		pcl::PointCloud<LiDARPoints_t> edge_group3;
+		pcl::PointCloud<LiDARPoints_t> edge_group4;
+
 		// Eigen::Vector3f NormalVector; // Normal vectors of the payload
 		Eigen::Matrix<float,3,1,Eigen::DontAlign> normal_vector;
+		Eigen::Matrix<float,3,3,Eigen::DontAlign> principal_axes;
 		QuickDecodeEntry_t entry;
+		Homogeneous_t pose_tag_to_lidar;
 		Homogeneous_t pose;
+		Homogeneous_t initial_pose;
 		tf::Transform transform;
+
+        RKHSDecoding_t rkhs_decoding; //
 
 
 
@@ -197,13 +278,20 @@ namespace BipedLab {
 	}GrizTagFamily_t;
 
 	typedef struct ClusterRemoval {
-		int removed_by_point_check;
-		int boundary_point_check;
-		int no_edge_check;
 		int minimum_return;
-		int decode_fail;
-		int decoder_not_return;
-		int decoder_fail_corner;
+		int maximum_return;
+		int plane_fitting; // v
+		int plane_outliers; // v
+		int boundary_point_check; // v
+        int minimum_ring_points;
+		int no_edge_check; // v
+		int line_fitting;
+		int pose_optimization;
+		int decoding_failure;
+
+        // for weighted gaussian 
+        int decoder_not_return;
+        int decoder_fail_corner;
 	}ClusterRemoval_t;
 
 	typedef struct Statistics {
@@ -215,22 +303,46 @@ namespace BipedLab {
 	}Statistics_t;
 
 	typedef struct Timing{
-		// in us
-		clock_t start_total_time; 
-		clock_t start_computation_time;
-		clock_t timing;
+		// in ms
+		std::chrono::steady_clock::time_point start_total_time; 
+		std::chrono::steady_clock::time_point start_computation_time;
+		std::chrono::steady_clock::time_point timing;
 
+        double duration;
 		double total_time;
-		double computation_time;
-		double edgingand_clustering_time;
+		double total_duration;
+		double edging_and_clustering_time;
 		double to_pcl_vector_time;
+		double fill_in_time;
 		double point_check_time;
+		double plane_fitting_removal_time;
 		double line_fitting_time;
-		double payload_extraction_time;
-		double normal_vector_time;
+		double organize_points_time;
+		double pca_time;
+		double split_edge_time;
+		double pose_optimization_time;
+		double store_template_time;
 		double payload_decoding_time;
+
+
+
+		double normal_vector_time;
 		double tag_to_robot_time;
 	}Timing_t;
+
+	typedef struct TimeDecoding{
+		// in ms
+		std::chrono::steady_clock::time_point timing;
+
+        double original;
+		double matrix;
+		double vectorization;
+		double tbb_original;
+		double tbb_vectorization;
+		double manual_scheduling_tbb_vectorization;
+		double tbb_scheduling_tbb_vectorization;
+		double tbb_kd_tree;
+	}TimeDecoding_t;
 
 	typedef struct TestCluster {
 		int flag;
@@ -243,4 +355,22 @@ namespace BipedLab {
 		std::vector<ClusterFamily_t*> no_edge;
 		std::vector<ClusterFamily_t*> extract_payload;
 	}Debug_t;
+
+
+    typedef struct PathLeafString{
+        std::string operator()(const boost::filesystem::directory_entry& entry) const {
+            return entry.path().leaf().string();
+        }
+    }PathLeafString_t;
+
+    typedef nanoflann::KDTreeEigenMatrixAdaptor<
+        Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>, -1,
+        nanoflann::metric_L2,
+        false> kd_tree_t;
+
+    typedef Eigen::Triplet<float> Trip_t;
+
+
+
+
 } // namespace

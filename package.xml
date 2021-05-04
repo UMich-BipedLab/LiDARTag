@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>lidar_tag</name>
+  <name>lidartag</name>
   <version>0.0.0</version>
-  <description>A package for lidar_tag</description>
+  <description>A package for lidartag</description>
   <maintainer email="bjhuang@umich.edu">brucebot</maintainer>
 
 

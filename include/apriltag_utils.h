@@ -31,7 +31,7 @@
 #ifndef APRILTAG_UTILS_H
 #define APRILTAG_UTILS_H
 
-#include "lidar_tag.h"
+#include "lidartag.h"
 
 namespace BipedAprilLab{
 

@@ -1,0 +1,4 @@
+output/*
+matlab/paper_data/*
+*.mat
+*.m~
