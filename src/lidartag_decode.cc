@@ -1761,7 +1761,7 @@ int LiDARTag::_getCodeRKHS(
         }
     }
     // utils::printSpendHz(std::clock(), c_start, "A cluster decoding: ");
-   
+
 
     // if (rkhs_decoding.template_points_3d.cols() > 1e3) {
     //     cout << "============" << endl;

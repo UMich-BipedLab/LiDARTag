@@ -48,7 +48,7 @@
             <param name="outputs_path" type="string" value="/home/chenxif/automatic_lidar_camera_calibration/src/LiDARTag/output" /> -->
 
 
-            <param name="stats_file_path" type="string" value="/home/alex/catkin_ws/src/LiDARTag/outputs/stats.txt" />
+            <param name="stats_file_path" type="string" value="/home/alex/catkin_ws/src/LiDARTag/outputs/stats.csv" />
             <param name="cluster_file_path" type="string" value="/home/alex/catkin_ws/src/LiDARTag/outputs/cluster.txt" />
             <param name="pose_file_path" type="string" value="/home/alex/catkin_ws/src/LiDARTag/outputs/" />
             <param name="outputs_path" type="string" value="/home/alex/catkin_ws/src/LiDARTag/outputs/" />
@@ -140,4 +140,3 @@
     </group>
 
 </launch>
-

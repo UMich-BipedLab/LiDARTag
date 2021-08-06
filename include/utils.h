@@ -196,7 +196,7 @@ void fitGrid(Eigen::MatrixXf &t_vertices,
         const velodyne_pointcloud::PointXYZIR &t_p3, 
         const velodyne_pointcloud::PointXYZIR &t_p4);
 
-void fitGrid_new(Eigen::MatrixXf &t_vertices, Eigen::Matrix3f &H,
+std::vector<Eigen::Matrix3f> fitGrid_new(Eigen::MatrixXf &t_vertices, Eigen::Matrix3f &H,
              Eigen::MatrixXf &t_payload_vertices);
 
 float distance(

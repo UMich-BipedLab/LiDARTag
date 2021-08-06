@@ -30,20 +30,21 @@
 -->
 
 <launch>
-            <include file="$(find lidartag)/launch/LiDARTag_master.launch" />
+    <include file="$(find lidartag)/launch/LiDARTag_master.launch" output="screen" />
 
-            <group ns="LiDARTag">
+    <group ns="LiDARTag">
+        <param name="mark_cluster_validity" type="bool" value="true" />
+        <!-- list for marker sizes -->
+        <rosparam param="tag_size_list"> [0.61]</rosparam>
 
-            <!-- list for marker sizes -->
-            <rosparam param="tag_size_list"> [0.61]</rosparam>
+        <!-- Tunable for PoI clustering -->
+        <param name="nearby_factor" type="double" value="4" />
+        <param name="linkage_tunable" type="double" value="0.5" />
 
-            <!-- Tunable for PoI clustering -->
-            <param name="nearby_factor" type="double" value="4" />
-            <param name="linkage_tunable" type="double" value="0.5" />
+        <!-- Tunable for cluster validation -->
+        <param name="max_outlier_ratio" type="double" value="0.15" />
 
-            <!-- Tunable for cluster validation -->
-            <param name="max_outlier_ratio" type="double" value="0.35" />
-
-            </group>
+        <param name="pcl_visualize_cluster" type="bool" value="true" />
+        <node pkg="rviz" type="rviz" name="rviz" args="-d $(find lidartag)/rviz/LiDARTag.rviz" respawn="true"/>
+    </group>
 </launch>
-

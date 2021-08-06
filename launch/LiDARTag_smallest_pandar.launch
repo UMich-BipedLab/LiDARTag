@@ -30,27 +30,28 @@
 -->
 
 <launch>
-    <include file="$(find lidartag)/launch/LiDARTag_master.launch" />
+    <param name="use_sim_time" value="true"/>
+    <include file="$(find lidartag)/launch/LiDARTag_master_pandar.launch" output="screen" />
 
     <group ns="LiDARTag">
+        <param name="mark_cluster_validity" type="bool" value="true" />
+        <!-- list for marker sizes -->
+        <rosparam param="tag_size_list"> [1.03]</rosparam>
 
-    <!-- list for marker sizes -->
-    <rosparam param="tag_size_list"> [0.8051, 0.61, 1.22]</rosparam>
+        <!-- Tunable for PoI clustering -->
+        <param name="nearby_factor" type="double" value="4" />
+        <param name="linkage_tunable" type="double" value="0.5" />
 
-    <!-- Tunable for PoI clustering -->
-    <param name="nearby_factor" type="double" value="4" />
-    <param name="linkage_tunable" type="double" value="0.5" />
+        <!-- Tunable for cluster validation -->
+        <param name="max_outlier_ratio" type="double" value="0.15" />
 
-    <!-- Tunable for cluster validation -->
-    <param name="max_outlier_ratio" type="double" value="0.35" />
+        <param name="pcl_visualize_cluster" type="bool" value="false" />
 
-    <param name="pcl_visualize_cluster" type="bool" value="false" />
+        <param name="cluster_min_index" type="int" value="60" />
+        <param name="cluster_max_index" type="int" value="80" />
+        <param name="cluster_min_points_size" type="int" value="1400" />
+        <param name="cluster_max_points_size" type="int" value="1600" />
 
-    <param name="cluster_max_index" type="int" value="100" />
-    <param name="cluster_min_index" type="int" value="80" />
-    <param name="cluster_max_points_size" type="int" value="1300" />
-    <param name="cluster_min_points_size" type="int" value="1100" />
-
-    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find lidartag)/rviz/LiDARTag.rviz" respawn="true"/>
+        <node pkg="rviz" type="rviz" name="rviz" args="-d $(find lidartag)/rviz/cluster.rviz" respawn="true"/>
     </group>
 </launch>

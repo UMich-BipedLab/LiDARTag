@@ -46,7 +46,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <visualization_msgs/Marker.h> // Marker
 #include <visualization_msgs/MarkerArray.h> // Marker
-
+#include <jsk_rviz_plugins/OverlayText.h>
 
 // threadings
 #include <boost/thread/mutex.hpp>
@@ -60,6 +60,8 @@
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/ModelCoefficients.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/filters/extract_indices.h>
 
 #include <velodyne_pointcloud/point_types.h>
 #include <velodyne_pointcloud/pointcloudXYZIR.h> 
@@ -83,6 +85,13 @@ namespace BipedLab{
             /*****************************************************
              * Variables
              *****************************************************/
+            bool loop = true;
+            int pose_status = 0;
+            double inlier_size;
+            std::ofstream fbuff;
+            double cluster_buff_time_stamp_sec;
+            double cluster_buff_time_stamp_nsec;
+
             // Flags for functioning
             int _adaptive_thresholding; // Use adaptive thresholding or not
             int _collect_dataset; // To collect dataset (only publish one tag)
@@ -106,8 +115,26 @@ namespace BipedLab{
             bool _ring_estimation; // need to estimate ring_num or not
             bool _ring_estimated;
             bool _use_ring; // use ring information or not
+            bool _pcl_visualize_cluster = false;
             int _num_accumulation; // Accumuate # of scans as a full scan of lidar 
             int _iter; //iterations of frame
+            int _cluster_max_index;
+            int _cluster_min_index;
+            int _cluster_max_points_size;
+            int _cluster_min_points_size;
+            Eigen::Vector3f _intersection1;
+            Eigen::Vector3f _intersection2;
+            Eigen::Vector3f _intersection3;
+            Eigen::Vector3f _intersection4;
+            Eigen::MatrixXf _ordered_payload_vertices;
+            Eigen::MatrixXf _Vertices = Eigen::MatrixXf::Zero(3, 5);
+            Eigen::Matrix<float,3,3,Eigen::DontAlign> _R;
+            Eigen::Matrix<float,3,3,Eigen::DontAlign> _U;
+            Eigen::Matrix<float,3,3,Eigen::DontAlign> _V;
+
+            Eigen::MatrixXf _payload_vertices = Eigen::MatrixXf::Zero(3,4);
+
+            std::string _lidar_frame_name;
             std::string _assign_id; // Directly assign Id, mainly for calibration usage
 
             // ROS
@@ -131,6 +158,7 @@ namespace BipedLab{
             ros::Publisher _cluster_marker_pub;  // cluster markers
             ros::Publisher _boundary_marker_pub; // cluster boundary
             ros::Publisher _id_marker_pub;
+            ros::Publisher _marker_pub;
             ros::Publisher _payload_marker_pub; // payload boundary
             ros::Publisher _payload_grid_pub; // grid visualization
             ros::Publisher _payload_grid_line_pub; // grid visualization
@@ -140,7 +168,23 @@ namespace BipedLab{
             ros::Publisher _lidartag_pose_pub; // Publish LiDAR pose
             ros::Publisher _clustered_points_pub; // Points after minor clusters removed
             ros::Publisher _detectionArray_pub;
-
+            ros::Publisher _lidartag_cluster_pub;
+            ros::Publisher _lidartag_cluster_edge_points_pub;
+            ros::Publisher _lidartag_cluster_transformed_edge_points_pub;
+            ros::Publisher detail_valid_marker_array_pub;
+            ros::Publisher detail_valid_text_pub;
+            ros::Publisher _intersection_marker_array_pub;
+            ros::Publisher _line_cloud1_pub;
+            ros::Publisher _line_cloud2_pub;
+            ros::Publisher _line_cloud3_pub;
+            ros::Publisher _line_cloud4_pub;
+            ros::Publisher _cloud1_pub;
+            ros::Publisher _cloud2_pub;
+            ros::Publisher _cloud3_pub;
+            ros::Publisher _cloud4_pub;
+            ros::Publisher _transformed_edge_pc_pub;
+            ros::Publisher _average_point_pub;
+            ros::Publisher _before_transformed_edge_pc_pub;
             // Flag
             int _point_cloud_received; // check if a scan of point cloud has received or not
             int _stop; // Just a switch for exiting this program while using valgrind
@@ -167,6 +211,7 @@ namespace BipedLab{
             int _beam_num;
             double _vertical_fov;
 
+            int _edge_flag = -1;
             // PointCould data (for a single scan)
             int _point_cloud_size;
             std_msgs::Header _point_cloud_header;
@@ -519,7 +564,7 @@ namespace BipedLab{
             /* [A set of 2D points]
             * A function to transform the edge points to the tag frame
             */
-            bool _getLines(pcl::PointCloud<pcl::PointXYZ>::Ptr t_cloud, Eigen::Vector4f &t_line);
+            bool _getLines(pcl::PointCloud<pcl::PointXYZ>::Ptr t_cloud, Eigen::Vector4f &t_line, pcl::PointCloud<pcl::PointXYZ>::Ptr &line_cloud);
 
             /* [Type transformation]
              * A function to transform an eigen type of vector to pcl point type
@@ -870,6 +915,13 @@ namespace BipedLab{
             void _freeVec(Container& c); 
             void _freePCL(pcl::PointCloud<LiDARPoints_t*> &vec);
             void _freeTagLineStruc(TagLines_t &TagEdges);
-    }; // GrizTag
+            void visualiseClusterBuff(std::vector<ClusterFamily_t> &cluster_buff);
+            void keyboardEventOccurred(const pcl::visualization::KeyboardEvent& event, void* nothing);
+            void writeClusterBuff(std::vector<ClusterFamily_t> &cluster_buff, std::ofstream &fbuff);
+            void publishLidartagCluster(const std::vector<ClusterFamily_t> &cluster_buff);
+            void publishClusterInfo(const ClusterFamily_t cluster);
+            void publishIntersections(const std::vector<Eigen::Vector3f> intersection_list);
+            void printClusterResult(const std::vector<ClusterFamily_t> &cluster_buff);
+    };  // GrizTag
 } // namespace
 #endif

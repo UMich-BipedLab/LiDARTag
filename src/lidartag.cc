@@ -41,6 +41,7 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 #include <Eigen/Dense> // SVD
 #include <unsupported/Eigen/MatrixFunctions> // matrix exponential
@@ -74,10 +75,19 @@ using namespace std::chrono;
 namespace BipedLab {
     LiDARTag::LiDARTag():
         _nh("~"), _point_cloud_received(0),
-		_pub_frame("velodyne"), // what frame of the published pointcloud should be 
         _stop(0), // Just a switch for exiting this program while using valgrind
         _thread_vec(nullptr) {
             LiDARTag::_getParameters();
+            // fbuff.open(_outputs_path + "/cluster_buff.csv", std::ios::out);
+            // if (!fbuff.is_open()) {
+            //         cout << "Could not open cluster_buff.txt: " <<
+            //         _outputs_path
+            //         << "\n Currently at: " << __LINE__ << endl;
+            //         exit(0);
+            // }
+            // fbuff << "ros time stamp, pc time stamp sec, pc time stamp nsec,
+            // index number, cluster size, edge size, inlier size,
+            // percentage_inliers, detail_valid, valid, " << endl;
             pcl::console::setVerbosityLevel(pcl::console::L_ALWAYS);
             if (_id_decoding){
                 cout << "\033[1;32m\n\n===== loading tag family ===== \033[0m\n";
@@ -161,7 +171,42 @@ namespace BipedLab {
             _detectionArray_pub = 
                 _nh.advertise<lidartag_msgs::LiDARTagDetectionArray>(
                         lidartag_detection_topic,10);
-
+            _lidartag_cluster_pub = 
+                _nh.advertise<sensor_msgs::PointCloud2>("lidartag_cluster_points",10);
+            _lidartag_cluster_edge_points_pub = 
+                _nh.advertise<sensor_msgs::PointCloud2>("lidartag_cluster_edge_points",10);
+            _lidartag_cluster_transformed_edge_points_pub = 
+                _nh.advertise<sensor_msgs::PointCloud2>("lidartag_cluster_trasformed_edge_points",10);
+            _marker_pub = 
+                _nh.advertise<visualization_msgs::Marker>("intersection_marker",10);
+            detail_valid_marker_array_pub = 
+                _nh.advertise<visualization_msgs::MarkerArray>("detail_valid_marker",10);
+            detail_valid_text_pub = 
+                _nh.advertise<jsk_rviz_plugins::OverlayText>("detail_valid_text",10);
+            _intersection_marker_array_pub = 
+                _nh.advertise<visualization_msgs::MarkerArray>("intesection_markers",10);
+            _line_cloud1_pub = 
+                _nh.advertise<sensor_msgs::PointCloud2>("line_cloud1",10);
+            _line_cloud2_pub = 
+                _nh.advertise<sensor_msgs::PointCloud2>("line_cloud2",10);
+            _line_cloud3_pub = 
+                _nh.advertise<sensor_msgs::PointCloud2>("line_cloud3",10);
+            _line_cloud4_pub = 
+                _nh.advertise<sensor_msgs::PointCloud2>("line_cloud4",10);
+            _cloud1_pub = 
+                _nh.advertise<sensor_msgs::PointCloud2>("cloud1",10);
+            _cloud2_pub = 
+                _nh.advertise<sensor_msgs::PointCloud2>("cloud2",10);
+            _cloud3_pub = 
+                _nh.advertise<sensor_msgs::PointCloud2>("cloud3",10);
+            _cloud4_pub = 
+                _nh.advertise<sensor_msgs::PointCloud2>("cloud4",10);
+            _transformed_edge_pc_pub = 
+                _nh.advertise<sensor_msgs::PointCloud2>("transformed_edge_pc",10);
+            _average_point_pub = 
+                _nh.advertise<geometry_msgs::PointStamped>("average_point",10);
+            _before_transformed_edge_pc_pub = 
+                _nh.advertise<sensor_msgs::PointCloud2>("before_transformed_edge_pc",10);
             // put ros spin into a background thread
             boost::thread RosSpin(&LiDARTag::_rosSpin, this);
 
@@ -351,9 +396,14 @@ namespace BipedLab {
                 LiDARTag::_lidarTagDetection(ordered_buff, clusterbuff);
             
 
-            if (_log_data) 
+            if (_log_data){
+                printClusterResult(clusterbuff);
                 _printStatistics(clusterbuff);
-
+                // writeClusterBuff(clusterbuff, fbuff);
+            }
+            if(_pcl_visualize_cluster){
+                visualiseClusterBuff(clusterbuff);
+            }
             clusterpc->clear();
             clusteredgepc->clear();
             payloadpc->clear();
@@ -385,13 +435,13 @@ namespace BipedLab {
             LiDARTag::_clusterToPclVectorAndMarkerPublisher(
                     clusterbuff, clusterpc, clusteredgepc, payloadpc, payload3dpc,
                     tagpc, ini_tagpc, edge_group1, edge_group2, edge_group3,
-                    edge_group4, boundarypc, cluster_markers); 
+                    edge_group4, boundarypc, cluster_markers);
             // add clusters to mat files
-            // LiDARTag::_saveTemporalCluster(clusterbuff, matData); 
+            // LiDARTag::_saveTemporalCluster(clusterbuff, matData);
 
             // publish lidartag poses
             _lidartag_pose_pub.publish(_lidartag_pose_array);
-
+            LiDARTag::publishLidartagCluster(clusterbuff);
             // publish results for rviz
             LiDARTag::_plotIdealFrame();
             LiDARTag::_publishPC(
@@ -451,8 +501,9 @@ namespace BipedLab {
             if (_valgrind_check){
                 valgrind_check++;
                 if (valgrind_check > 0) {
-                    _stop = 1;
-                    break;
+                  ROS_ERROR("valgrind out");
+                  _stop = 1;
+                  break;
                 }
             }
         } // ros::ok()
@@ -464,6 +515,7 @@ namespace BipedLab {
      * if not get all parameters then it will use hard-coded parameters
      */
     void LiDARTag::_getParameters(){
+        bool GotPubFrame = ros::param::get("frame_name", _pub_frame);
         bool GotThreshold = 
             ros::param::get("distance_threshold", _distance_threshold);
         bool GotPublishTopic = 
@@ -584,6 +636,11 @@ namespace BipedLab {
             ros::param::get("num_accumulation", _num_accumulation);
         bool GotCoaTunable = ros::param::get("coa_tunable", _coa_tunable);
         bool GotTagsizeTunable = ros::param::get("tagsize_tunable", _tagsize_tunable);
+        bool GotMaxClusterIndex = ros::param::get("cluster_max_index", _cluster_max_index);
+        bool GotMinClusterIndex = ros::param::get("cluster_min_index", _cluster_min_index);
+        bool GotMaxClusterPointsSize = ros::param::get("cluster_max_points_size", _cluster_max_points_size);
+        bool GotMinClusterPointsSize = ros::param::get("cluster_min_points_size", _cluster_min_points_size);
+        bool GotVisualizeCluster = ros::param::get("pcl_visualize_cluster", _pcl_visualize_cluster );
         bool Pass = utils::checkParameters(64, 
                 GotFakeTag, GotLidarTopic, GotBeamNum, 
                 GotOptPose, GotDecodeId, GotPlaneFitting,
@@ -649,7 +706,7 @@ namespace BipedLab {
             _collect_dataset = 1;
     
             _sleep_to_display = 1;
-            _sleep_time_for_vis = 0.05;
+            _sleep_time_for_vis = 1.0;
             _valgrind_check = 0;
             _black_border = 1;
             _fake_tag = 0;
@@ -670,15 +727,15 @@ namespace BipedLab {
             _optimization_percent = 0.1;
             _tag_size_list = {0.7};
             _debug_info = false;
-            _debug_time = false;
+            _debug_time = true;
             _plane_fitting = true;
             _has_ring = true;
             _ring_estimation = true;
             _derivative_method = true;
-            _opt_lb = 0.8;
-            _opt_ub = 0.8;
+            _opt_lb = 1.0;
+            _opt_ub = 1.0;
             _coa_tunable = 0.75;
-            _tagsize_tunable = 1.5;
+            _tagsize_tunable = 1.1;
         }
         else{
             cout << "\033[1;32m=========================== \033[0m\n";
@@ -1029,8 +1086,11 @@ namespace BipedLab {
                 _edge_pub.publish(pcs_waited_to_pub);
             else if (which_publisher=="original") 
                 _original_pc_pub.publish(pcs_waited_to_pub);
-            else if (which_publisher=="cluster") 
-                _cluster_pub.publish(pcs_waited_to_pub);
+            else if (which_publisher=="cluster"){
+              pcs_waited_to_pub.header = _point_cloud_header;
+              pcs_waited_to_pub.header.stamp = ros::Time::now();
+              _cluster_pub.publish(pcs_waited_to_pub);
+            }
             // else if (which_publisher=="indexcolumn") 
             //     _index_pub.publish(pcs_waited_to_pub);
             else if (which_publisher=="payload") 
@@ -1051,8 +1111,11 @@ namespace BipedLab {
                 _boundary_pub.publish(pcs_waited_to_pub);
             else if (which_publisher=="initialtarget")
                 _ini_tag_pub.publish(pcs_waited_to_pub);
-            else if (which_publisher=="clusteredgepc") 
-                _clustered_points_pub.publish(pcs_waited_to_pub);
+            else if (which_publisher=="clusteredgepc"){
+              pcs_waited_to_pub.header.stamp = _current_scan_time;
+              pcs_waited_to_pub.header.frame_id = _pub_frame;
+              _clustered_points_pub.publish(pcs_waited_to_pub);
+            }
             else if (which_publisher=="transpts") 
                 _transformed_points_pub.publish(pcs_waited_to_pub);
             else if (which_publisher=="transptstag")
@@ -1257,8 +1320,11 @@ namespace BipedLab {
 
         // _timing.duration = duration.count();
         if (_print_ros_info || _debug_info) {
-            ROS_INFO_STREAM("-- Remaining Cluster: " << 
-                    _result_statistics.remaining_cluster_size);
+            // ROS_INFO_STREAM("-- Remaining Cluster: " << 
+            //         _result_statistics.remaining_cluster_size);
+            // ROS_INFO_STREAM("edge_flag: " << _edge_flag);
+            // ROS_INFO_STREAM("mark_cluster_validity: " << _mark_cluster_validity);
+            // ROS_INFO_STREAM("cluster buffer size: " << cluster_buff.size());
             ROS_INFO_STREAM("-- Computation: " << 
                             1e3 / _timing.total_duration << " [Hz]");
         }
@@ -1363,24 +1429,28 @@ namespace BipedLab {
                 // 2 means the right side point is the edge point, 
                 // 3 means two side points are edge points
                 int edge_flag = 
-                    LiDARTag::_getEdgePoints(ordered_buff, i, j, n);      
-                if (edge_flag == 0)
-                    continue;
-
+                    LiDARTag::_getEdgePoints(ordered_buff, i, j, n);
+                _edge_flag = edge_flag;
+                if (edge_flag == 0) {
+                //   std::cout << "edge_flag = 0" << std::endl;
+                  continue;
+                }
                 if (edge_flag == 1 || edge_flag == 3) {
-                    _clusterClassifier(ordered_buff[i][j], cluster_buff);
-                    const auto& point1 = ordered_buff[i][j].point;
-                    const auto& Point1L = ordered_buff[i][j-1].point;
-                    const auto& Point1R = ordered_buff[i][j+1].point;
-                    double DepthGrad1 = 
-                        std::abs((Point1L.getVector3fMap()-point1.getVector3fMap()).norm()-
-                                (point1.getVector3fMap()-Point1R.getVector3fMap()).norm());                 
+                  _clusterClassifier(ordered_buff[i][j], cluster_buff);
+                  const auto &point1 = ordered_buff[i][j].point;
+                  const auto &Point1L = ordered_buff[i][j - 1].point;
+                  const auto &Point1R = ordered_buff[i][j + 1].point;
+                  double DepthGrad1 = std::abs(
+                      (Point1L.getVector3fMap() - point1.getVector3fMap())
+                          .norm() -
+                      (point1.getVector3fMap() - Point1R.getVector3fMap())
+                          .norm());
 
-                    // push the detected point that is an edge into a buff
-                    LiDARPoints_t lidar_points = {
-                        ordered_buff[i][j].point, ordered_buff[i][j].index, 
-                        1, DepthGrad1, 0};
-					edge_buff[i].push_back(lidar_points);                  
+                  // push the detected point that is an edge into a buff
+                  LiDARPoints_t lidar_points = {ordered_buff[i][j].point,
+                                                ordered_buff[i][j].index, 1,
+                                                DepthGrad1, 0};
+                  edge_buff[i].push_back(lidar_points);                  
                 }
                 if (edge_flag == 2 || edge_flag == 3) {
                     _clusterClassifier(ordered_buff[i][j+n-1], cluster_buff);
@@ -1527,9 +1597,9 @@ namespace BipedLab {
         std::ofstream fplanefit;
         if (_log_data) {
             std::string path(_outputs_path);
-            fplanefit.open(path + "/planeFit.txt");
+            fplanefit.open(path + "/planeFit.csv");
             if (!fplanefit.is_open()) {
-                cout << "Could not open planeFit.txt" << endl;
+                cout << "Could not open planeFit.csv" << endl;
                 exit(0);
             }
         }
@@ -1613,8 +1683,10 @@ namespace BipedLab {
                 _result_statistics.cluster_removal.minimum_return ++;
                 _result_statistics.remaining_cluster_size--;
 
-                if (_mark_cluster_validity)
+                if (_mark_cluster_validity){
                     cluster_buff[i].valid = false;
+                    cluster_buff[i].detail_valid = 1;
+                }
                 //tbb::task::self().cancel_group_execution();
                 continue;
             }
@@ -1641,12 +1713,14 @@ namespace BipedLab {
                         new pcl::ModelCoefficients);
                 if (!_rejectWithPlanarCheck(
                             cluster_buff[i], inliers, coefficients, fplanefit)) {
-                    if (_mark_cluster_validity)
+                    if (_mark_cluster_validity){
                         cluster_buff[i].valid = false;
+                        cluster_buff[i].detail_valid = 2;
+                    }
                     //tbb::task::self().cancel_group_execution();
                     continue;
                 }
-
+                inlier_size = inliers->indices.size();
                 // Mark cluster as invalid if too many outliers in plane fitting
                 auto percentage_inliers = 
                     inliers->indices.size() / 
@@ -1673,6 +1747,7 @@ namespace BipedLab {
                     _result_statistics.remaining_cluster_size--;
                     if (_mark_cluster_validity) {
                         cluster_buff[i].valid = false;
+                        cluster_buff[i].detail_valid = 3;
                         continue;
                     }
                 }
@@ -1728,8 +1803,9 @@ namespace BipedLab {
                 // boost::thread BuffToPclVectorThread(&LiDARTag::AdaptiveThresholding, this, boost::ref(cluster_buff[i]));
             if(!LiDARTag::_adaptiveThresholding(cluster_buff[i])) {
                 // removal has been done inside the function 
-                if (_mark_cluster_validity)
-                    cluster_buff[i].valid = false;	
+                if (_mark_cluster_validity){
+                    cluster_buff[i].valid = false;
+                }
                 // cluster_buff.erase(cluster_buff.begin()+i);
                 // i--;
             } else {
@@ -1792,6 +1868,7 @@ namespace BipedLab {
                     utils::spendElapsedTimeMilli(
                             std::chrono::steady_clock::now(), _timing.timing);
             }
+            cluster.detail_valid = 4;
             return false;
         } else {
             // TODO: calculate the average of edge points
@@ -1836,6 +1913,7 @@ namespace BipedLab {
             if (!_transformSplitEdges(cluster)) {
                 _result_statistics.cluster_removal.line_fitting++;
                 _result_statistics.remaining_cluster_size--;
+                cluster.detail_valid = 5;
                 return false;
             }
             // cout << "after split edge poins" << endl;
@@ -1865,56 +1943,80 @@ namespace BipedLab {
                return true; 
             } else {
                 int status = _optimizePose(cluster);
+                cluster.pose_estimation_status = status;
+                // ROS_INFO_STREAM("status: " << status << std::endl);
+                // ROS_INFO_STREAM("pose status: " << pose_status << std::endl);
                 if (status < 0) {
-                    _result_statistics.cluster_removal.pose_optimization++;
-                    _result_statistics.remaining_cluster_size--;
-                    // cout << "about to return false after _optimizePose" << endl;
-
-                    return false;
+                  //   cout << "initial "
+                  //           "_result_statistics.cluster_removal.pose_optimization
+                  //           = "
+                  //        <<
+                  //        _result_statistics.cluster_removal.pose_optimization
+                  //        << endl;
+                  //   cout << "initial "
+                  //           "_result_statistics.remaining_cluster_size = "
+                  //        <<   _result_statistics.remaining_cluster_size <<
+                  //        endl;
+                  //   _result_statistics.cluster_removal.pose_optimization++;
+                  //   _result_statistics.remaining_cluster_size--;
+                  //   cout << "after "
+                  //           "_result_statistics.cluster_removal.pose_optimization
+                  //           = "
+                  //        <<
+                  //        _result_statistics.cluster_removal.pose_optimization
+                  //        << endl;
+                  //   cout << "after "
+                  //           "_result_statistics.remaining_cluster_size = "
+                  //        <<   _result_statistics.remaining_cluster_size <<
+                  //        endl;
+                  // cout << "about to return false after _optimizePose" <<
+                  // endl;
+                //   cout << "pose optimization rejeted" << std::endl;
+                  cluster.detail_valid = 6;
+                  return false;
                 } else {
-                    if (_debug_time) {
-                        _timing.pose_optimization_time += 
-                            utils::spendElapsedTimeMilli(
-                                    std::chrono::steady_clock::now(), _timing.timing);
-                        _timing.timing = std::chrono::steady_clock::now();
-                    }
+                  if (_debug_time) {
+                    _timing.pose_optimization_time +=
+                        utils::spendElapsedTimeMilli(
+                            std::chrono::steady_clock::now(), _timing.timing);
+                    _timing.timing = std::chrono::steady_clock::now();
+                  }
 
-                    // cout << "about to store template points" << endl;
-                    _storeTemplatePts(cluster);
-                    if (_debug_time) {
-                        _timing.store_template_time += 
-                            utils::spendElapsedTimeMilli(
-                                    std::chrono::steady_clock::now(), _timing.timing);
-                        _timing.timing = std::chrono::steady_clock::now();
-                    }
+                  // cout << "about to store template points" << endl;
+                  _storeTemplatePts(cluster);
+                  if (_debug_time) {
+                    _timing.store_template_time += utils::spendElapsedTimeMilli(
+                        std::chrono::steady_clock::now(), _timing.timing);
+                    _timing.timing = std::chrono::steady_clock::now();
+                  }
 
-                    if (!_id_decoding){
-                        _assignClusterPose(
-                                cluster.pose_tag_to_lidar, 
-                                cluster.pose, 0);
-                        return true;
+                  if (!_id_decoding) {
+                    _assignClusterPose(cluster.pose_tag_to_lidar, cluster.pose,
+                                       0);
+                    return true;
+                  } else {
+                    // cout << "about to deocde" << endl;
+                    if (!LiDARTag::_decodePayload(cluster)) {
+                      _result_statistics.cluster_removal.decoding_failure++;
+                      _result_statistics.remaining_cluster_size--;
+                      // cout << "about to return false after deocding" << endl;
+                      cluster.detail_valid = 7;
+                      return false;
                     } else {
-                        // cout << "about to deocde" << endl;
-                        if (!LiDARTag::_decodePayload(cluster)){
-                            _result_statistics.cluster_removal.decoding_failure++;
-                            _result_statistics.remaining_cluster_size--;
-                            // cout << "about to return false after deocding" << endl;
-                            return false;
-                        } else {
-                            if (_debug_time) {
-                                _timing.payload_decoding_time += 
-                                    utils::spendElapsedTimeMilli(
-                                            std::chrono::steady_clock::now(), _timing.timing);
-                                _timing.timing = std::chrono::steady_clock::now();
-                            }
-                            // cout << "about to assign pose" << endl;
-                            _assignClusterPose(
-                                    cluster.pose_tag_to_lidar, 
-                                    cluster.pose, 
-                                    cluster.rkhs_decoding.rotation_angle);
-                            return true;
-                        } 
-                    } 
+                      if (_debug_time) {
+                        _timing.payload_decoding_time +=
+                            utils::spendElapsedTimeMilli(
+                                std::chrono::steady_clock::now(),
+                                _timing.timing);
+                        _timing.timing = std::chrono::steady_clock::now();
+                      }
+                      // cout << "about to assign pose" << endl;
+                      _assignClusterPose(cluster.pose_tag_to_lidar,
+                                         cluster.pose,
+                                         cluster.rkhs_decoding.rotation_angle);
+                      return true;
+                    }
+                  }
                 }
             }
                     // LiDARTag::_decodePayload(cluster);
@@ -2790,59 +2892,79 @@ namespace BipedLab {
         TransformedPCTag->reserve(_point_cloud_size);
         TransformedPCTag->clear();
 
+        pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_edge_pc(new pcl::PointCloud<pcl::PointXYZ>);
+        transformed_edge_pc->reserve(_point_cloud_size);
+        transformed_edge_pc->clear();
+
+        pcl::PointCloud<pcl::PointXYZ>::Ptr before_transformed_edge_pc(new pcl::PointCloud<pcl::PointXYZ>);
+        before_transformed_edge_pc->resize(cluster.edge_points.size());
 
         //separate edge points into 4 groups
-        for (int i=0; i<cluster.edge_points.size(); ++i){
+        sensor_msgs::PointCloud2 before_transformed_edge_pc_msg;
+        for (int i = 0; i < cluster.edge_points.size(); i++) {
+          before_transformed_edge_pc->points[i].x = cluster.edge_points[i].point.x;
+          before_transformed_edge_pc->points[i].y = cluster.edge_points[i].point.y;
+          before_transformed_edge_pc->points[i].z = cluster.edge_points[i].point.z;
+        }
+          pcl::toROSMsg(*before_transformed_edge_pc, before_transformed_edge_pc_msg);
+          before_transformed_edge_pc_msg.header = _point_cloud_header;
+          before_transformed_edge_pc_msg.header.frame_id = _pub_frame;
+          _before_transformed_edge_pc_pub.publish(before_transformed_edge_pc_msg);
+
+          for (int i = 0; i < cluster.edge_points.size(); ++i) {
             if (cluster.edge_points[i].valid != 1) continue;
             Eigen::Vector3f edge_point(
-                    cluster.edge_points[i].point.x - cluster.average.x, 
-                    cluster.edge_points[i].point.y - cluster.average.y, 
-                    cluster.edge_points[i].point.z - cluster.average.z); 
-            Eigen::Matrix<float,3,3,Eigen::DontAlign> transform_matrix = 
-                cluster.principal_axes;
+                cluster.edge_points[i].point.x - cluster.average.x,
+                cluster.edge_points[i].point.y - cluster.average.y,
+                cluster.edge_points[i].point.z - cluster.average.z);
+            Eigen::Matrix<float,3,3,Eigen::DontAlign> transform_matrix = cluster.principal_axes;
+            // cluster.principal_axes << -0.866, 0.180, -0.466,
+            //                     -0.492, -0.130, 0.861,
+            //                     0.095, 0.975, 0.201;
+            // Eigen::Matrix<float,3,3,Eigen::DontAlign>  transform_matrix;
+            // transform_matrix = cluster.principal_axes;
 
             transform_matrix = (transform_matrix.transpose()).eval();
 
             Eigen::Vector3f transformed_edge_point = transform_matrix * edge_point;
-
             pcl::PointXYZ p;
             p.x = transformed_edge_point(0);
             p.y = transformed_edge_point(1);
             p.z = 0;
+            transformed_edge_pc->push_back(p);
             LiDARPoints_t group_point;
             group_point.point = cluster.edge_points[i].point;
             if (transformed_edge_point(0) > 0) {
-                if (transformed_edge_point(1) > 0) {
-                    cloud1->points.push_back(p);
-                    group_point.point.intensity = 0;
-                    cluster.edge_group1.push_back(group_point);
-                } else {
-                    cloud2->points.push_back(p);
-                    group_point.point.intensity = 85;
-                    cluster.edge_group2.push_back(group_point);
-                }
+              if (transformed_edge_point(1) > 0) {
+                cloud1->points.push_back(p);
+                group_point.point.intensity = 0;
+                cluster.edge_group1.push_back(group_point);
+              } else {
+                cloud2->points.push_back(p);
+                group_point.point.intensity = 85;
+                cluster.edge_group2.push_back(group_point);
+              }
             } else {
-                if (transformed_edge_point(1) > 0) {
-                    cloud4->points.push_back(p);
-                    group_point.point.intensity = 170;
-                    cluster.edge_group4.push_back(group_point);
-                } else {
-                    cloud3->points.push_back(p);
-                    group_point.point.intensity = 255;
-                    cluster.edge_group3.push_back(group_point);
-                } 
+              if (transformed_edge_point(1) > 0) {
+                cloud4->points.push_back(p);
+                group_point.point.intensity = 170;
+                cluster.edge_group4.push_back(group_point);
+              } else {
+                cloud3->points.push_back(p);
+                group_point.point.intensity = 255;
+                cluster.edge_group3.push_back(group_point);
+              }
             }
         }
+
         if (_debug_info) {
             ROS_DEBUG_STREAM("==== _transformSplitEdges ====");
             float distance =
                 std::sqrt(pow(cluster.average.x, 2) +
-                          pow(cluster.average.y, 2) +
                           pow(cluster.average.z, 2));
             ROS_DEBUG_STREAM("Distance : " << distance);
             ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() + cluster.edge_points.size());
         }
-
         int num_edge_points = 3;
         if (cloud1->size() < num_edge_points ||
             cloud2->size() < num_edge_points ||
@@ -2853,6 +2975,26 @@ namespace BipedLab {
             return false;
         }
 
+        // sensor_msgs::PointCloud2 cloud1_msg;
+        // sensor_msgs::PointCloud2 cloud2_msg;
+        // sensor_msgs::PointCloud2 cloud3_msg;
+        // sensor_msgs::PointCloud2 cloud4_msg;
+        // pcl::toROSMsg(*cloud1, cloud1_msg);
+        // pcl::toROSMsg(*cloud2, cloud2_msg);
+        // pcl::toROSMsg(*cloud3, cloud3_msg);
+        // pcl::toROSMsg(*cloud4, cloud4_msg);
+        // cloud1_msg.header = _point_cloud_header;
+        // cloud2_msg.header = _point_cloud_header;
+        // cloud3_msg.header = _point_cloud_header;
+        // cloud4_msg.header = _point_cloud_header;
+        // cloud1_msg.header.frame_id = _pub_frame;
+        // cloud2_msg.header.frame_id = _pub_frame;
+        // cloud3_msg.header.frame_id = _pub_frame;
+        // cloud4_msg.header.frame_id = _pub_frame;
+        // _cloud1_pub.publish(cloud1_msg);
+        // _cloud2_pub.publish(cloud2_msg);
+        // _cloud3_pub.publish(cloud3_msg);
+        // _cloud4_pub.publish(cloud4_msg);
         // //visualize all transformed points
         // LiDARTag::_publishPC(TransformedPC, _pub_frame, string("transpts"));
 
@@ -2862,57 +3004,122 @@ namespace BipedLab {
         Eigen::Vector4f line2;
         Eigen::Vector4f line3;
         Eigen::Vector4f line4;
-        if (!LiDARTag::_getLines(cloud1, line1)) {
+        pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud1(new pcl::PointCloud<pcl::PointXYZ> );
+        pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud2(new pcl::PointCloud<pcl::PointXYZ> );
+        pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud3(new pcl::PointCloud<pcl::PointXYZ> );
+        pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud4(new pcl::PointCloud<pcl::PointXYZ> );
+        line_cloud1->reserve(_point_cloud_size);
+        line_cloud1->clear();
+        line_cloud2->reserve(_point_cloud_size);
+        line_cloud2->clear();
+        line_cloud3->reserve(_point_cloud_size);
+        line_cloud3->clear();
+        line_cloud4->reserve(_point_cloud_size);
+        line_cloud4->clear();
+        // sensor_msgs::PointCloud2 line_cloud1_msg;
+        // sensor_msgs::PointCloud2 line_cloud2_msg;
+        // sensor_msgs::PointCloud2 line_cloud3_msg;
+        // sensor_msgs::PointCloud2 line_cloud4_msg;
+
+        if (!LiDARTag::_getLines(cloud1, line1, line_cloud1)) {
+          if (_debug_info)
+                ROS_DEBUG_STREAM("Status: " << false);
+
+          return false;
+        }
+        if (!LiDARTag::_getLines(cloud2, line2, line_cloud2)) {
             if (_debug_info)
                 ROS_DEBUG_STREAM("Status: " << false);
 
             return false;
         }
-        if (!LiDARTag::_getLines(cloud2, line2)) {
+        if (!LiDARTag::_getLines(cloud3, line3, line_cloud3)) {
             if (_debug_info)
                 ROS_DEBUG_STREAM("Status: " << false);
 
             return false;
         }
-        if (!LiDARTag::_getLines(cloud3, line3)) {
+        if (!LiDARTag::_getLines(cloud4, line4, line_cloud4)) {
             if (_debug_info)
                 ROS_DEBUG_STREAM("Status: " << false);
 
             return false;
         }
-        if (!LiDARTag::_getLines(cloud4, line4)) {
-            if (_debug_info)
-                ROS_DEBUG_STREAM("Status: " << false);
-            
-            return false;
-        }
-        
+
         // get intersections of four sides
         Eigen::Vector3f intersection1 = _getintersec(line1, line2);
         Eigen::Vector3f intersection2 = _getintersec(line2, line3);
         Eigen::Vector3f intersection3 = _getintersec(line3, line4);
         Eigen::Vector3f intersection4 = _getintersec(line1, line4);
+        if (!_estimateTargetSize(cluster, intersection1, intersection2, intersection3, intersection4)) return false;
 
-        if (!_estimateTargetSize(cluster, 
-                    intersection1, intersection2, intersection3, intersection4)) 
-            return false;
-        
+        // pcl::toROSMsg(*line_cloud1, line_cloud1_msg);
+        // pcl::toROSMsg(*line_cloud2, line_cloud2_msg);
+        // pcl::toROSMsg(*line_cloud3, line_cloud3_msg);
+        // pcl::toROSMsg(*line_cloud4, line_cloud4_msg);
+        // line_cloud1_msg.header = _point_cloud_header;
+        // line_cloud2_msg.header = _point_cloud_header;
+        // line_cloud3_msg.header = _point_cloud_header;
+        // line_cloud4_msg.header = _point_cloud_header;
+        // line_cloud1_msg.header.frame_id = _pub_frame;
+        // line_cloud2_msg.header.frame_id = _pub_frame;
+        // line_cloud3_msg.header.frame_id = _pub_frame;
+        // line_cloud4_msg.header.frame_id = _pub_frame;
+        // _line_cloud1_pub.publish(line_cloud1_msg);
+        // _line_cloud2_pub.publish(line_cloud2_msg);
+        // _line_cloud3_pub.publish(line_cloud3_msg);
+        // _line_cloud4_pub.publish(line_cloud4_msg);
+
+        sensor_msgs::PointCloud2 transformed_edge_pc_msg;
+        pcl::toROSMsg(*transformed_edge_pc, transformed_edge_pc_msg);
+        transformed_edge_pc_msg.header = _point_cloud_header;
+        transformed_edge_pc_msg.header.frame_id = _pub_frame;
+        _transformed_edge_pc_pub.publish(transformed_edge_pc_msg);
+
+        std::vector<Eigen::Vector3f> intersection_list{intersection1, intersection2, intersection3, intersection4};
+        publishIntersections(intersection_list);
+        _intersection1 = intersection1;
+        _intersection2 = intersection2;
+        _intersection3 = intersection3;
+        _intersection4 = intersection4;
         // associate four intersections with four coners of the template
         Eigen::MatrixXf payload_vertices(3, 4);
         payload_vertices.col(0) = cluster.principal_axes * intersection1;
         payload_vertices.col(1) = cluster.principal_axes * intersection2;
         payload_vertices.col(2) = cluster.principal_axes * intersection3;
         payload_vertices.col(3) = cluster.principal_axes * intersection4;
+        // payload_vertices << -0.0151639, -0.629135, 0.0127609, 0.624599,
+        //                             -0.178287, -0.325841, 0.167202, 0.319495,
+        //                             0.728342, -0.0662743, -0.686448, 0.0829155;
+
         Eigen::MatrixXf ordered_payload_vertices = _getOrderedCorners(payload_vertices, cluster);
         Eigen:: MatrixXf Vertices = Eigen::MatrixXf::Zero(3,5);
+        // ordered_payload_vertices << -0.0151639, -0.629135, 0.0127609, 0.624599,
+        //                             -0.178287, -0.325841, 0.167202, 0.319495,
+        //                             0.728342, -0.0662743, -0.686448, 0.0829155;
+        // Vertices << 0, 0, 0, 0, 0,
+        //             0, 0.515, 0.515, -0.515, -0.515,
+        //             0, 0.515, -0.515, -0.515, 0.515;
         utils::formGrid(Vertices, 0, 0, 0, cluster.tag_size);
         Eigen::Matrix3f R;
-        utils::fitGrid_new(Vertices, R, ordered_payload_vertices);
-
+        std::vector<Eigen::Matrix3f> matrixs;
+        matrixs = utils::fitGrid_new(Vertices, R, ordered_payload_vertices);
+        _U = matrixs.front();
+        matrixs.erase(matrixs.begin());
+        _V = matrixs.front();
+        matrixs.erase(matrixs.begin());
+        matrixs.clear();
+        // R << -0.467, 0.861, 0.201
+        //    , -0.632, -0.484, 0.606
+        //     , 0.619, 0.156, 0.767;
+        _payload_vertices = ordered_payload_vertices;
+        _Vertices = Vertices;
+        _ordered_payload_vertices = ordered_payload_vertices;
+        _R = R;
         // used for visualization for corner points
         PointXYZRI showpoint;
         PointXYZRI showpoint_tag;
-        for (int i = 0; i < 3; ++i) {
+        for (int i = 0; i < 4; ++i) {
             showpoint.intensity = 50;
             showpoint.x = ordered_payload_vertices.col(i)(0);
             showpoint.y = ordered_payload_vertices.col(i)(1);
@@ -2924,18 +3131,18 @@ namespace BipedLab {
             TransformedPC->push_back(showpoint);
             TransformedPCTag->push_back(showpoint_tag);
         }
-        if (!_debug_info) {
-            showpoint.intensity = 50;
-            showpoint.x = ordered_payload_vertices.col(3)(0);
-            showpoint.y = ordered_payload_vertices.col(3)(1);
-            showpoint.z = ordered_payload_vertices.col(3)(2);
+        // if (!_debug_info) {
+        //     showpoint.intensity = 50;
+        //     showpoint.x = ordered_payload_vertices.col(3)(0);
+        //     showpoint.y = ordered_payload_vertices.col(3)(1);
+        //     showpoint.z = ordered_payload_vertices.col(3)(2);
 
-            showpoint_tag.x = showpoint.x + cluster.average.x;
-            showpoint_tag.y = showpoint.y + cluster.average.y;
-            showpoint_tag.z = showpoint.z + cluster.average.z;
-            TransformedPC->push_back(showpoint);
-            TransformedPCTag->push_back(showpoint_tag);
-        }
+        //     showpoint_tag.x = showpoint.x + cluster.average.x;
+        //     showpoint_tag.y = showpoint.y + cluster.average.y;
+        //     showpoint_tag.z = showpoint.z + cluster.average.z;
+        //     TransformedPC->push_back(showpoint);
+        //     TransformedPCTag->push_back(showpoint_tag);
+        // }
         LiDARTag::_publishPC(TransformedPC, _pub_frame, string("transpts"));
         LiDARTag::_publishPC(TransformedPCTag, _pub_frame, string("transptstag"));
 
@@ -2954,7 +3161,6 @@ namespace BipedLab {
             ROS_DEBUG_STREAM("Initial rotation matrix: \n" << R);
             ROS_DEBUG_STREAM("Status: " << true);
         }
-        
         return true;
     }
 
@@ -2962,11 +3168,12 @@ namespace BipedLab {
     /* [Grouped edge points]
      * A function to line fitting 4 lines of the tag
      */
-    bool LiDARTag::_getLines(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, Eigen::Vector4f &line){
+    bool LiDARTag::_getLines(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, Eigen::Vector4f &line, pcl::PointCloud<pcl::PointXYZ>::Ptr &line_cloud){
 
         pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
         pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
         pcl::SACSegmentation<pcl::PointXYZ> seg;
+        pcl::ExtractIndices<pcl::PointXYZ> extract;
 
         seg.setOptimizeCoefficients (true);
         seg.setModelType(pcl::SACMODEL_LINE);
@@ -2985,6 +3192,10 @@ namespace BipedLab {
             }
             return false;
         }
+        extract.setInputCloud (cloud);
+        extract.setIndices (inliers);
+        extract.setNegative (false);
+        extract.filter (*line_cloud);
         line << coefficients->values[0], coefficients->values[1], coefficients->values[3], coefficients->values[4];
         return true;
     }
@@ -3056,9 +3267,11 @@ namespace BipedLab {
                 tagsize = _tag_size_list[i];
                 size_num = i;
             }
+            else
+              return false;
         }
 
-        // float tagsize_tunable = 1.5;
+        // float tagsize_tunable = 0.1;
         if (gap > _tagsize_tunable * tagsize) {
         // if (gap > 10) {
             status = false;
@@ -3110,6 +3323,7 @@ namespace BipedLab {
         float x = (a*n*p-a*m*q+a*d*m-b*c*m) / (a*n - b*m);
         float y = (b*n*p-b*c*n+a*d*n-b*m*q) / (a*n - b*m);
         Eigen::Vector3f intersection(x,y,0);
+
         return intersection;
     }
 
@@ -3393,7 +3607,7 @@ namespace BipedLab {
         
         // fstats
         if (_iter == 0) {
-            fstats.open(_outputs_path + "/stats.txt", ios::trunc);
+            fstats.open(_outputs_path + "/stats.csv", ios::trunc);
             if (!fstats.is_open()) {
                 cout << "Could not open stats.txt: " << _outputs_path
                     << "\n Currently at: " << __LINE__ << endl;
@@ -3407,7 +3621,7 @@ namespace BipedLab {
                    << "remaining"
                    << endl;
         } else {
-            fstats.open(_outputs_path + "/stats.txt", 
+            fstats.open(_outputs_path + "/stats.csv", 
                     std::ofstream::out | std::ofstream::app);
             if (!fstats.is_open()) {
                 cout << "Could not open stats.txt: " << _outputs_path
@@ -3445,27 +3659,30 @@ namespace BipedLab {
 
         // Timing
         if (_debug_time) {
-            if (_iter == 0) {
-                ftiming.open(_outputs_path + "/timing_all.txt", ios::trunc);
-                if (!ftiming.is_open()) {
-                    cout << "Could not open timing_all.txt: " << _outputs_path
-                        << "\n Currently at " << __FILE__ << " at "<< __LINE__ << endl;
-                    exit(0);
-                }
-                ftiming << "iter, duration, PoI_clustering, "
-                    << "to_pcl, fill_in_time, point_check, plane_fitting, " 
+          ROS_INFO("debug time");
+          if (_iter == 0) {
+            ftiming.open(_outputs_path + "/timing_all.txt", ios::trunc);
+            if (!ftiming.is_open()) {
+              cout << "Could not open timing_all.txt: " << _outputs_path
+                   << "\n Currently at " << __FILE__ << " at " << __LINE__
+                   << endl;
+              exit(0);
+            }
+            ftiming << "iter, duration, PoI_clustering, "
+                    << "to_pcl, fill_in_time, point_check, plane_fitting, "
                     << "line_fitting, avage_edge_points, pca, "
                     << "split_edge, pose_optimization, store_template, "
                     << "payload_decoding" << endl;
-            } else {
-                ftiming.open(_outputs_path + "/timing_all.txt", 
-                        std::ofstream::out | std::ofstream::app);
-                if (!ftiming.is_open()) {
-                    cout << "Could not open timing_all.txt: " << _outputs_path
-                        << "\n Currently at " << __FILE__ << " at "<< __LINE__ << endl;
-                    exit(0);
-                }
+          } else {
+            ftiming.open(_outputs_path + "/timing_all.txt",
+                         std::ofstream::out | std::ofstream::app);
+            if (!ftiming.is_open()) {
+              cout << "Could not open timing_all.txt: " << _outputs_path
+                   << "\n Currently at " << __FILE__ << " at " << __LINE__
+                   << endl;
+              exit(0);
             }
+          }
             ftiming << _iter << ",";
             ftiming << _timing.total_duration << ",";
             ftiming << _timing.edging_and_clustering_time << ",";
@@ -3562,7 +3779,7 @@ namespace BipedLab {
             for (int i = 0; i < _num_tag_sizes; ++i) {
                 std::string _corners_file_path = 
                     _outputs_path + "tag_size" + 
-                    std::to_string(_tag_size_list[i]) + "corners.txt";
+                    std::to_string(_tag_size_list[i]) + "corners.csv";
                 fcorners.open(_corners_file_path, std::ofstream::trunc);
                 if (!fcorners.is_open()) {
                     cout << "Could not open fcorners file: " << _corners_file_path
@@ -3576,15 +3793,16 @@ namespace BipedLab {
             }
 
 
-            fclusters.open(_outputs_path + "/clusters.txt", std::ofstream::trunc);
+            fclusters.open(_outputs_path + "/clusters.csv", std::ofstream::trunc);
             if (!fclusters.is_open()) {
                 cout << "Could not open cluster file: " << _outputs_path
                      << "Currently at :" << __LINE__ << endl;
                 exit(0);
             }
-            fclusters << "iter, cluster size, cluter points" << endl;
+            fclusters << "It is recorded if there is any valid cluster" << endl;
+            fclusters << "iter, valid cluster size, valid cluter points" << endl;
         } else {
-            fclusters.open(_outputs_path + "/clusters.txt", 
+            fclusters.open(_outputs_path + "/clusters.csv", 
                     std::ofstream::out | std::ofstream::app);
             if (!fclusters.is_open()) {
                 cout << "Could not open cluster file: " << _outputs_path
@@ -3639,7 +3857,7 @@ namespace BipedLab {
                 std::string _corners_file_path = 
                     _outputs_path + "tag_size" + 
                     std::to_string(cluster_buff[cluster_idx].tag_size) + 
-                    "corners.txt";
+                    "corners.csv";
                 fcorners.open(_corners_file_path, 
                         std::ofstream::out | std::ofstream::app);
                 fcorners << _iter << ",";
@@ -3803,4 +4021,304 @@ namespace BipedLab {
         // if (detectionsToPub.detections.size() > 2)
         // ROS_INFO_STREAM("LiDARTag Got wrong tags");   
     }
-} // namespace BipedLab
+    void LiDARTag::keyboardEventOccurred (const pcl::visualization::KeyboardEvent& event, void* nothing)
+    {
+      if (event.getKeySym() == "space" && event.keyDown()) loop = true;
+    }
+
+    void LiDARTag::visualiseClusterBuff( vector<ClusterFamily_t> &cluster_buff){
+      ROS_INFO("visualiseClusterBuff start");
+      cluster_buff_time_stamp_sec = _point_cloud_header.stamp.sec;
+      cluster_buff_time_stamp_nsec = _point_cloud_header.stamp.nsec;
+      cout << fixed;
+      std::cout << "time stamp: sec = " << cluster_buff_time_stamp_sec << endl;
+      std::cout << "time stamp: nsec = " << cluster_buff_time_stamp_nsec << endl;
+      
+
+      pcl::visualization::PCLVisualizer viewer("Cluster buff visualization");
+      int v1(0);
+      float bckgr_gray_level = 0.0;  // Black
+      float txt_gray_lvl = 1.0 - bckgr_gray_level;
+      pcl::PointCloud<LiDARPoints_t>::Ptr cluster_pc(
+          new pcl::PointCloud<LiDARPoints_t>);
+      pcl::PointCloud<pcl::PointXYZ>::Ptr output_pc(
+          new pcl::PointCloud<pcl::PointXYZ>);
+      std::stringstream ss;
+      std::string index;
+      std::string pc_size;
+      ss << 0;
+      index = "cluster buff index = " + ss.str();
+      pc_size = "cluster point cloud size = " + ss.str();
+      *cluster_pc = cluster_buff[0].data;
+      std::cout << "0:size = " << cluster_pc->points.size() << std::endl;
+      output_pc->points.resize(cluster_pc->points.size());
+      for (size_t i = 0; i < cluster_pc->points.size(); i++) {
+        output_pc->points[i].x = cluster_pc->points[i].point.x;
+        output_pc->points[i].y = cluster_pc->points[i].point.y;
+        output_pc->points[i].z = cluster_pc->points[i].point.z;
+        }
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cluster_color (output_pc, 20, 180, 20);
+        viewer.addPointCloud(output_pc, cluster_color, "cluster", v1);
+        viewer.addText (index , 10, 80, 16, txt_gray_lvl, txt_gray_lvl, txt_gray_lvl, "index", v1);
+        viewer.addText (pc_size , 10, 60, 16, txt_gray_lvl, txt_gray_lvl, txt_gray_lvl, "pc_size", v1);
+        viewer.setBackgroundColor (bckgr_gray_level, bckgr_gray_level, bckgr_gray_level, v1);
+        viewer.registerKeyboardCallback(&LiDARTag::keyboardEventOccurred, *this, (void*) NULL);
+        int index_num = 0;
+        while (!viewer.wasStopped()) {
+            viewer.spinOnce();
+            if(loop){
+                if (index_num + 1 > cluster_buff.size()){
+                    ROS_INFO("[ClusterBuff_visualization] exceeded clusterbuff size");
+                    return;
+                }
+                index_num++;
+                *cluster_pc = cluster_buff[index_num].data;
+                output_pc->points.resize(cluster_pc->points.size());
+                if (output_pc->points.size() < 1000 ){
+                  continue;
+                }
+                // std::cout << "index number = " << index_num << endl << "size = " << output_pc->points.size() << std::endl;
+                for (size_t i = 0; i < cluster_pc->points.size(); i++) {
+                    output_pc->points[i].x = cluster_pc->points[i].point.x;
+                    output_pc->points[i].y = cluster_pc->points[i].point.y;
+                    output_pc->points[i].z = cluster_pc->points[i].point.z;
+                }
+                viewer.updatePointCloud(output_pc, cluster_color, "cluster");
+                ss.str("");
+                ss << index_num;
+                index = "cluster buff index = " + ss.str();
+                viewer.updateText(index, 10, 80, 16, txt_gray_lvl, txt_gray_lvl,
+                                txt_gray_lvl, "index");
+                ss.str("");
+                ss << output_pc->points.size();
+                pc_size = "cluster point cloud size = " + ss.str();
+                viewer.updateText(pc_size, 10, 60, 16, txt_gray_lvl, txt_gray_lvl,
+                                txt_gray_lvl, "pc_size");
+            }
+            loop = false;
+        }
+        viewer.close();
+        cluster_pc->clear();
+        output_pc->clear();
+    }
+
+
+    void LiDARTag::writeClusterBuff( vector<ClusterFamily_t> &cluster_buff, std::ofstream &fbuff){
+      ROS_INFO("writeClusterBuff start");
+      cluster_buff_time_stamp_sec = _point_cloud_header.stamp.sec;
+      cluster_buff_time_stamp_nsec = _point_cloud_header.stamp.nsec;
+      cout << fixed;
+      std::cout << "time stamp: sec = " << cluster_buff_time_stamp_sec << endl;
+      std::cout << "time stamp: nsec = " << cluster_buff_time_stamp_nsec << endl;
+      
+
+      pcl::PointCloud<LiDARPoints_t>::Ptr cluster_pc(
+          new pcl::PointCloud<LiDARPoints_t>);
+      pcl::PointCloud<pcl::PointXYZ>::Ptr output_pc(
+          new pcl::PointCloud<pcl::PointXYZ>);
+      *cluster_pc = cluster_buff[0].data;
+      output_pc->points.resize(cluster_pc->points.size());
+      for (size_t i = 0; i < cluster_pc->points.size(); i++) {
+        output_pc->points[i].x = cluster_pc->points[i].point.x;
+        output_pc->points[i].y = cluster_pc->points[i].point.y;
+        output_pc->points[i].z = cluster_pc->points[i].point.z;
+        }
+        int index_num = 0;
+        while (true) {
+                if (index_num + 1 > cluster_buff.size()){
+                    return;
+                }
+                index_num++;
+                *cluster_pc = cluster_buff[index_num].data;
+                output_pc->points.resize(cluster_pc->points.size());
+                if (output_pc->points.size() < 1400 || 1600 < output_pc->points.size() || index_num < 50 || 80 < index_num ){
+                  continue;
+                } 
+
+                // std::cout << "index number = " << index_num << endl << "size = " << output_pc->points.size() << std::endl;
+                for (size_t i = 0; i < cluster_pc->points.size(); i++) {
+                    output_pc->points[i].x = cluster_pc->points[i].point.x;
+                    output_pc->points[i].y = cluster_pc->points[i].point.y;
+                    output_pc->points[i].z = cluster_pc->points[i].point.z;
+                }
+                fbuff << fixed << std::setprecision(10); //TODO:
+                fbuff << ros::Time::now() << ",";
+                fbuff << cluster_buff_time_stamp_sec << ",";
+                fbuff << cluster_buff_time_stamp_nsec << ",";
+                fbuff << index_num << ",";
+                fbuff << output_pc->points.size() << ",";
+                fbuff << cluster_buff[index_num].edge_points.size() << ",";
+                fbuff << inlier_size << ",";
+                fbuff << cluster_buff[index_num].percentages_inliers << ",";
+                fbuff << cluster_buff[index_num].detail_valid << ",";
+                fbuff << cluster_buff[index_num].valid;
+                fbuff << std::endl;
+        }
+        pose_status = 0;
+        cluster_pc->clear();
+        output_pc->clear();
+    }
+
+    void LiDARTag::publishLidartagCluster(const vector<ClusterFamily_t> &cluster_buff){
+      pcl::PointCloud<LiDARPoints_t>::Ptr cluster_pc(
+          new pcl::PointCloud<LiDARPoints_t>);
+      pcl::PointCloud<LiDARPoints_t>::Ptr cluster_ep_pc(
+          new pcl::PointCloud<LiDARPoints_t>);
+      pcl::PointCloud<LiDARPoints_t>::Ptr cluster_tr_ep_pc(
+          new pcl::PointCloud<LiDARPoints_t>);
+      pcl::PointCloud<PointXYZRI>::Ptr output_pc(
+          new pcl::PointCloud<PointXYZRI>);
+      pcl::PointCloud<PointXYZRI>::Ptr output_ep_pc(
+          new pcl::PointCloud<PointXYZRI>);
+      pcl::PointCloud<PointXYZRI>::Ptr output_tr_ep_pc(
+          new pcl::PointCloud<PointXYZRI>);
+      sensor_msgs::PointCloud2 output_data_msg;
+      sensor_msgs::PointCloud2 output_ep_msg;
+      sensor_msgs::PointCloud2 output_tr_ep_msg;
+      geometry_msgs::PointStamped point;
+
+
+
+      int index_num = 0;
+      while (true) {
+        if (index_num + 1 > cluster_buff.size()) {
+          return;
+        }
+
+        if (cluster_buff[index_num].data.size() < _cluster_min_points_size || _cluster_max_points_size < cluster_buff[index_num].data.size() || index_num < _cluster_min_index || _cluster_max_index < index_num) {
+          index_num++;
+          continue;
+        }
+        *cluster_pc = cluster_buff[index_num].data;
+        *cluster_ep_pc = cluster_buff[index_num].edge_points;
+        *cluster_tr_ep_pc = cluster_buff[index_num].transformed_edge_points;
+        output_pc->points.resize(cluster_pc->points.size());
+        output_ep_pc->points.resize(cluster_ep_pc->points.size());
+        output_tr_ep_pc->points.resize(cluster_tr_ep_pc->points.size());
+        point.header.stamp = ros::Time::now();
+        point.header.frame_id = _pub_frame;
+        point.point.x = cluster_buff[index_num].average.x;
+        point.point.y = cluster_buff[index_num].average.y;
+        point.point.z = cluster_buff[index_num].average.z;
+        // std::cout << "index number = " << index_num << endl << "size = " <<
+        // output_pc->points.size() << std::endl;
+        for (size_t i = 0; i < cluster_pc->points.size(); i++) {
+          output_pc->points[i].x = cluster_pc->points[i].point.x;
+          output_pc->points[i].y = cluster_pc->points[i].point.y;
+          output_pc->points[i].z = cluster_pc->points[i].point.z;
+          output_pc->points[i].ring = cluster_pc->points[i].point.ring;
+          output_pc->points[i].intensity = cluster_pc->points[i].point.intensity;
+        }
+        for (size_t i = 0; i < cluster_ep_pc->points.size(); i++) {
+          output_ep_pc->points[i].x = cluster_ep_pc->points[i].point.x;
+          output_ep_pc->points[i].y = cluster_ep_pc->points[i].point.y;
+          output_ep_pc->points[i].z = cluster_ep_pc->points[i].point.z;
+          output_ep_pc->points[i].ring = cluster_ep_pc->points[i].point.ring;
+          output_ep_pc->points[i].intensity =
+              cluster_ep_pc->points[i].point.intensity;
+        }
+        for (size_t i = 0; i < cluster_tr_ep_pc->points.size(); i++) {
+          output_tr_ep_pc->points[i].x = cluster_tr_ep_pc->points[i].point.x;
+          output_tr_ep_pc->points[i].y = cluster_tr_ep_pc->points[i].point.y;
+          output_tr_ep_pc->points[i].z = cluster_tr_ep_pc->points[i].point.z;
+          output_tr_ep_pc->points[i].ring =
+              cluster_tr_ep_pc->points[i].point.ring;
+          output_tr_ep_pc->points[i].intensity =
+              cluster_tr_ep_pc->points[i].point.intensity;
+        }
+        pcl::toROSMsg(*output_pc, output_data_msg);
+        pcl::toROSMsg(*output_ep_pc, output_ep_msg);
+        pcl::toROSMsg(*output_tr_ep_pc, output_tr_ep_msg);
+        output_data_msg.header.frame_id = _pub_frame;
+        output_ep_msg.header.frame_id = _pub_frame;
+        output_tr_ep_msg.header.frame_id = _pub_frame;
+        output_data_msg.header = _point_cloud_header;
+        output_ep_msg.header = _point_cloud_header;
+        output_tr_ep_msg.header = _point_cloud_header;
+        _lidartag_cluster_pub.publish(output_data_msg);
+        _lidartag_cluster_edge_points_pub.publish(output_ep_msg);
+        _lidartag_cluster_transformed_edge_points_pub.publish(output_tr_ep_msg);
+        _average_point_pub.publish(point);
+        publishClusterInfo(cluster_buff[index_num]);
+        index_num++;
+        }
+        cluster_pc->clear();
+        cluster_ep_pc->clear();
+        cluster_tr_ep_pc->clear();
+        output_pc->clear();
+        output_ep_pc->clear();
+        output_tr_ep_pc->clear();
+    }
+    void LiDARTag::publishIntersections(const std::vector<Eigen::Vector3f> intersection_list){
+      visualization_msgs::MarkerArray intersection_marker_array;
+      intersection_marker_array.markers.resize(4);
+      int index = 0;
+      ros::Duration d(3.0);
+      for (auto intersection : intersection_list) {
+        intersection_marker_array.markers[index].header.frame_id = _pub_frame;
+        intersection_marker_array.markers[index].header.stamp = ros::Time::now();
+        intersection_marker_array.markers[index].ns = "intersection_marker";
+        intersection_marker_array.markers[index].id = index;
+        intersection_marker_array.markers[index].type = visualization_msgs::Marker::CUBE;
+        intersection_marker_array.markers[index].action = visualization_msgs::Marker::ADD;
+        intersection_marker_array.markers[index].lifetime = d;
+        intersection_marker_array.markers[index].scale.x = 0.1;
+        intersection_marker_array.markers[index].scale.y = 0.1;
+        intersection_marker_array.markers[index].scale.z = 0.1;
+        intersection_marker_array.markers[index].pose.position.x = intersection[0];
+        intersection_marker_array.markers[index].pose.position.y = intersection[1];
+        intersection_marker_array.markers[index].pose.position.z = 0;
+        intersection_marker_array.markers[index].pose.orientation.x = 0;
+        intersection_marker_array.markers[index].pose.orientation.y = 0;
+        intersection_marker_array.markers[index].pose.orientation.z = 0;
+        intersection_marker_array.markers[index].pose.orientation.w = 1;
+        intersection_marker_array.markers[index].color.r = 0.0f;
+        intersection_marker_array.markers[index].color.g = 1.0f;
+        intersection_marker_array.markers[index].color.b = 0.0f;
+        intersection_marker_array.markers[index].color.a = 1.0f;
+        index++;
+      }
+      _intersection_marker_array_pub.publish(intersection_marker_array);
+    }
+    void LiDARTag::printClusterResult(const std::vector<ClusterFamily_t> &cluster_buff){
+      std::ofstream fresult;
+      if(_iter == 0){
+            fresult.open(_outputs_path + "/results.csv", std::ofstream::out);
+            if(!fresult.is_open()){
+                std::cout << "Could not open results.csv: " << _outputs_path
+                        << "\n Crrently at: " << __LINE__ << std::endl;
+                exit(0);
+            }
+            fresult << "valid,id,x,y,z,roll,pitch,yaw,tag_size";
+            fresult << std::endl;
+
+      } else {
+            fresult.open(_outputs_path + "/results.csv", 
+                    std::ofstream::out | std::ofstream::app);
+            if (!fresult.is_open()) {
+                cout << "Could not open results.csv: " << _outputs_path
+                    << "\n Currently at: " << __LINE__ << endl;
+                exit(0);
+            }
+      }
+      for (auto cluster : cluster_buff){
+          if(cluster.valid){
+              fresult << cluster.valid << ",";
+              fresult << cluster.cluster_id << ",";
+              fresult << cluster.pose.translation(0) << ",";
+              fresult << cluster.pose.translation(1) << ",";
+              fresult << cluster.pose.translation(2) << ",";
+              fresult << cluster.pose.roll << ",";
+              fresult << cluster.pose.pitch << ",";
+              fresult << cluster.pose.yaw << ",";
+            //   fresult << cluster.average.x << ", ";
+            //   fresult << cluster.average.y << ", ";
+            //   fresult << cluster.average.z << ", ";
+              fresult << cluster.tag_size;
+              fresult << std::endl;
+          }
+      }
+      fresult.close();
+      fresult << std::endl;
+    }
+    };  // namespace BipedLab

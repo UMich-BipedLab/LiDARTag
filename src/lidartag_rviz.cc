@@ -317,7 +317,9 @@ namespace BipedLab {
 
         int Clustercount = 0;
         for (int Key=0; Key<Cluster.size() ;++Key) {
-            if (Cluster[Key].valid != 1) continue;
+            if (Cluster[Key].valid != 1){
+              continue;
+            }
             LiDARTag::_plotTagFrame(Cluster[Key]);
             // std::cout << "Valid Cluster number "<< ++Clustercount << ": " << Key << " Size: " << Cluster[Key].data.size() << std::endl;
             // if (Clustercount != 5) continue;
@@ -666,7 +668,7 @@ namespace BipedLab {
             }
             // Draw payload boundary marker
             visualization_msgs::Marker PayloadMarker;
-            
+
             if (_adaptive_thresholding){
                 // Upper boundary
                 for (int i=0; i<Cluster[Key].tag_edges.upper_line.size(); ++i){
@@ -815,7 +817,10 @@ namespace BipedLab {
 
 
             for (int i=0; i<Cluster[Key].data.size(); ++i){
-                if (Cluster[Key].data[i].valid != 1) continue;
+                if (Cluster[Key].data[i].valid != 1){
+                  continue;
+                }
+                // ROS_INFO("Cluster[Key].data[i].valid == 1");
                 PointsInClusters++;
                 // std::cout << Cluster[Key].data[i].point.ring << " index:" << Cluster[Key].data[i].index << " x: " << Cluster[Key].data[i].point.x << " y: " << Cluster[Key].data[i].point.y <<" z: "<<Cluster[Key].data[i].point.z << endl;
                 OutCluster->push_back(Cluster[Key].data[i].point);
@@ -929,7 +934,6 @@ namespace BipedLab {
             }
             // Publish to a lidartag channel
             _detectionArrayPublisher(Cluster[Key]);
-
         } 
         // if (PointsInClusters>_filling_max_points_threshold) {
         //     cout << "Too many points on a tag" << endl;
@@ -945,5 +949,73 @@ namespace BipedLab {
         // srand(time(0));
         // if (rand()%10 < 7)
         _detectionArray_pub.publish(detectionsToPub); 
+    }
+
+    void LiDARTag::publishClusterInfo(const ClusterFamily_t cluster){
+      jsk_rviz_plugins::OverlayText detail_valid_text;
+      std::string output_str;
+      Eigen::IOFormat mat_format(Eigen::StreamPrecision, 0, ", ", ";\n", "", "", "[", "]");
+      std::stringstream R_ss;
+      std::stringstream U_ss;
+      std::stringstream V_ss;
+      std::stringstream vertices_ss;
+      std::stringstream payload_vertices_ss;
+      std::stringstream ordered_payload_vertices_ss;
+      std::stringstream pa_ss;
+      R_ss << _R.format(mat_format);
+      U_ss << _U.format(mat_format);
+      V_ss << _V.format(mat_format);
+      vertices_ss << _Vertices.format(mat_format);
+      payload_vertices_ss << _payload_vertices.format(mat_format);
+      ordered_payload_vertices_ss << _ordered_payload_vertices.format(mat_format);
+      pa_ss << cluster.principal_axes.format(mat_format);
+
+      detail_valid_text.action = jsk_rviz_plugins::OverlayText::ADD;
+      detail_valid_text.left = 200;
+      detail_valid_text.top = 200;
+      detail_valid_text.width = 800;
+      detail_valid_text.height = 800;
+      detail_valid_text.text_size = 12;
+      output_str =
+        //   "cluster_id = " + to_string(cluster.cluster_id) + "\n" +
+          "valid = " + to_string(cluster.valid) + "\n" +
+          "detail_valid = " + to_string(cluster.detail_valid) + "\n" +
+          "pose_estimation_status = " + to_string(cluster.pose_estimation_status) + "\n" +
+        //   "total duration = " + to_string(_timing.total_duration) + "\n" +
+        //     "average.x = " + to_string(cluster.average.x) + "\n" +
+        //     "average.y = " + to_string(cluster.average.y) + "\n" +
+        //     "average.z = " + to_string(cluster.average.z) + "\n" +
+        //      "pose.roll = " + to_string(cluster.pose.roll) + "\n" +
+        //      "pose.pitch = " + to_string(cluster.pose.pitch) + "\n" +
+        //      "pose.yaw = " + to_string(cluster.pose.yaw) + "\n" +
+        //    "initial_pose.roll = " + to_string(cluster.initial_pose.roll) +"\n" + 
+        //    "initial_pose.pitch = " + to_string(cluster.initial_pose.pitch) + "\n" + 
+        //    "initial_pose.yaw = " + to_string(cluster.initial_pose.yaw) + "\n" +
+          "intersection1_x,y = " + to_string(_intersection1[0]) + ", " + to_string(_intersection1[1]) + "\n" +
+          "intersection2_x,y = " + to_string(_intersection2[0]) + ", " + to_string(_intersection2[1]) + "\n" +
+          "intersection3_x,y = " + to_string(_intersection3[0]) + ", " + to_string(_intersection3[1]) + "\n" +
+          "intersection4_x,y = " + to_string(_intersection4[0]) + ", " + to_string(_intersection4[1]) + "\n" +
+        //     "payload_vertices = " + payload_vertices_ss.str() + "\n" +
+            "ordered_payload_vertices = " + ordered_payload_vertices_ss.str() + "\n" +
+            // "vertices         = " + vertices_ss.str() + "\n" +
+        //   "princlple axis   = " + pa_ss.str() + "\n" +
+            "U                = " + U_ss.str() + "\n" +
+            "V                = " + V_ss.str() + "\n" +
+            "R                = " + R_ss.str() + "\n" +
+          "max_intensity = " + to_string(cluster.max_intensity.intensity) + "\n" + 
+          "min_intensity = " + to_string(cluster.min_intensity.intensity) + "\n" + 
+          "top ring = " + to_string(cluster.top_ring) + "\n" + 
+          "bottom ring = " + to_string(cluster.bottom_ring) + "\n" + 
+        //   "edge_inliers = " + to_string(cluster.edge_inliers) + "\n" + 
+        //   "data_inliers = " + to_string(cluster.data_inliers) + "\n" + 
+        //   "inliers = " + to_string(cluster.inliers) + "\n" + 
+           "percentages_inliers = " + to_string(cluster.percentages_inliers) + "\n";
+        //   "boundary_pts = " + to_string(cluster.boundary_pts) + "\n" +
+        //   "payload_without_boundary = " + to_string(cluster.payload_without_boundary) + "\n" +
+        //   "tag_size = " + to_string(cluster.tag_size) + "\n" +
+        //   "special case = " + to_string(cluster.special_case) + "\n";
+
+      detail_valid_text.text = output_str;
+      detail_valid_text_pub.publish(detail_valid_text);
     }
 }

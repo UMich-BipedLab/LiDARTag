@@ -250,6 +250,8 @@ namespace BipedLab {
 		 *          line_direction.z : the Z coordinate of a line's direction
 		 */
 		std::vector<Eigen::VectorXf> line_coeff;  // Upper, left, bottom, right line (count-clockwise)
+		int detail_valid;
+		int pose_estimation_status;
 	} ClusterFamily_t;
 
 	typedef struct GrizTagFamily {

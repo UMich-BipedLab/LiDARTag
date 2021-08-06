@@ -243,6 +243,7 @@ namespace BipedLab {
         if (_debug_info) 
             ROS_DEBUG_STREAM("Status: " << true);
         if (_log_data) {
+            fplanefit << "-----------------begining--------------------" << endl;
             fplanefit << "Successfully fit plane!" << endl;
             fplanefit << "Cluster Size: " << cluster.data.size() << endl;
             fplanefit << "Inliers     : " << inliers->indices.size() << endl;

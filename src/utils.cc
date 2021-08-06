@@ -30,6 +30,7 @@
 
 
 #include "utils.h"
+#include "lidartag.h"
 #include <math.h>
 #include <iostream>
 #include <numeric>      // std::iota
@@ -455,18 +456,21 @@ void fitGrid(Eigen::MatrixXf &GridVertices, Eigen::Matrix3f &H,
     H = R; // H: payload -> ref
 }
 
-void fitGrid_new(
+std::vector<Eigen::Matrix3f> fitGrid_new(
         Eigen::MatrixXf &GridVertices, 
         Eigen::Matrix3f &H,
         Eigen::MatrixXf &payload_vertices){
-
+    std::vector<Eigen::Matrix3f> mats;
     Eigen::Matrix3f M = 
         GridVertices.rightCols(4)*payload_vertices.transpose();
     Eigen::JacobiSVD<Eigen::MatrixXf> svd(
             M, Eigen::ComputeFullU | Eigen::ComputeFullV);
     Eigen::Matrix<float,3,3,Eigen::DontAlign> R = 
         svd.matrixU()*svd.matrixV().transpose();
-    H = R; // H: payload -> ref
+    mats.push_back(svd.matrixU());
+    mats.push_back(svd.matrixV());
+    H = R;  // H: payload -> ref
+    return mats;
 }
 velodyne_pointcloud::PointXYZIR toVelodyne(const Eigen::Vector3f &t_p){ 
     velodyne_pointcloud::PointXYZIR point;

@@ -1328,11 +1328,16 @@ namespace BipedLab {
                     ROS_WARN_STREAM("Optimized Cost too large: "
                             << std::setprecision(3) << minf);
                     ROS_WARN_STREAM("Inital Cost: " << initial_cost);
+                    ROS_WARN_STREAM("_optimization_percent: " << _optimization_percent);
+                    ROS_WARN_STREAM("cluster.inliers: " << cluster.inliers);
+
                 }
                 if (initial_cost < 0.1 * _optimization_percent * cluster.inliers / 1000) {
                     status = 2;
                     if (_debug_info) {
-                        ROS_WARN_STREAM("Use initial pose.");
+                    ROS_WARN_STREAM("Use initial pose.");
+                    ROS_WARN_STREAM("_optimization_percent: " << _optimization_percent);
+                    ROS_WARN_STREAM("cluster.inliers: " << cluster.inliers);
                     }
 
                     cluster.pose_tag_to_lidar.homogeneous =
@@ -1413,6 +1418,12 @@ namespace BipedLab {
             ROS_DEBUG_STREAM("Status: " << status);
         }
 
+        ROS_INFO_STREAM("status: " << status);
+        // ROS_INFO_STREAM("Optimized Cost too large: "
+        //         << std::setprecision(3) << minf);
+        // ROS_INFO_STREAM("Inital Cost: " << initial_cost);
+        // ROS_INFO_STREAM("_optimization_percent: " << _optimization_percent);
+        // ROS_INFO_STREAM("cluster.inliers: " << cluster.inliers);
         return status;
     }
 }// namespace
