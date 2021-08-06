@@ -42,7 +42,9 @@
 #include <boost/filesystem.hpp>
 
 
-
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/core/eigen.hpp>
 #include <velodyne_pointcloud/point_types.h>
 #include <velodyne_pointcloud/pointcloudXYZIR.h> 
 #include "lidartag.h"
@@ -196,8 +198,8 @@ void fitGrid(Eigen::MatrixXf &t_vertices,
         const velodyne_pointcloud::PointXYZIR &t_p3, 
         const velodyne_pointcloud::PointXYZIR &t_p4);
 
-std::vector<Eigen::Matrix3f> fitGrid_new(Eigen::MatrixXf &t_vertices, Eigen::Matrix3f &H,
-             Eigen::MatrixXf &t_payload_vertices);
+std::vector<Eigen::MatrixXf> fitGrid_new(const Eigen::MatrixXf &t_vertices, Eigen::Matrix3f &H,
+             const Eigen::MatrixXf &t_payload_vertices);
 
 float distance(
         const velodyne_pointcloud::PointXYZIR &t_p1,
