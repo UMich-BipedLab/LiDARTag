@@ -30,19 +30,19 @@
 %}
 
 clc, clear
-addpath(genpath("/home/brucebot/workspace/matlab_utils"));
+addpath(genpath("/home/shigeki/tag_ws/src/matlab_utils"));
 
 
 poolobj = gcp('nocreate');
 % delete(poolobj)
 if isempty(poolobj)
-    parpool('max-threading', 4);
+    parpool('threads');
 end
 
 opts.verbose.output_level = 1;
 opts.num_tag = 9; %5, 9, 30 % max is 30 for tag1606
-opts.img_path  = "tag16h6/"; % tag_img/
-opts.img_prefix = "tag16_06_%05d.png";
+opts.img_path  = "tag16h5/"; % tag_img/
+opts.img_prefix = "tag16_05_%05d.png";
 
 %% Tag Family Setting
 tag = loadAprilTagFamily();
@@ -50,7 +50,7 @@ tag = loadAprilTagFamily();
 
 
 %% ideal frame
-opts.target_size = 0.61; % 0.158, 0.8051, 1.22
+opts.target_size = 1.03;
 opts.polygon = 4;
 opts.rpy = [0, 0, 0];
 opts.xyz = [0, 0, 0];
