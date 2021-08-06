@@ -2806,10 +2806,9 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t &cluster) {
         cluster.edge_points[i].point.z - cluster.average.z);
     Eigen::Matrix<float, 3, 3, Eigen::DontAlign> transform_matrix =
         cluster.principal_axes;
-    // cluster.principal_axes << -0.866, 0.180, -0.466,
-    //                     -0.492, -0.130, 0.861,
-    //                     0.095, 0.975, 0.201;
-    // Eigen::Matrix<float,3,3,Eigen::DontAlign>  transform_matrix;
+    // cluster.principal_axes << -0.866, 0.180, -0.466, -0.492, -0.130, 0.861,
+    //     0.095, 0.975, 0.201;
+    // Eigen::Matrix<float, 3, 3, Eigen::DontAlign> transform_matrix;
     // transform_matrix = cluster.principal_axes;
 
     transform_matrix = (transform_matrix.transpose()).eval();
@@ -2968,7 +2967,7 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t &cluster) {
   transformed_edge_pc_msg.header.frame_id = _pub_frame;
   _transformed_edge_pc_pub.publish(transformed_edge_pc_msg);
 
-  std::vector<Eigen::Vector3f> intersection_list{intersection1, intersection2,
+  std::vector<Eigen::VectorXf> intersection_list{intersection1, intersection2,
                                                  intersection3, intersection4};
   publishIntersections(intersection_list);
   _intersection1 = intersection1;
@@ -2981,28 +2980,31 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t &cluster) {
   payload_vertices.col(1) = cluster.principal_axes * intersection2;
   payload_vertices.col(2) = cluster.principal_axes * intersection3;
   payload_vertices.col(3) = cluster.principal_axes * intersection4;
-  // payload_vertices << -0.0151639, -0.629135, 0.0127609, 0.624599,
-  //                             -0.178287, -0.325841, 0.167202, 0.319495,
-  //                             0.728342, -0.0662743, -0.686448, 0.0829155;
+  //   payload_vertices << -0.0151639, -0.629135, 0.0127609, 0.624599,
+  //   -0.178287,
+  //       -0.325841, 0.167202, 0.319495, 0.728342, -0.0662743, -0.686448,
+  //       0.0829155;
 
   Eigen::MatrixXf ordered_payload_vertices =
       _getOrderedCorners(payload_vertices, cluster);
   Eigen::MatrixXf Vertices = Eigen::MatrixXf::Zero(3, 5);
-  // ordered_payload_vertices << -0.0151639, -0.629135, 0.0127609, 0.624599,
-  //                             -0.178287, -0.325841, 0.167202, 0.319495,
-  //                             0.728342, -0.0662743, -0.686448, 0.0829155;
+  //   ordered_payload_vertices << -0.0151639, -0.629135, 0.0127609, 0.624599,
+  //       -0.178287, -0.325841, 0.167202, 0.319495, 0.728342, -0.0662743,
+  //       -0.686448, 0.0829155;
   // Vertices << 0, 0, 0, 0, 0,
   //             0, 0.515, 0.515, -0.515, -0.515,
   //             0, 0.515, -0.515, -0.515, 0.515;
   utils::formGrid(Vertices, 0, 0, 0, cluster.tag_size);
   Eigen::Matrix3f R;
-  std::vector<Eigen::Matrix3f> matrixs;
-  matrixs = utils::fitGrid_new(Vertices, R, ordered_payload_vertices);
-  _U = matrixs.front();
-  matrixs.erase(matrixs.begin());
-  _V = matrixs.front();
-  matrixs.erase(matrixs.begin());
-  matrixs.clear();
+  std::vector<Eigen::MatrixXf> mats;
+  mats = utils::fitGrid_new(Vertices, R, ordered_payload_vertices);
+  _U = mats.front();
+  mats.erase(mats.begin());
+  _V = mats.front();
+  mats.erase(mats.begin());
+  _r = mats.front();
+  mats.erase(mats.begin());
+  mats.clear();
   // R << -0.467, 0.861, 0.201
   //    , -0.632, -0.484, 0.606
   //     , 0.619, 0.156, 0.767;
@@ -3261,8 +3263,15 @@ void LiDARTag::_estimatePrincipleAxis(ClusterFamily_t &cluster) {
   ave.row(2) *= cluster.average.z;
 
   Eigen::MatrixXf centered_data = cluster.merged_data.topRows(3) - ave;
-  Eigen::JacobiSVD<Eigen::MatrixXf> svd(centered_data, Eigen::ComputeFullU);
-  cluster.principal_axes = svd.matrixU();
+  //   Eigen::JacobiSVD<Eigen::MatrixXf> svd(centered_data,
+  //   Eigen::ComputeFullU);
+  cv::Mat cv_centered_data, cv_W, cv_U, cv_Vt;
+  cv::eigen2cv(centered_data, cv_centered_data);
+  cv::SVD::compute(cv_centered_data, cv_W, cv_U, cv_Vt);
+  Eigen::Matrix3f U;
+  cv::cv2eigen(cv_U, U);
+  // cluster.principal_axes = svd.matrixU();
+  cluster.principal_axes = U;
 
   // Eigen::Matrix4f  m1 = MatrixXd::Random(4,4);
   // Eigen::Matrix4f  m1;
@@ -3306,9 +3315,9 @@ void LiDARTag::_estimatePrincipleAxis(ClusterFamily_t &cluster) {
     ROS_DEBUG_STREAM("Distance : " << distance);
     ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() +
                                               cluster.edge_points.size());
-    Eigen::VectorXf sv = svd.singularValues();
-    ROS_DEBUG_STREAM("Singular values: " << sv[0] << ", " << sv[1] << ", "
-                                         << sv[2]);
+    // Eigen::VectorXf sv = svd.singularValues();
+    // ROS_DEBUG_STREAM("Singular values: " << sv[0] << ", " << sv[1] << ", "
+    //                                      << sv[2]);
   }
 
   // flip through xy plane
@@ -4176,7 +4185,7 @@ void LiDARTag::publishLidartagCluster(
   output_tr_ep_pc->clear();
 }
 void LiDARTag::publishIntersections(
-    const std::vector<Eigen::Vector3f> intersection_list) {
+    const std::vector<Eigen::VectorXf> intersection_list) {
   visualization_msgs::MarkerArray intersection_marker_array;
   intersection_marker_array.markers.resize(4);
   int index = 0;

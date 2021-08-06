@@ -42,12 +42,12 @@ Visualization Manager:
   Class: ""
   Displays:
     - Class: rviz/Axes
-      Enabled: true
+      Enabled: false
       Length: 1
       Name: Axes
       Radius: 0.10000000149011612
       Reference Frame: <Fixed Frame>
-      Value: true
+      Value: false
     - Alpha: 0.5
       Cell Size: 2
       Class: rviz/Grid
@@ -90,7 +90,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 255
@@ -107,7 +107,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -259,9 +259,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 4.203895392974451e-45
+      Max Intensity: 127.62503814697266
       Min Color: 0; 0; 0
-      Min Intensity: 4.203895392974451e-45
+      Min Intensity: 127.62503814697266
       Name: EstimatedCorners
       Position Transformer: XYZ
       Queue Size: 10
@@ -588,12 +588,12 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 20
+      Max Intensity: 58
       Min Color: 0; 0; 0
-      Min Intensity: 0
+      Min Intensity: 1
       Name: PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
@@ -605,12 +605,12 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Align Bottom: false
       Background Alpha: 0.800000011920929
       Background Color: 0; 0; 0
       Class: jsk_rviz_plugin/OverlayText
-      Enabled: false
+      Enabled: true
       Foreground Alpha: 0.800000011920929
       Foreground Color: 25; 255; 240
       Invert Shadow: false
@@ -619,7 +619,7 @@ Visualization Manager:
       Overtake FG Color Properties: true
       Overtake Position Properties: false
       Topic: /LiDARTag/lidartag_main/detail_valid_text
-      Value: false
+      Value: true
       font: DejaVu Sans Mono
       height: 128
       left: 0
@@ -883,25 +883,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 9.990751266479492
+      Distance: 4.955667972564697
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.2597011923789978
-        Y: -1.461177110671997
-        Z: -0.4091132879257202
+        X: -0.19010627269744873
+        Y: -1.2467411756515503
+        Z: 0.5246328711509705
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.33979737758636475
+      Pitch: 0.18479768931865692
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.501691460609436
+      Yaw: 1.4966797828674316
     Saved: ~
 Window Geometry:
   Displays:

@@ -32,6 +32,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 # CHECK THE DEPENDENCIES
 find_package(NLopt REQUIRED)
+find_package(OpenCV REQUIRED)
 # PCL
 find_package(PCL 1.2 REQUIRED)
 find_package(Boost REQUIRED
@@ -101,6 +102,7 @@ include_directories(
 	${PCL_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${TBB_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
   )
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
@@ -117,5 +119,6 @@ target_link_libraries(lidartag_main
     ${PCL_LIBRARIES}
     ${NLOPT_LIBRARIES}
     ${TBB_LIBRARIES}
+    ${OpenCV_LIBS}
     pcl_visualization
 )
