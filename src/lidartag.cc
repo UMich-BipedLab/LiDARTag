@@ -3141,9 +3141,18 @@ namespace BipedLab {
         ave.row(2) *= cluster.average.z;
 
         Eigen::MatrixXf centered_data = cluster.merged_data.topRows(3) - ave;
-        Eigen::JacobiSVD<Eigen::MatrixXf> svd(centered_data, Eigen::ComputeFullU);
-        cluster.principal_axes = svd.matrixU();
 
+        //SVD using eigen
+        // Eigen::JacobiSVD<Eigen::MatrixXf> svd(centered_data, Eigen::ComputeFullU);
+        // cluster.principal_axes = svd.matrixU();
+
+        //SVD using OpenCV
+        cv::Mat cv_centered_data, cv_W, cv_U, cv_Vt;
+        cv::eigen2cv(centered_data, cv_centered_data);
+        cv::SVD::compute(cv_centered_data, cv_W, cv_U, cv_Vt);
+        Eigen::Matrix3f U;
+        cv::cv2eigen(cv_U, U);
+        cluster.principal_axes = U;
         // Eigen::Matrix4f  m1 = MatrixXd::Random(4,4);
         // Eigen::Matrix4f  m1;   
         // m1 << 1, 2, 3, 4, 
@@ -3182,8 +3191,8 @@ namespace BipedLab {
                           pow(cluster.average.z, 2));
             ROS_DEBUG_STREAM("Distance : " << distance);
             ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() + cluster.edge_points.size());
-            Eigen::VectorXf sv = svd.singularValues();
-            ROS_DEBUG_STREAM("Singular values: " << sv[0] << ", " << sv[1] << ", " << sv[2]);
+            // Eigen::VectorXf sv = svd.singularValues();
+            // ROS_DEBUG_STREAM("Singular values: " << sv[0] << ", " << sv[1] << ", " << sv[2]);
         }
         
 

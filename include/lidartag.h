@@ -70,6 +70,10 @@
 #include "types.h"
 #include "thread_pool.h"
 
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/core/eigen.hpp>
+
 // #include "mat.h"
 // #include "matrix.h"
 // #include "tensorflow_ros_test/lib.h"

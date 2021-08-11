@@ -37,6 +37,7 @@ find_package(PCL 1.2 REQUIRED)
 find_package(Boost REQUIRED
              COMPONENTS filesystem system signals regex date_time program_options thread
 )
+find_package(OpenCV REQUIRED)
 # find_package(Eigen3)
 #include(cmake)
 # include(${CMAKE_CURRENT_SOURCE_DIR}/../A/CMakeLists.txt)
@@ -95,6 +96,7 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
   ${TBB_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
@@ -111,4 +113,5 @@ target_link_libraries(lidartag_main
     ${PCL_LIBRARIES}
     ${NLOPT_LIBRARIES}
     ${TBB_LIBRARIES}
+    ${OpenCV_LIBS}
 )
