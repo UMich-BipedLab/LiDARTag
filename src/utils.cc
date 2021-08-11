@@ -462,10 +462,22 @@ void fitGrid_new(
 
     Eigen::Matrix3f M = 
         GridVertices.rightCols(4)*payload_vertices.transpose();
-    Eigen::JacobiSVD<Eigen::MatrixXf> svd(
-            M, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    Eigen::Matrix<float,3,3,Eigen::DontAlign> R = 
-        svd.matrixU()*svd.matrixV().transpose();
+    Eigen::Matrix<float, 3, 3, Eigen::DontAlign> R;
+    
+    //SVD using eigen
+    // Eigen::JacobiSVD<Eigen::MatrixXf> svd(
+    //         M, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    // R = svd.matrixU() * svd.matrixV().transpose();
+
+    //SVD using OpenCV
+    Eigen::Matrix3f r, U, V;
+    cv::Mat cv_A, cv_W, cv_U, cv_Vt;
+    cv::eigen2cv(M, cv_A);
+    cv::SVD::compute(cv_A, cv_W, cv_U, cv_Vt);
+    cv::cv2eigen(cv_W, r);
+    cv::cv2eigen(cv_U, U);
+    cv::cv2eigen(cv_Vt, V);
+    R = U * V;
     H = R; // H: payload -> ref
 }
 velodyne_pointcloud::PointXYZIR toVelodyne(const Eigen::Vector3f &t_p){ 
