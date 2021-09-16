@@ -61,19 +61,31 @@ else()
 endif() 
 
 
-find_package(Eigen3)
-if(NOT EIGEN3_FOUND)
-  # Fallback to cmake_modules
-  find_package(cmake_modules REQUIRED)
-  # message(STATUS "=============================================Eigen path: ${EIGEN3_INCLUDE_DIR}")
-  find_package(Eigen REQUIRED)
-  set(EIGEN3_INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS})
-  set(EIGEN3_LIBRARIES ${EIGEN_LIBRARIES})  # Not strictly necessary as Eigen is head only
-  # Possibly map additional variables to the EIGEN3_ prefix.
-else()
-  # message(STATUS "=============================================Eigen path: ${EIGEN3_INCLUDE_DIR}")
-  set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
-endif()
+# find_package(Eigen3)
+# if(NOT EIGEN3_FOUND)
+#   # Fallback to cmake_modules
+#   find_package(cmake_modules REQUIRED)
+#   # message(STATUS "=============================================Eigen path: ${EIGEN3_INCLUDE_DIR}")
+#   find_package(Eigen REQUIRED)
+#   set(EIGEN3_INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS})
+#   set(EIGEN3_LIBRARIES ${EIGEN_LIBRARIES})  # Not strictly necessary as Eigen is head only
+#   # Possibly map additional variables to the EIGEN3_ prefix.
+# else()
+#   # message(STATUS "=============================================Eigen path: ${EIGEN3_INCLUDE_DIR}")
+#   set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
+# endif()
+
+message(STATUS "Trying to include Eigen library")
+set(EIGEN3_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/internal_eigen3/eigen)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+find_package(Eigen3 3.4.0 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
+message(STATUS "================================== EIGEN (internal): " ${EIGEN3_VERSION})
+
+
+
+
+
 find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
 
 catkin_package(
