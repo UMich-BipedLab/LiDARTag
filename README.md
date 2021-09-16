@@ -106,11 +106,13 @@ cmake --build . --config Release -- -j 6;
 sudo cmake --build . --target install
 ```
 
+<!--
 ###### Notes
 Ensure the followings in the CMakeList.txt are correct:
 1. FindTBB.cmake is under _LiDARTag/cmake/_
 2. LIST(APPEND CMAKE_MODULE_PATH "YOUR_PATH/LiDARTag/cmake/")
 	* Please change **YOUR_PATH** to your path to the LiDARTag package (something like this: catkin/src/LiDARTag/cmake).
+-->
 
 
 ### NLopt library
