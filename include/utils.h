@@ -396,65 +396,60 @@ void constructConvexHull(const Eigen::MatrixXf &P, Eigen::MatrixXf &convex_hull)
 
 float computePolygonArea(const Eigen::MatrixXf &vertices);
 
+point eigen2Corners(const Eigen::MatrixXf &vector, point &tag_point);
 
+// float computeMedian(std::vector<float> vec);
+// template <typename T>
+// T computeMedian(std::vector<T> &vec);
+// template <typename T>
+// T computeMedian(std::vector<T> &vec){
+//     assert(vec.size()!=0);
+//     if (vec.size() % 2 == 0) {
+//         const auto median_it1 = vec.begin() + vec.size() / 2 - 1;
+//         const auto median_it2 = vec.begin() + vec.size() / 2;
 
-    //float computeMedian(std::vector<float> vec);
-    // template <typename T>
-    // T computeMedian(std::vector<T> &vec);
-    // template <typename T>
-    // T computeMedian(std::vector<T> &vec){
-    //     assert(vec.size()!=0);
-    //     if (vec.size() % 2 == 0) {
-    //         const auto median_it1 = vec.begin() + vec.size() / 2 - 1;
-    //         const auto median_it2 = vec.begin() + vec.size() / 2;
+//         std::nth_element(vec.begin(), median_it1 , vec.end());
+//         const T e1 = *median_it1;
 
-    //         std::nth_element(vec.begin(), median_it1 , vec.end());
-    //         const T e1 = *median_it1;
+//         std::nth_element(vec.begin(), median_it2 , vec.end());
+//         const T e2 = *median_it2;
 
-    //         std::nth_element(vec.begin(), median_it2 , vec.end());
-    //         const T e2 = *median_it2;
+//         return (e1 + e2) / 2;
 
-    //         return (e1 + e2) / 2;
+//     } else {
+//         const auto median_it = vec.begin() + vec.size() / 2;
+//         std::nth_element(vec.begin(), median_it , vec.end());
 
-    //     } else {
-    //         const auto median_it = vec.begin() + vec.size() / 2;
-    //         std::nth_element(vec.begin(), median_it , vec.end());
+//         return *median_it;
+//     }
+// }
 
-    //         return *median_it;
-    //     }
-    // }
+// auto computeMedian(const std::vector<float> &vec);
+// template <typename T>
+// T computeMedian(const std::vector<T> &eigen_vec);
+// template <typename T>
+// T computeMedian(const std::vector<T> &vec){
+//     //assert(eigen_vec.size()!=0);
+//     //std::vector<float> vec(eigen_vec.data(), eigen_vec.data() +
+//     eigen_vec.size()); assert(vec.size()!=0); if (vec.size() % 2 == 0) {
+//         const T median_it1 = vec.begin() + vec.size() / 2 - 1;
+//         const T median_it2 = vec.begin() + vec.size() / 2;
 
+//         std::nth_element(vec.begin(), median_it1 , vec.end());
+//         const T e1 = *median_it1;
 
+//         std::nth_element(vec.begin(), median_it2 , vec.end());
+//         const T e2 = *median_it2;
 
+//         return (e1 + e2) / 2;
 
-    
-    // auto computeMedian(const std::vector<float> &vec);
-    // template <typename T>
-    // T computeMedian(const std::vector<T> &eigen_vec);
-    // template <typename T>
-    // T computeMedian(const std::vector<T> &vec){
-    //     //assert(eigen_vec.size()!=0);
-    //     //std::vector<float> vec(eigen_vec.data(), eigen_vec.data() + eigen_vec.size());
-    //     assert(vec.size()!=0);
-    //     if (vec.size() % 2 == 0) {
-    //         const T median_it1 = vec.begin() + vec.size() / 2 - 1;
-    //         const T median_it2 = vec.begin() + vec.size() / 2;
+//     } else {
+//         const T median_it = vec.begin() + vec.size() / 2;
+//         std::nth_element(vec.begin(), median_it , vec.end());
 
-    //         std::nth_element(vec.begin(), median_it1 , vec.end());
-    //         const T e1 = *median_it1;
-
-    //         std::nth_element(vec.begin(), median_it2 , vec.end());
-    //         const T e2 = *median_it2;
-
-    //         return (e1 + e2) / 2;
-
-    //     } else {
-    //         const T median_it = vec.begin() + vec.size() / 2;
-    //         std::nth_element(vec.begin(), median_it , vec.end());
-
-    //         return *median_it;
-    //     }
-    // }
+//         return *median_it;
+//     }
+// }
 
 
 } // utils

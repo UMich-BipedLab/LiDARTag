@@ -50,7 +50,7 @@ tag = loadAprilTagFamily();
 
 
 %% ideal frame
-opts.target_size = 1.03;
+opts.target_size = 0.8;
 opts.polygon = 4;
 opts.rpy = [0, 0, 0];
 opts.xyz = [0, 0, 0];

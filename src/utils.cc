@@ -29,31 +29,36 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include "lidartag.h"
 #include "utils.h"
-#include <algorithm> // std::sort, std::stable_sort
-#include <iostream>
 #include <math.h>
-#include <numeric> // std::iota
+#include <algorithm>  // std::sort, std::stable_sort
+#include <iostream>
+#include <numeric>  // std::iota
+#include "lidartag.h"
 
-namespace BipedLab {
-namespace utils {
+namespace BipedLab
+{
+namespace utils
+{
 // second
-double spendCPUTime(const std::clock_t &t_end, const std::clock_t &t_start) {
+double spendCPUTime(const std::clock_t & t_end, const std::clock_t & t_start)
+{
   return (((double)(t_end - t_start)) / CLOCKS_PER_SEC);
 }
 
-double spendCPUHz(const std::clock_t &t_end, const std::clock_t &t_start) {
+double spendCPUHz(const std::clock_t & t_end, const std::clock_t & t_start)
+{
   return 1.0 / spendCPUTime(t_end, t_start);
 }
 
-double printSpendCPUHz(const std::clock_t &t_end, const std::clock_t &t_start,
-                       std::string txt) {
-  std::cout << std::fixed << std::setprecision(2) << txt
-            << spendCPUHz(t_end, t_start) << " [Hz]" << std::endl;
+double printSpendCPUHz(const std::clock_t & t_end, const std::clock_t & t_start, std::string txt)
+{
+  std::cout << std::fixed << std::setprecision(2) << txt << spendCPUHz(t_end, t_start) << " [Hz]"
+            << std::endl;
 }
 
-double printSpendCPUHz(const std::clock_t &t_end, const std::clock_t &t_start) {
+double printSpendCPUHz(const std::clock_t & t_end, const std::clock_t & t_start)
+{
   std::string text = "CPU time used: ";
   printSpendCPUHz(t_end, t_start, text);
 }
@@ -62,33 +67,40 @@ double printSpendCPUHz(const std::clock_t &t_end, const std::clock_t &t_start) {
 // std::chrono::steady_clock::now(); std::chrono::duration<double> duration =
 //     std::chrono::steady_clock::now() - clock_start;
 
-double spendElapsedTime(const std::chrono::steady_clock::time_point &t_end,
-                        const std::chrono::steady_clock::time_point &t_start) {
+double spendElapsedTime(
+  const std::chrono::steady_clock::time_point & t_end,
+  const std::chrono::steady_clock::time_point & t_start)
+{
   std::chrono::duration<double> duration = t_end - t_start;
   return duration.count();
 }
 
-double
-spendElapsedTimeMilli(const std::chrono::steady_clock::time_point &t_end,
-                      const std::chrono::steady_clock::time_point &t_start) {
+double spendElapsedTimeMilli(
+  const std::chrono::steady_clock::time_point & t_end,
+  const std::chrono::steady_clock::time_point & t_start)
+{
   return 1e3 * spendElapsedTime(t_end, t_start);
 }
 
-double spendElapsedHz(const std::chrono::steady_clock::time_point &t_end,
-                      const std::chrono::steady_clock::time_point &t_start) {
+double spendElapsedHz(
+  const std::chrono::steady_clock::time_point & t_end,
+  const std::chrono::steady_clock::time_point & t_start)
+{
   return 1.0 / spendElapsedTime(t_end, t_start);
 }
 
-double printSpendElapsedHz(const std::chrono::steady_clock::time_point &t_end,
-                           const std::chrono::steady_clock::time_point &t_start,
-                           std::string txt) {
-  std::cout << std::fixed << std::setprecision(2) << txt
-            << spendElapsedHz(t_end, t_start) << " [Hz]" << std::endl;
+double printSpendElapsedHz(
+  const std::chrono::steady_clock::time_point & t_end,
+  const std::chrono::steady_clock::time_point & t_start, std::string txt)
+{
+  std::cout << std::fixed << std::setprecision(2) << txt << spendElapsedHz(t_end, t_start)
+            << " [Hz]" << std::endl;
 }
 
-double
-printSpendElapsedHz(const std::chrono::steady_clock::time_point &t_end,
-                    const std::chrono::steady_clock::time_point &t_start) {
+double printSpendElapsedHz(
+  const std::chrono::steady_clock::time_point & t_end,
+  const std::chrono::steady_clock::time_point & t_start)
+{
   std::string text = "Elapsed time: ";
   printSpendElapsedHz(t_end, t_start, text);
 }
@@ -97,27 +109,31 @@ printSpendElapsedHz(const std::chrono::steady_clock::time_point &t_end,
 //   return std::abs(i-j) < 1e-3;
 // }
 
-std::string tranferToLowercase(std::string &t_data) {
+std::string tranferToLowercase(std::string & t_data)
+{
   std::transform(t_data.begin(), t_data.end(), t_data.begin(), ::tolower);
 
   return t_data;
 }
 
-void pressEnterToContinue() {
+void pressEnterToContinue()
+{
   int c;
   printf("Press [Enter] key to continue.\n");
   while (getchar() != '\n')
-    ;        // option TWO to clean stdin
-  getchar(); // wait for ENTER
+    ;         // option TWO to clean stdin
+  getchar();  // wait for ENTER
 }
 
 // Checks if a matrix is a valid rotation matrix.
-bool isRotationMatrix(Eigen::Matrix3f &t_R) {
+bool isRotationMatrix(Eigen::Matrix3f & t_R)
+{
   Eigen::Matrix3f should_be_identity = t_R * t_R.transpose();
   return (should_be_identity - Eigen::Matrix3f::Identity()).norm() < 1e-6;
 }
 
-Eigen::Vector3f rotationMatrixToEulerAngles(Eigen::Matrix3f &t_R) {
+Eigen::Vector3f rotationMatrixToEulerAngles(Eigen::Matrix3f & t_R)
+{
   // assert(isRotationMatrix(t_R));
   float sy = std::sqrt(t_R(0, 0) * (0, 0) + t_R(1, 0) * (1, 0));
 
@@ -140,7 +156,8 @@ Eigen::Vector3f rotationMatrixToEulerAngles(Eigen::Matrix3f &t_R) {
 /*
  * A function to check if get all parameters
  */
-bool checkParameters(int t_n, ...) {
+bool checkParameters(int t_n, ...)
+{
   va_list vl_num;
   va_start(vl_num, t_n);
   bool Pass = true;
@@ -161,21 +178,20 @@ bool checkParameters(int t_n, ...) {
 
 // Overload operator << for PointXYZRI
 // DO NOT want to change their stucture
-void COUT(const velodyne_pointcloud::PointXYZIR &t_p) {
-  std::cout << "x: " << t_p.x << ", y: " << t_p.y << ", z: " << t_p.z
-            << ", ring: " << t_p.ring << ", intensity: " << t_p.intensity
-            << std::endl;
+void COUT(const velodyne_pointcloud::PointXYZIR & t_p)
+{
+  std::cout << "x: " << t_p.x << ", y: " << t_p.y << ", z: " << t_p.z << ", ring: " << t_p.ring
+            << ", intensity: " << t_p.intensity << std::endl;
 }
 
-bool compareIndex(LiDARPoints_t *A, LiDARPoints_t *B) {
-  return A->index < B->index;
-}
+bool compareIndex(LiDARPoints_t * A, LiDARPoints_t * B) { return A->index < B->index; }
 
-uint64_t bitShift(std::string const &t_value) {
+uint64_t bitShift(std::string const & t_value)
+{
   uint64_t result = 0;
 
-  char const *p = t_value.c_str();
-  char const *q = p + t_value.size();
+  char const * p = t_value.c_str();
+  char const * q = p + t_value.size();
   while (p < q) {
     result = (result << 1) + (result << 3) + *(p++) - '0';
   }
@@ -183,9 +199,10 @@ uint64_t bitShift(std::string const &t_value) {
   return result;
 }
 
-void normalize(std::vector<float> &x, std::vector<float> &y,
-               std::vector<float> &z, std::vector<float> &I,
-               const pcl::PointCloud<LiDARPoints_t *> t_payload) {
+void normalize(
+  std::vector<float> & x, std::vector<float> & y, std::vector<float> & z, std::vector<float> & I,
+  const pcl::PointCloud<LiDARPoints_t *> t_payload)
+{
   // normlize the y,z so the top left is (0,0) and bottom right is (1,1)
   // as well as x axis
   //                                           o
@@ -205,20 +222,14 @@ void normalize(std::vector<float> &x, std::vector<float> &y,
   float max_intensity = -1e8;
 
   for (int i = 0; i < t_payload.size(); ++i) {
-    if (t_payload[i]->point.x > back_x)
-      back_x = t_payload[i]->point.x;
-    if (t_payload[i]->point.x < front_x)
-      front_x = t_payload[i]->point.x;
+    if (t_payload[i]->point.x > back_x) back_x = t_payload[i]->point.x;
+    if (t_payload[i]->point.x < front_x) front_x = t_payload[i]->point.x;
 
-    if (t_payload[i]->point.y > top_left_y)
-      top_left_y = t_payload[i]->point.y;
-    if (t_payload[i]->point.y < bottom_right_y)
-      bottom_right_y = t_payload[i]->point.y;
+    if (t_payload[i]->point.y > top_left_y) top_left_y = t_payload[i]->point.y;
+    if (t_payload[i]->point.y < bottom_right_y) bottom_right_y = t_payload[i]->point.y;
 
-    if (t_payload[i]->point.z > top_left_z)
-      top_left_z = t_payload[i]->point.z;
-    if (t_payload[i]->point.z < bottom_right_z)
-      bottom_right_z = t_payload[i]->point.z;
+    if (t_payload[i]->point.z > top_left_z) top_left_z = t_payload[i]->point.z;
+    if (t_payload[i]->point.z < bottom_right_z) bottom_right_z = t_payload[i]->point.z;
     if (t_payload[i]->point.intensity > max_intensity)
       max_intensity = t_payload[i]->point.intensity;
   }
@@ -234,9 +245,10 @@ void normalize(std::vector<float> &x, std::vector<float> &y,
   }
 }
 
-void normalizeByAve(std::vector<float> &x, std::vector<float> &y,
-                    std::vector<float> &z, std::vector<float> &I,
-                    const pcl::PointCloud<LiDARPoints_t *> t_payload) {
+void normalizeByAve(
+  std::vector<float> & x, std::vector<float> & y, std::vector<float> & z, std::vector<float> & I,
+  const pcl::PointCloud<LiDARPoints_t *> t_payload)
+{
   float ave_x = 0;
   float ave_y = 0;
   float ave_z = 0;
@@ -262,9 +274,10 @@ void normalizeByAve(std::vector<float> &x, std::vector<float> &y,
   }
 }
 
-velodyne_pointcloud::PointXYZIR
-pointsAddDivide(const velodyne_pointcloud::PointXYZIR &t_p1,
-                const velodyne_pointcloud::PointXYZIR &t_p2, float t_d) {
+velodyne_pointcloud::PointXYZIR pointsAddDivide(
+  const velodyne_pointcloud::PointXYZIR & t_p1, const velodyne_pointcloud::PointXYZIR & t_p2,
+  float t_d)
+{
   assert(t_d != 0);
   velodyne_pointcloud::PointXYZIR tmp;
   tmp.x = (t_p1.x + t_p2.x) / t_d;
@@ -276,9 +289,9 @@ pointsAddDivide(const velodyne_pointcloud::PointXYZIR &t_p1,
 }
 
 // form vector from p1 to p2. ie p2-p1
-velodyne_pointcloud::PointXYZIR
-vectorize(const velodyne_pointcloud::PointXYZIR &t_p1,
-          const velodyne_pointcloud::PointXYZIR &t_p2) {
+velodyne_pointcloud::PointXYZIR vectorize(
+  const velodyne_pointcloud::PointXYZIR & t_p1, const velodyne_pointcloud::PointXYZIR & t_p2)
+{
   velodyne_pointcloud::PointXYZIR tmp;
   tmp.x = (t_p2.x - t_p1.x);
   tmp.y = (t_p2.y - t_p1.y);
@@ -288,40 +301,43 @@ vectorize(const velodyne_pointcloud::PointXYZIR &t_p1,
   return tmp;
 }
 
-float dot(const velodyne_pointcloud::PointXYZIR &t_p1,
-          const velodyne_pointcloud::PointXYZIR &t_p2) {
+float dot(
+  const velodyne_pointcloud::PointXYZIR & t_p1, const velodyne_pointcloud::PointXYZIR & t_p2)
+{
   return t_p1.y * t_p2.y + t_p1.z * t_p2.z;
 }
 
-float Norm(const velodyne_pointcloud::PointXYZIR &t_p) {
+float Norm(const velodyne_pointcloud::PointXYZIR & t_p)
+{
   return std::sqrt(std::pow(t_p.y, 2) + std::pow(t_p.z, 2));
 }
 
-double MVN(const float &t_tag_size, const int &t_d, const Eigen::Vector2f &t_X,
-           const Eigen::Vector2f t_mean) {
+double MVN(
+  const float & t_tag_size, const int & t_d, const Eigen::Vector2f & t_X,
+  const Eigen::Vector2f t_mean)
+{
   Eigen::Matrix2f Sigma;
   Sigma << t_tag_size / t_d / 2, 0, 0, t_tag_size / t_d / 2;
   double sqrt2pi = std::sqrt(2 * M_PI);
-  double QuadForm =
-      (t_X - t_mean).transpose() * Sigma.inverse() * (t_X - t_mean);
+  double QuadForm = (t_X - t_mean).transpose() * Sigma.inverse() * (t_X - t_mean);
   double norm = std::pow(sqrt2pi, -2) * std::pow(Sigma.determinant(), -0.5);
 
   return norm * exp(-0.5 * QuadForm);
 }
 
 // step between p1 and p2
-float getStep(const velodyne_pointcloud::PointXYZIR &t_p1,
-              const velodyne_pointcloud::PointXYZIR &t_p2, const int t_d) {
-  return std::sqrt(std::pow((t_p2.y - t_p1.y), 2) +
-                   std::pow((t_p2.z - t_p1.z), 2)) /
-         t_d;
+float getStep(
+  const velodyne_pointcloud::PointXYZIR & t_p1, const velodyne_pointcloud::PointXYZIR & t_p2,
+  const int t_d)
+{
+  return std::sqrt(std::pow((t_p2.y - t_p1.y), 2) + std::pow((t_p2.z - t_p1.z), 2)) / t_d;
 }
 
 // To get the t where p1 + t * v12 is the point that p projects onto line p12
-void getProjection(const velodyne_pointcloud::PointXYZIR &t_p1,
-                   const velodyne_pointcloud::PointXYZIR &t_p2,
-                   const velodyne_pointcloud::PointXYZIR &t_p, float &k,
-                   Eigen::Vector2f &t_v) {
+void getProjection(
+  const velodyne_pointcloud::PointXYZIR & t_p1, const velodyne_pointcloud::PointXYZIR & t_p2,
+  const velodyne_pointcloud::PointXYZIR & t_p, float & k, Eigen::Vector2f & t_v)
+{
   // form vector from p1 to p2 and p1 to p
   velodyne_pointcloud::PointXYZIR v12 = vectorize(t_p1, t_p2);
   velodyne_pointcloud::PointXYZIR v1p = vectorize(t_p1, t_p);
@@ -330,10 +346,11 @@ void getProjection(const velodyne_pointcloud::PointXYZIR &t_p1,
   // v = v12;
 }
 
-void assignCellIndex(const float &t_tag_size, const Eigen::Matrix3f &t_R,
-                     velodyne_pointcloud::PointXYZIR &t_p_reference,
-                     const velodyne_pointcloud::PointXYZIR &t_average,
-                     const int t_d, PayloadVoting_t &t_vote) {
+void assignCellIndex(
+  const float & t_tag_size, const Eigen::Matrix3f & t_R,
+  velodyne_pointcloud::PointXYZIR & t_p_reference,
+  const velodyne_pointcloud::PointXYZIR & t_average, const int t_d, PayloadVoting_t & t_vote)
+{
   // R: Payload p -> reference x
   // prepare for Gaussian
   float xOffset = t_vote.p->x - t_average.x;
@@ -354,15 +371,15 @@ void assignCellIndex(const float &t_tag_size, const Eigen::Matrix3f &t_R,
   t_p_reference.x = x;
   t_p_reference.y = y;
   t_p_reference.z = z;
-  float ss = t_tag_size / t_d; // scale back to the unit square
+  float ss = t_tag_size / t_d;  // scale back to the unit square
   y = std::max(std::min(y, t_d / 2 * ss),
-               (-t_d / 2 * ss + (float)0.001)); // don't match to 6
+               (-t_d / 2 * ss + (float)0.001));  // don't match to 6
   z = std::max(std::min(z, t_d / 2 * ss),
-               (-t_d / 2 * ss + (float)0.001)); // don't match to 6
+               (-t_d / 2 * ss + (float)0.001));  // don't match to 6
   int cellIndexT = t_d / 2 + std::floor(-y / ss);
   int cellIndexK = t_d / 2 + std::floor(-z / ss);
 
-  float cy = (std::ceil(y / ss) - 0.5) * ss; // offset to center of each ceil
+  float cy = (std::ceil(y / ss) - 0.5) * ss;  // offset to center of each ceil
   float cz = (std::ceil(z / ss) - 0.5) * ss;
 
   // which grid it belongs to (in 1-16 vector form)?
@@ -376,20 +393,20 @@ void assignCellIndex(const float &t_tag_size, const Eigen::Matrix3f &t_R,
 }
 
 // normalize weight and classify them into grid
-void sortPointsToGrid(std::vector<std::vector<PayloadVoting_t *>> &t_grid,
-                      std::vector<PayloadVoting_t> &t_votes) {
-  for (int i = 0; i < t_votes.size(); ++i)
-    t_grid[t_votes[i].cell].push_back(&t_votes[i]);
+void sortPointsToGrid(
+  std::vector<std::vector<PayloadVoting_t *>> & t_grid, std::vector<PayloadVoting_t> & t_votes)
+{
+  for (int i = 0; i < t_votes.size(); ++i) t_grid[t_votes[i].cell].push_back(&t_votes[i]);
 }
 
-void formGrid(Eigen::MatrixXf &t_vertices, float x, float y, float z,
-              float t_tag_size) {
+void formGrid(Eigen::MatrixXf & t_vertices, float x, float y, float z, float t_tag_size)
+{
   // define 5 points in reference coord frame: x0,...x4 (x0==(0,0,0))
   Eigen::Vector3f tmp;
-  tmp << x, y, z; // 0,0,0
+  tmp << x, y, z;  // 0,0,0
 
   // center
-  t_vertices.col(0) = tmp; // center of ref model
+  t_vertices.col(0) = tmp;  // center of ref model
 
   // p1
   tmp[1] = y + t_tag_size / 2;
@@ -412,11 +429,11 @@ void formGrid(Eigen::MatrixXf &t_vertices, float x, float y, float z,
   t_vertices.col(4) = tmp;
 }
 
-void fitGrid(Eigen::MatrixXf &GridVertices, Eigen::Matrix3f &H,
-             const velodyne_pointcloud::PointXYZIR &t_p1,
-             const velodyne_pointcloud::PointXYZIR &t_p2,
-             const velodyne_pointcloud::PointXYZIR &t_p3,
-             const velodyne_pointcloud::PointXYZIR &t_p4) {
+void fitGrid(
+  Eigen::MatrixXf & GridVertices, Eigen::Matrix3f & H, const velodyne_pointcloud::PointXYZIR & t_p1,
+  const velodyne_pointcloud::PointXYZIR & t_p2, const velodyne_pointcloud::PointXYZIR & t_p3,
+  const velodyne_pointcloud::PointXYZIR & t_p4)
+{
   Eigen::MatrixXf payload_vertices(3, 4);
   payload_vertices(0, 0) = t_p1.x;
   payload_vertices(1, 0) = t_p1.y;
@@ -435,18 +452,17 @@ void fitGrid(Eigen::MatrixXf &GridVertices, Eigen::Matrix3f &H,
   payload_vertices(2, 3) = t_p4.z;
 
   Eigen::Matrix3f M = GridVertices.rightCols(4) * payload_vertices.transpose();
-  Eigen::JacobiSVD<Eigen::MatrixXf> svd(M, Eigen::ComputeFullU |
-                                               Eigen::ComputeFullV);
+  Eigen::JacobiSVD<Eigen::MatrixXf> svd(M, Eigen::ComputeFullU | Eigen::ComputeFullV);
   // Eigen::Matrix<float,3,3,Eigen::DontAlign> R =
   // svd.matrixV()*svd.matrixU().transpose();
-  Eigen::Matrix<float, 3, 3, Eigen::DontAlign> R =
-      svd.matrixU() * svd.matrixV().transpose();
-  H = R; // H: payload -> ref
+  Eigen::Matrix<float, 3, 3, Eigen::DontAlign> R = svd.matrixU() * svd.matrixV().transpose();
+  H = R;  // H: payload -> ref
 }
 
-std::vector<Eigen::MatrixXf>
-fitGrid_new(const Eigen::MatrixXf &GridVertices, Eigen::Matrix3f &H,
-            const Eigen::MatrixXf &payload_vertices) {
+std::vector<Eigen::MatrixXf> fitGrid_new(
+  const Eigen::MatrixXf & GridVertices, Eigen::Matrix3f & H,
+  const Eigen::MatrixXf & payload_vertices)
+{
   std::vector<Eigen::MatrixXf> mats;
   Eigen::Matrix3f M = GridVertices.rightCols(4) * payload_vertices.transpose();
   Eigen::Matrix<float, 3, 3, Eigen::DontAlign> R;
@@ -467,10 +483,11 @@ fitGrid_new(const Eigen::MatrixXf &GridVertices, Eigen::Matrix3f &H,
   mats.push_back(U);
   mats.push_back(V);
   mats.push_back(r);
-  H = R; // H: payload -> ref
+  H = R;  // H: payload -> ref
   return mats;
 }
-velodyne_pointcloud::PointXYZIR toVelodyne(const Eigen::Vector3f &t_p) {
+velodyne_pointcloud::PointXYZIR toVelodyne(const Eigen::Vector3f & t_p)
+{
   velodyne_pointcloud::PointXYZIR point;
   point.x = t_p[0];
   point.y = t_p[1];
@@ -479,7 +496,8 @@ velodyne_pointcloud::PointXYZIR toVelodyne(const Eigen::Vector3f &t_p) {
   return point;
 }
 
-Eigen::Vector3f toEigen(const velodyne_pointcloud::PointXYZIR &t_point) {
+Eigen::Vector3f toEigen(const velodyne_pointcloud::PointXYZIR & t_point)
+{
   Eigen::Vector3f tmp;
   tmp[0] = t_point.x;
   tmp[1] = t_point.y;
@@ -488,25 +506,28 @@ Eigen::Vector3f toEigen(const velodyne_pointcloud::PointXYZIR &t_point) {
   return tmp;
 }
 
-void minus(velodyne_pointcloud::PointXYZIR &t_p1,
-           const velodyne_pointcloud::PointXYZIR &t_p2) {
+void minus(velodyne_pointcloud::PointXYZIR & t_p1, const velodyne_pointcloud::PointXYZIR & t_p2)
+{
   t_p1.x = t_p1.x - t_p2.x;
   t_p1.y = t_p1.y - t_p2.y;
   t_p1.z = t_p1.z - t_p2.z;
 }
 
-float distance(const velodyne_pointcloud::PointXYZIR &t_p1,
-               const velodyne_pointcloud::PointXYZIR &t_p2) {
-  return std::sqrt(std::pow((t_p1.x - t_p2.x), 2) +
-                   std::pow((t_p1.y - t_p2.y), 2) +
-                   std::pow((t_p1.z - t_p2.z), 2));
+float distance(
+  const velodyne_pointcloud::PointXYZIR & t_p1, const velodyne_pointcloud::PointXYZIR & t_p2)
+{
+  return std::sqrt(
+    std::pow((t_p1.x - t_p2.x), 2) + std::pow((t_p1.y - t_p2.y), 2) +
+    std::pow((t_p1.z - t_p2.z), 2));
 }
 
 /*
  * A function to calculate angle between va and vb
  * return: angle in degree
  */
-template <class T, class U> float getAngle(T a, U b) {
+template <class T, class U>
+float getAngle(T a, U b)
+{
   return rad2Deg(std::acos(dot(a, b) / (Norm(a) * Norm(b))));
 }
 
@@ -516,62 +537,49 @@ template <class T, class U> float getAngle(T a, U b) {
  * return -1: incorrect distance
  * return -2: incorrect angle
  */
-int checkCorners(const float Tagsize,
-                 const velodyne_pointcloud::PointXYZIR &t_p1,
-                 const velodyne_pointcloud::PointXYZIR &t_p2,
-                 const velodyne_pointcloud::PointXYZIR &t_p3,
-                 const velodyne_pointcloud::PointXYZIR &t_p4) {
-
+int checkCorners(
+  const float Tagsize, const velodyne_pointcloud::PointXYZIR & t_p1,
+  const velodyne_pointcloud::PointXYZIR & t_p2, const velodyne_pointcloud::PointXYZIR & t_p3,
+  const velodyne_pointcloud::PointXYZIR & t_p4)
+{
   // XXX tunable
   float ratio = 1 / 3;
   float AngleLowerBound = 75;
   float AngleUpperBound = 105;
-  if (distance(t_p1, t_p2) < Tagsize * ratio)
-    return -1;
-  if (distance(t_p1, t_p3) < Tagsize * ratio)
-    return -1;
-  if (distance(t_p1, t_p4) < Tagsize * ratio)
-    return -1;
-  if (distance(t_p2, t_p3) < Tagsize * ratio)
-    return -1;
-  if (distance(t_p2, t_p4) < Tagsize * ratio)
-    return -1;
-  if (distance(t_p3, t_p4) < Tagsize * ratio)
-    return -1;
+  if (distance(t_p1, t_p2) < Tagsize * ratio) return -1;
+  if (distance(t_p1, t_p3) < Tagsize * ratio) return -1;
+  if (distance(t_p1, t_p4) < Tagsize * ratio) return -1;
+  if (distance(t_p2, t_p3) < Tagsize * ratio) return -1;
+  if (distance(t_p2, t_p4) < Tagsize * ratio) return -1;
+  if (distance(t_p3, t_p4) < Tagsize * ratio) return -1;
 
   // angle between p12 and p14
-  float Angle1 = getAngle<velodyne_pointcloud::PointXYZIR,
-                          velodyne_pointcloud::PointXYZIR>(
-      vectorize(t_p1, t_p2), vectorize(t_p1, t_p4));
-  if ((Angle1 < AngleLowerBound) || (AngleUpperBound < Angle1))
-    return -2;
+  float Angle1 = getAngle<velodyne_pointcloud::PointXYZIR, velodyne_pointcloud::PointXYZIR>(
+    vectorize(t_p1, t_p2), vectorize(t_p1, t_p4));
+  if ((Angle1 < AngleLowerBound) || (AngleUpperBound < Angle1)) return -2;
 
   // angle between p21 and p23
-  float Angle2 = getAngle<velodyne_pointcloud::PointXYZIR,
-                          velodyne_pointcloud::PointXYZIR>(
-      vectorize(t_p2, t_p1), vectorize(t_p2, t_p3));
-  if ((Angle2 < AngleLowerBound) || (AngleUpperBound < Angle2))
-    return -2;
+  float Angle2 = getAngle<velodyne_pointcloud::PointXYZIR, velodyne_pointcloud::PointXYZIR>(
+    vectorize(t_p2, t_p1), vectorize(t_p2, t_p3));
+  if ((Angle2 < AngleLowerBound) || (AngleUpperBound < Angle2)) return -2;
 
   // angle between p32 and p34
-  float Angle3 = getAngle<velodyne_pointcloud::PointXYZIR,
-                          velodyne_pointcloud::PointXYZIR>(
-      vectorize(t_p3, t_p2), vectorize(t_p3, t_p4));
-  if ((Angle3 < AngleLowerBound) || (AngleUpperBound < Angle3))
-    return -2;
+  float Angle3 = getAngle<velodyne_pointcloud::PointXYZIR, velodyne_pointcloud::PointXYZIR>(
+    vectorize(t_p3, t_p2), vectorize(t_p3, t_p4));
+  if ((Angle3 < AngleLowerBound) || (AngleUpperBound < Angle3)) return -2;
 
   // angle between p43 and p41
-  float Angle4 = getAngle<velodyne_pointcloud::PointXYZIR,
-                          velodyne_pointcloud::PointXYZIR>(
-      vectorize(t_p4, t_p3), vectorize(t_p4, t_p1));
-  if ((Angle4 < AngleLowerBound) || (AngleUpperBound < Angle4))
-    return -2;
+  float Angle4 = getAngle<velodyne_pointcloud::PointXYZIR, velodyne_pointcloud::PointXYZIR>(
+    vectorize(t_p4, t_p3), vectorize(t_p4, t_p1));
+  if ((Angle4 < AngleLowerBound) || (AngleUpperBound < Angle4)) return -2;
 
   return 0;
 }
 
 /* Function for creating blockdiagonal given arbitrary number of arguments.  */
-template <class T> T blockMatrix(int t_n, ...) {
+template <class T>
+T blockMatrix(int t_n, ...)
+{
   va_list vl_num;
   va_start(vl_num, t_n);
   int cols_now = 0;
@@ -600,7 +608,8 @@ template <class T> T blockMatrix(int t_n, ...) {
 // pose is geometry_msgs pose
 // template <class T>
 // Eigen::Matrix4d poseToEigenMatrix(const T &pose){
-Eigen::Matrix4d poseToEigenMatrix(const geometry_msgs::Pose &t_pose) {
+Eigen::Matrix4d poseToEigenMatrix(const geometry_msgs::Pose & t_pose)
+{
   Eigen::Matrix4d matrix_pose = Eigen::Matrix4d::Identity();
   matrix_pose(0, 3) = t_pose.position.x;
   matrix_pose(1, 3) = t_pose.position.y;
@@ -611,7 +620,9 @@ Eigen::Matrix4d poseToEigenMatrix(const geometry_msgs::Pose &t_pose) {
 }
 
 // pose is geometry_msgs pose
-template <class T> Eigen::Matrix3d qToR(const T &t_pose) {
+template <class T>
+Eigen::Matrix3d qToR(const T & t_pose)
+{
   Eigen::Matrix3d R = Eigen::Matrix3d::Identity();
   double a = t_pose.orientation.w;
   double b = t_pose.orientation.x;
@@ -632,12 +643,13 @@ template <class T> Eigen::Matrix3d qToR(const T &t_pose) {
   return R;
 }
 
-Eigen::Matrix3d qToR(const Eigen::Vector3f &t_pose) {
+Eigen::Matrix3d qToR(const Eigen::Vector3f & t_pose)
+{
   Eigen::Matrix3d R = Eigen::Matrix3d::Identity();
-  double a = 0;         // w
-  double b = t_pose(0); // x
-  double c = t_pose(1); // y
-  double d = t_pose(2); // z
+  double a = 0;          // w
+  double b = t_pose(0);  // x
+  double c = t_pose(1);  // y
+  double d = t_pose(2);  // z
   R(0, 0) = std::pow(a, 2) + std::pow(b, 2) - std::pow(c, 2) - std::pow(d, 2);
   R(0, 1) = 2 * (b * c - a * d);
   R(0, 2) = 2 * (b * d + a * c);
@@ -653,14 +665,16 @@ Eigen::Matrix3d qToR(const Eigen::Vector3f &t_pose) {
   return R;
 }
 
-Eigen::Matrix3d qMultiplication(const double &q1_w, const Eigen::Vector3f &q1,
-                                const double &q2_w, const Eigen::Vector3f &q2) {
+Eigen::Matrix3d qMultiplication(
+  const double & q1_w, const Eigen::Vector3f & q1, const double & q2_w, const Eigen::Vector3f & q2)
+{
 }
 
 /*
  * Returns all numbers not in set, where the total set is [0,n)
  */
-std::vector<int> complementOfSet(const std::vector<int> &set, std::size_t n) {
+std::vector<int> complementOfSet(const std::vector<int> & set, std::size_t n)
+{
   std::size_t curr_idx = 0;
   std::vector<int> complement;
 
@@ -671,17 +685,19 @@ std::vector<int> complementOfSet(const std::vector<int> &set, std::size_t n) {
       complement.push_back(i);
     } else if (i == set[curr_idx]) {
       curr_idx++;
-    } // Inlier
+    }  // Inlier
   }
 
   return complement;
 }
 
-float dot_product(Eigen::Vector3f v1, Eigen::Vector3f v2) {
+float dot_product(Eigen::Vector3f v1, Eigen::Vector3f v2)
+{
   return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
-Eigen::Vector3f cross_product(Eigen::Vector3f v1, Eigen::Vector3f v2) {
+Eigen::Vector3f cross_product(Eigen::Vector3f v1, Eigen::Vector3f v2)
+{
   Eigen::Vector3f res;
   res[0] = v1[1] * v2[2] - v1[2] * v2[1];
   res[1] = v1[2] * v2[0] - v1[0] * v2[2];
@@ -689,8 +705,8 @@ Eigen::Vector3f cross_product(Eigen::Vector3f v1, Eigen::Vector3f v2) {
   return res;
 }
 
-void readDirectory(const std::string &name, std::vector<std::string> &v) {
-
+void readDirectory(const std::string & name, std::vector<std::string> & v)
+{
   boost::filesystem::path p(name);
   boost::filesystem::directory_iterator start(p);
   boost::filesystem::directory_iterator end;
@@ -698,7 +714,8 @@ void readDirectory(const std::string &name, std::vector<std::string> &v) {
   std::sort(v.begin(), v.end());
 }
 
-float computeMedian(const Eigen::VectorXf &eigen_vec) {
+float computeMedian(const Eigen::VectorXf & eigen_vec)
+{
   assert(eigen_vec.size() != 0);
   std::vector<float> vec(eigen_vec.data(), eigen_vec.data() + eigen_vec.size());
   assert(vec.size() != 0);
@@ -722,9 +739,9 @@ float computeMedian(const Eigen::VectorXf &eigen_vec) {
   }
 }
 
-Eigen::MatrixXf convertXYZIToHomogeneous(const Eigen::MatrixXf &mat_xyzi) {
-  assert(mat_xyzi.rows() == 4 &&
-         "The input dimension is wrong, it should be four");
+Eigen::MatrixXf convertXYZIToHomogeneous(const Eigen::MatrixXf & mat_xyzi)
+{
+  assert(mat_xyzi.rows() == 4 && "The input dimension is wrong, it should be four");
   Eigen::MatrixXf mat_h = mat_xyzi;
   mat_h.row(3).setOnes();
 
@@ -735,17 +752,17 @@ Eigen::MatrixXf convertXYZIToHomogeneous(const Eigen::MatrixXf &mat_xyzi) {
  * It returns a rigid-body transformation.
  * [Note] The rotation matrix from rpy follows the "XYZ" convention
  */
-Eigen::Matrix4f computeTransformation(Eigen::Vector3f rot_v,
-                                      Eigen::Vector3f trans_v) {
+Eigen::Matrix4f computeTransformation(Eigen::Vector3f rot_v, Eigen::Vector3f trans_v)
+{
   Eigen::Matrix4f H = Eigen::Matrix4f::Identity(4, 4);
-  H.topLeftCorner(3, 3) =
-      computeRotX(rot_v(0)) * computeRotY(rot_v(1)) * computeRotZ(rot_v(2));
+  H.topLeftCorner(3, 3) = computeRotX(rot_v(0)) * computeRotY(rot_v(1)) * computeRotZ(rot_v(2));
   H.topRightCorner(3, 1) = trans_v;
 
   return H;
 }
 
-double get_sign(double x) {
+double get_sign(double x)
+{
   double output;
   if (x >= 0) {
     output = 1;
@@ -755,18 +772,21 @@ double get_sign(double x) {
   return output;
 }
 
-Eigen::Matrix3f skew(const Eigen::Vector3d v) {
+Eigen::Matrix3f skew(const Eigen::Vector3d v)
+{
   Eigen::Matrix3f m;
   m << 0, -v[2], v[1], v[2], 0, -v[0], -v[1], v[0], 0;
   return m;
 }
 
-Eigen::Vector3d unskew(const Eigen::Matrix3f Ax) {
+Eigen::Vector3d unskew(const Eigen::Matrix3f Ax)
+{
   Eigen::Vector3d v(Ax(2, 1), Ax(0, 2), Ax(1, 0));
   return v;
 }
 
-Eigen::Matrix3f Exp_SO3(const Eigen::Vector3d w) {
+Eigen::Matrix3f Exp_SO3(const Eigen::Vector3d w)
+{
   double theta = w.norm();
   Eigen::Matrix3f A = skew(w);
   Eigen::Matrix3f output;
@@ -780,7 +800,8 @@ Eigen::Matrix3f Exp_SO3(const Eigen::Vector3d w) {
   return output;
 }
 
-Eigen::Vector3d Log_SO3(const Eigen::Matrix3f A) {
+Eigen::Vector3d Log_SO3(const Eigen::Matrix3f A)
+{
   double theta = std::acos((A(0, 0) + A(1, 1) + A(2, 2) - 1) / 2);
   Eigen::Matrix3f A_transpose = A.transpose();
   Eigen::Vector3d output;
@@ -798,15 +819,14 @@ Eigen::Vector3d Log_SO3(const Eigen::Matrix3f A) {
 // Returns a positive value, if OAB makes a counter-clockwise turn,
 // negative for clockwise turn, and zero if the points are collinear.
 // compute on y-z plane and direction on x or -x axis
-double cross(const Eigen::Vector4f &O, const Eigen::Vector4f &A,
-             const Eigen::Vector4f &B) {
+double cross(const Eigen::Vector4f & O, const Eigen::Vector4f & A, const Eigen::Vector4f & B)
+{
   return (A[1] - O[1]) * (B[2] - O[2]) - (A[2] - O[2]) * (B[1] - O[1]);
 }
 
 // comparator of transformed points, used for convex hull
-void sortEigenVectorIndices(const Eigen::MatrixXf &mat,
-                            Eigen::VectorXi &indices) {
-
+void sortEigenVectorIndices(const Eigen::MatrixXf & mat, Eigen::VectorXi & indices)
+{
   // initialize original index locations
   int num_elements = mat.cols();
   std::vector<int> idx(num_elements);
@@ -817,20 +837,20 @@ void sortEigenVectorIndices(const Eigen::MatrixXf &mat,
   // to avoid unnecessary index re-orderings
   // when v contains elements of equal values
   std::stable_sort(idx.begin(), idx.end(), [&mat](int i1, int i2) {
-    return (mat(1, i1) < mat(1, i2)) ||
-           (mat(1, i1) == mat(1, i2) && mat(2, i1) < mat(2, i2));
+    return (mat(1, i1) < mat(1, i2)) || (mat(1, i1) == mat(1, i2) && mat(2, i1) < mat(2, i2));
   });
   // Eigen::Transpositions indices(Eigen::Map<Eigen::Matrix<float, num_elements,
   // 1>>(idx)); Eigen::Transpositions indices; Eigen::Map<Eigen::VectorXi>
   // test(idx.data()).cast<int>(); printVector(idx);
-  int *ptr = &idx[0];
+  int * ptr = &idx[0];
   Eigen::Map<Eigen::VectorXi> tmp(ptr, num_elements);
   indices = tmp;
 }
 
 // Vertices are in a 4xn matrix as [x,y,z,1]
 // This function computes the area on y-z plane
-float computePolygonArea(const Eigen::MatrixXf &vertices) {
+float computePolygonArea(const Eigen::MatrixXf & vertices)
+{
   // Initialze area
   float area = 0.0;
 
@@ -839,9 +859,8 @@ float computePolygonArea(const Eigen::MatrixXf &vertices) {
   // Calculate value of shoelace formula
   int j = num_pts - 1;
   for (int i = 0; i < num_pts; i++) {
-    area +=
-        (vertices(1, j) + vertices(1, i)) * (vertices(2, j) - vertices(2, i));
-    j = i; // j is previous vertex to i
+    area += (vertices(1, j) + vertices(1, i)) * (vertices(2, j) - vertices(2, i));
+    j = i;  // j is previous vertex to i
   }
 
   // Return absolute value
@@ -849,11 +868,10 @@ float computePolygonArea(const Eigen::MatrixXf &vertices) {
 }
 
 // Returns a list of points on the convex hull in counter-clockwise order.
-void constructConvexHull(const Eigen::MatrixXf &P,
-                         Eigen::MatrixXf &convex_hull) {
+void constructConvexHull(const Eigen::MatrixXf & P, Eigen::MatrixXf & convex_hull)
+{
   size_t n = P.cols();
-  if (n <= 3)
-    convex_hull = P;
+  if (n <= 3) convex_hull = P;
 
   // Eigen::MatrixXf Q(Eigen::MatrixXf::Random(3, 4));
   // Q(1, 0) = 3;
@@ -912,20 +930,16 @@ void constructConvexHull(const Eigen::MatrixXf &P,
 
   for (int i = 0; i < sorted_points.cols(); i++) {
     Eigen::Vector4f cur_pt = sorted_points.col(i);
-    if (i == sorted_points.cols() - 1 ||
-        cross(left_most, cur_pt, right_most) > 0) {
+    if (i == sorted_points.cols() - 1 || cross(left_most, cur_pt, right_most) > 0) {
       // std::cout << "i: " << i << std::endl;
-      while (k >= 2 && cross(up.col(k - 2), up.col(k - 1), cur_pt) <= 0)
-        k--;
+      while (k >= 2 && cross(up.col(k - 2), up.col(k - 1), cur_pt) <= 0) k--;
       up.col(k++) = cur_pt;
       // std::cout << "k: " << k << std::endl;
       // std::cout << "2. up: \n" << up << std::endl;
     }
 
-    if (i == sorted_points.cols() - 1 ||
-        cross(left_most, cur_pt, right_most) <= 0) {
-      while (j >= 2 && cross(down.col(j - 2), down.col(j - 1), cur_pt) >= 0)
-        j--;
+    if (i == sorted_points.cols() - 1 || cross(left_most, cur_pt, right_most) <= 0) {
+      while (j >= 2 && cross(down.col(j - 2), down.col(j - 1), cur_pt) >= 0) j--;
       down.col(j++) = cur_pt;
     }
   }
@@ -971,6 +985,12 @@ void constructConvexHull(const Eigen::MatrixXf &P,
   // std::cout << "convex_hull: \n" << convex_hull.leftCols(k - 1) << std::endl;
 
   // return convex_hull.leftCols(k - 1);
+}
+point eigen2Corners(const Eigen::MatrixXf & vector, point & tag_point)
+{
+  tag_point.x = vector(0, 0);
+  tag_point.y = vector(1, 0);
+  tag_point.z = vector(2, 0);
 }
 
 // float computeMedian(std::vector<float> &vec){
@@ -1018,5 +1038,5 @@ void constructConvexHull(const Eigen::MatrixXf &P,
 //     }
 // }
 
-} // namespace utils
-} // namespace BipedLab
+}  // namespace utils
+}  // namespace BipedLab

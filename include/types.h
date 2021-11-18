@@ -235,7 +235,7 @@ typedef struct ClusterFamily {
   int boundary_rings;
   pcl::PointCloud<LiDARPoints_t *> payload; // payload points with boundary
   pcl::PointCloud<LiDARPoints_t *> RLHS_decoding; // payload points transformed
-  int payload_without_boundary; // size of payload points without boundary
+  int payload_without_boundary; // size of payload points withpout boundary
   double tag_size;
   double box_width;
 
@@ -267,6 +267,7 @@ typedef struct ClusterFamily {
       line_coeff; // Upper, left, bottom, right line (count-clockwise)
   int detail_valid;
   int pose_estimation_status;
+  int expected_points;
 } ClusterFamily_t;
 
 typedef struct GrizTagFamily {
@@ -377,6 +378,19 @@ typedef struct PathLeafString {
     return entry.path().leaf().string();
   }
 } PathLeafString_t;
+
+typedef struct {
+  float x;
+  float y;
+  float z;
+} point;
+
+typedef struct {
+  point top;
+  point down;
+  point left;
+  point right;
+} corners;
 
 typedef nanoflann::KDTreeEigenMatrixAdaptor<
     Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>, -1,

@@ -53,7 +53,7 @@
 
 
             <!-- Path for Analysis Files -->
-            <param name="library_path" type="string" value="$(find lidartag)/lib/" />
+            <param name="library_path" type="string" value="$(find lidartag)/lib/origin/" />
             <param name="outputs_path" type="string" value="$(find lidartag)/outputs/" />
 
             <!--
@@ -190,5 +190,3 @@
 
     </group>
 </launch>
-
-

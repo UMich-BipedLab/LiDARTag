@@ -32,8 +32,6 @@
 #include <pcl/ModelCoefficients.h>
 #include <pcl/common/intersections.h>
 #include <pcl/features/integral_image_normal.h>
-#include <pcl/sample_consensus/impl/ransac.hpp>
-#include <pcl/sample_consensus/impl/sac_model_line.hpp>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/sample_consensus/ransac.h>
@@ -42,27 +40,29 @@
 #include <pcl/sample_consensus/sac_model_sphere.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/sample_consensus/impl/ransac.hpp>
+#include <pcl/sample_consensus/impl/sac_model_line.hpp>
 
-#include <Eigen/Dense>                       // SVD
-#include <unsupported/Eigen/CXX11/Tensor>    // tensor output
-#include <unsupported/Eigen/MatrixFunctions> // matrix exponential
+#include <Eigen/Dense>                        // SVD
+#include <unsupported/Eigen/CXX11/Tensor>     // tensor output
+#include <unsupported/Eigen/MatrixFunctions>  // matrix exponential
 
 #include <ros/console.h>
-#include <ros/package.h> // package
+#include <ros/package.h>  // package
 
 #include "apriltag_utils.h"
 #include "lidartag.h"
 #include "ultra_puck.h"
 #include "utils.h"
 
-#include <algorithm> // std::sort
-#include <fstream>   // log files
-#include <math.h>    /* sqrt, pow(a,b) */
-#include <nlopt.hpp>
+#include <math.h>   /* sqrt, pow(a,b) */
 #include <stdlib.h> /* srand, rand */
-#include <thread>
-#include <time.h> /* clock_t, clock, CLOCKS_PER_SEC */
+#include <time.h>   /* clock_t, clock, CLOCKS_PER_SEC */
 #include <unistd.h>
+#include <algorithm>  // std::sort
+#include <fstream>    // log files
+#include <nlopt.hpp>
+#include <thread>
 
 /* CONSTANT */
 #define SQRT2 1.41421356237
@@ -72,11 +72,14 @@
 using namespace std;
 using namespace std::chrono;
 
-namespace BipedLab {
+namespace BipedLab
+{
 LiDARTag::LiDARTag()
-    : _nh("~"), _point_cloud_received(0),
-      _stop(0), // Just a switch for exiting this program while using valgrind
-      _thread_vec(nullptr) {
+: _nh("~"),
+  _point_cloud_received(0),
+  _stop(0),  // Just a switch for exiting this program while using valgrind
+  _thread_vec(nullptr)
+{
   LiDARTag::_getParameters();
   // fbuff.open(_outputs_path + "/cluster_buff.csv", std::ios::out);
   // if (!fbuff.is_open()) {
@@ -88,6 +91,7 @@ LiDARTag::LiDARTag()
   // fbuff << "ros time stamp, pc time stamp sec, pc time stamp nsec,
   // index number, cluster size, edge size, inlier size,
   // percentage_inliers, detail_valid, valid, " << endl;
+
   pcl::console::setVerbosityLevel(pcl::console::L_ALWAYS);
   if (_id_decoding) {
     cout << "\033[1;32m\n\n===== loading tag family ===== \033[0m\n";
@@ -103,12 +107,10 @@ LiDARTag::LiDARTag()
 
   ROS_INFO("ALL INITIALIZED!");
   _LiDAR1_sub = _nh.subscribe<sensor_msgs::PointCloud2>(
-      _pointcloud_topic, 50, &LiDARTag::_pointCloudCallback, this);
+    _pointcloud_topic, 50, &LiDARTag::_pointCloudCallback, this);
   _edge_pub = _nh.advertise<sensor_msgs::PointCloud2>("WholeEdgedPC", 10);
-  _transformed_points_pub =
-      _nh.advertise<sensor_msgs::PointCloud2>("TransformedPoints", 10);
-  _transformed_points_tag_pub =
-      _nh.advertise<sensor_msgs::PointCloud2>("TransformedPointsTag", 10);
+  _transformed_points_pub = _nh.advertise<sensor_msgs::PointCloud2>("TransformedPoints", 10);
+  _transformed_points_tag_pub = _nh.advertise<sensor_msgs::PointCloud2>("TransformedPointsTag", 10);
   _edge1_pub = _nh.advertise<sensor_msgs::PointCloud2>("EdgeGroup1", 10);
   _edge2_pub = _nh.advertise<sensor_msgs::PointCloud2>("EdgeGroup2", 10);
   _edge3_pub = _nh.advertise<sensor_msgs::PointCloud2>("EdgeGroup3", 10);
@@ -117,51 +119,34 @@ LiDARTag::LiDARTag()
   _cluster_pub = _nh.advertise<sensor_msgs::PointCloud2>("DetectedPC", 10);
   // _index_pub =
   //     _nh.advertise<sensor_msgs::PointCloud2>("IndexPC", 10);
-  _payload_pub =
-      _nh.advertise<sensor_msgs::PointCloud2>("Associated_pattern_3d", 10);
-  _payload3d_pub =
-      _nh.advertise<sensor_msgs::PointCloud2>("Template_points_3d", 10);
+  _payload_pub = _nh.advertise<sensor_msgs::PointCloud2>("Associated_pattern_3d", 10);
+  _payload3d_pub = _nh.advertise<sensor_msgs::PointCloud2>("Template_points_3d", 10);
   _tag_pub = _nh.advertise<sensor_msgs::PointCloud2>("Template_points", 10);
-  _ini_tag_pub =
-      _nh.advertise<sensor_msgs::PointCloud2>("Initial_Template_points", 10);
-  _boundary_marker_pub =
-      _nh.advertise<visualization_msgs::MarkerArray>("BoundaryMarker", 10);
-  _id_marker_pub =
-      _nh.advertise<visualization_msgs::MarkerArray>("IDMarkers", 10);
-  _cluster_marker_pub =
-      _nh.advertise<visualization_msgs::MarkerArray>("ClusterMarker", 10);
-  _payload_marker_pub =
-      _nh.advertise<visualization_msgs::MarkerArray>("PayloadEdges", 10);
-  _payload_grid_pub =
-      _nh.advertise<visualization_msgs::MarkerArray>("Grid", 10);
-  _payload_grid_line_pub =
-      _nh.advertise<visualization_msgs::Marker>("GridLine", 10);
-  _ideal_frame_pub =
-      _nh.advertise<visualization_msgs::MarkerArray>("IdealFrame", 10);
+  _ini_tag_pub = _nh.advertise<sensor_msgs::PointCloud2>("Initial_Template_points", 10);
+  _boundary_marker_pub = _nh.advertise<visualization_msgs::MarkerArray>("BoundaryMarker", 10);
+  _id_marker_pub = _nh.advertise<visualization_msgs::MarkerArray>("IDMarkers", 10);
+  _cluster_marker_pub = _nh.advertise<visualization_msgs::MarkerArray>("ClusterMarker", 10);
+  _payload_marker_pub = _nh.advertise<visualization_msgs::MarkerArray>("PayloadEdges", 10);
+  _payload_grid_pub = _nh.advertise<visualization_msgs::MarkerArray>("Grid", 10);
+  _payload_grid_line_pub = _nh.advertise<visualization_msgs::Marker>("GridLine", 10);
+  _ideal_frame_pub = _nh.advertise<visualization_msgs::MarkerArray>("IdealFrame", 10);
   _tag_frame_pub = _nh.advertise<visualization_msgs::Marker>("TagFrame", 10);
-  _edge_vector_pub =
-      _nh.advertise<visualization_msgs::MarkerArray>("EdgeVector", 10);
-  _lidartag_pose_pub =
-      _nh.advertise<lidartag_msgs::LiDARTagDetectionArray>("LiDARTagPose", 1);
-  _clustered_points_pub =
-      _nh.advertise<sensor_msgs::PointCloud2>("ClusterEdgePC", 5);
-  _detectionArray_pub = _nh.advertise<lidartag_msgs::LiDARTagDetectionArray>(
-      lidartag_detection_topic, 10);
-  _lidartag_cluster_pub =
-      _nh.advertise<sensor_msgs::PointCloud2>("lidartag_cluster_points", 10);
-  _lidartag_cluster_edge_points_pub = _nh.advertise<sensor_msgs::PointCloud2>(
-      "lidartag_cluster_edge_points", 10);
+  _edge_vector_pub = _nh.advertise<visualization_msgs::MarkerArray>("EdgeVector", 10);
+  _lidartag_pose_pub = _nh.advertise<lidartag_msgs::LiDARTagDetectionArray>("LiDARTagPose", 1);
+  _clustered_points_pub = _nh.advertise<sensor_msgs::PointCloud2>("ClusterEdgePC", 5);
+  _detectionArray_pub =
+    _nh.advertise<lidartag_msgs::LiDARTagDetectionArray>(lidartag_detection_topic, 10);
+  _lidartag_cluster_pub = _nh.advertise<sensor_msgs::PointCloud2>("lidartag_cluster_points", 10);
+  _lidartag_cluster_edge_points_pub =
+    _nh.advertise<sensor_msgs::PointCloud2>("lidartag_cluster_edge_points", 10);
   _lidartag_cluster_transformed_edge_points_pub =
-      _nh.advertise<sensor_msgs::PointCloud2>(
-          "lidartag_cluster_trasformed_edge_points", 10);
-  _marker_pub =
-      _nh.advertise<visualization_msgs::Marker>("intersection_marker", 10);
+    _nh.advertise<sensor_msgs::PointCloud2>("lidartag_cluster_trasformed_edge_points", 10);
+  _marker_pub = _nh.advertise<visualization_msgs::Marker>("intersection_marker", 10);
   detail_valid_marker_array_pub =
-      _nh.advertise<visualization_msgs::MarkerArray>("detail_valid_marker", 10);
-  detail_valid_text_pub =
-      _nh.advertise<jsk_rviz_plugins::OverlayText>("detail_valid_text", 10);
+    _nh.advertise<visualization_msgs::MarkerArray>("detail_valid_marker", 10);
+  detail_valid_text_pub = _nh.advertise<jsk_rviz_plugins::OverlayText>("detail_valid_text", 10);
   _intersection_marker_array_pub =
-      _nh.advertise<visualization_msgs::MarkerArray>("intesection_markers", 10);
+    _nh.advertise<visualization_msgs::MarkerArray>("intesection_markers", 10);
   _line_cloud1_pub = _nh.advertise<sensor_msgs::PointCloud2>("line_cloud1", 10);
   _line_cloud2_pub = _nh.advertise<sensor_msgs::PointCloud2>("line_cloud2", 10);
   _line_cloud3_pub = _nh.advertise<sensor_msgs::PointCloud2>("line_cloud3", 10);
@@ -170,12 +155,30 @@ LiDARTag::LiDARTag()
   _cloud2_pub = _nh.advertise<sensor_msgs::PointCloud2>("cloud2", 10);
   _cloud3_pub = _nh.advertise<sensor_msgs::PointCloud2>("cloud3", 10);
   _cloud4_pub = _nh.advertise<sensor_msgs::PointCloud2>("cloud4", 10);
-  _transformed_edge_pc_pub =
-      _nh.advertise<sensor_msgs::PointCloud2>("transformed_edge_pc", 10);
-  _average_point_pub =
-      _nh.advertise<geometry_msgs::PointStamped>("average_point", 10);
+  _transformed_edge_pc_pub = _nh.advertise<sensor_msgs::PointCloud2>("transformed_edge_pc", 10);
+  _average_point_pub = _nh.advertise<geometry_msgs::PointStamped>("average_point", 10);
   _before_transformed_edge_pc_pub =
-      _nh.advertise<sensor_msgs::PointCloud2>("before_transformed_edge_pc", 10);
+    _nh.advertise<sensor_msgs::PointCloud2>("before_transformed_edge_pc", 10);
+  _corners_array_pub = _nh.advertise<lidartag_msgs::CornersArray>("corners_array", 10);
+  _left_corners_pub = _nh.advertise<visualization_msgs::Marker>("left_corner", 10);
+  _right_corners_pub = _nh.advertise<visualization_msgs::Marker>("right_corner", 10);
+  _down_corners_pub = _nh.advertise<visualization_msgs::Marker>("down_corner", 10);
+  _top_corners_pub = _nh.advertise<visualization_msgs::Marker>("top_corner", 10);
+  _boundary_corners_array_pub =
+    _nh.advertise<lidartag_msgs::CornersArray>("boundary_corners_array", 10);
+  _left_boundary_corners_pub =
+    _nh.advertise<visualization_msgs::Marker>("left_boundary_corner", 10);
+  _right_boundary_corners_pub =
+    _nh.advertise<visualization_msgs::Marker>("right_boundary_corner", 10);
+  _down_boundary_corners_pub =
+    _nh.advertise<visualization_msgs::Marker>("down_boundary_corner", 10);
+  _top_boundary_corners_pub = _nh.advertise<visualization_msgs::Marker>("top_boundary_corner", 10);
+  _colored_cluster_buff_pub = _nh.advertise<sensor_msgs::PointCloud2>("colored_cluster_buff", 10);
+  _ps_cluster_buff__pub =
+    _nh.advertise<visualization_msgs::MarkerArray>("cluster_buff_points_size_markers", 10);
+  _in_cluster_buff__pub =
+    _nh.advertise<visualization_msgs::MarkerArray>("cluster_buff_index_number_markers", 10);
+  _boundary_points_pub = _nh.advertise<sensor_msgs::PointCloud2>("boundary_points", 10);
   // put ros spin into a background thread
   boost::thread RosSpin(&LiDARTag::_rosSpin, this);
 
@@ -244,6 +247,12 @@ LiDARTag::LiDARTag()
   // Exam the minimum distance of each point in a ring
   ROS_INFO("Analyzing system");
   LiDARTag::_analyzeLiDARDevice();
+
+  srv_ = boost::make_shared<dynamic_reconfigure::Server<lidartag_msgs::LiDARTagMsgsConfig>>(_nh);
+  dynamic_reconfigure::Server<lidartag_msgs::LiDARTagMsgsConfig>::CallbackType f;
+  f = boost::bind(&LiDARTag::dynparamCallback, this, _1, _2);
+  srv_->setCallback(f);
+
   boost::thread ExtractionSpin(&LiDARTag::_mainLoop, this);
   ExtractionSpin.join();
   RosSpin.join();
@@ -252,15 +261,15 @@ LiDARTag::LiDARTag()
 /*
  * Main loop
  */
-void LiDARTag::_mainLoop() {
+void LiDARTag::_mainLoop()
+{
   ROS_INFO("Start points of interest extraction");
   // ROS_INFO_STREAM("Tag_size:" << _payload_size);
   // ros::Rate r(10); // 10 hz
   ros::Duration duration(_sleep_time_for_vis);
   clock_t StartAve = clock();
   pcl::PointCloud<PointXYZRI>::Ptr clusterpc(new pcl::PointCloud<PointXYZRI>);
-  pcl::PointCloud<PointXYZRI>::Ptr clusteredgepc(
-      new pcl::PointCloud<PointXYZRI>);
+  pcl::PointCloud<PointXYZRI>::Ptr clusteredgepc(new pcl::PointCloud<PointXYZRI>);
   pcl::PointCloud<PointXYZRI>::Ptr payloadpc(new pcl::PointCloud<PointXYZRI>);
   // pcl::PointCloud<PointXYZRI>::Ptr indexpc(
   //         new pcl::PointCloud<PointXYZRI>);
@@ -300,6 +309,8 @@ void LiDARTag::_mainLoop() {
   while (ros::ok()) {
     _lidartag_pose_array.detections.clear();
     detectionsToPub.detections.clear();
+    pub_corners_array_.corners.clear();
+    _boundary_corners_array_.corners.clear();
     if (_debug_time) {
       _timing = {std::chrono::steady_clock::now(),
                  std::chrono::steady_clock::now(),
@@ -324,8 +335,7 @@ void LiDARTag::_mainLoop() {
     }
 
     if (_debug_decoding_time) {
-      _time_decoding = {
-          std::chrono::steady_clock::now(), 0, 0, 0, 0, 0, 0, 0, 0};
+      _time_decoding = {std::chrono::steady_clock::now(), 0, 0, 0, 0, 0, 0, 0, 0};
     }
 
     // Try to take a pointcloud from the buffer
@@ -335,16 +345,14 @@ void LiDARTag::_mainLoop() {
         continue;
       }
     } else {
-      std::vector<std::vector<LiDARPoints_t>> ordered_buff_cur =
-          LiDARTag::_getOrderBuff();
+      std::vector<std::vector<LiDARPoints_t>> ordered_buff_cur = LiDARTag::_getOrderBuff();
       if (ordered_buff_cur.empty()) {
         continue;
       }
       if (accumulated_scan < _num_accumulation) {
         for (int ring = 0; ring < _beam_num; ++ring) {
-          ordered_buff[ring].insert(ordered_buff[ring].end(),
-                                    ordered_buff_cur[ring].begin(),
-                                    ordered_buff_cur[ring].end());
+          ordered_buff[ring].insert(
+            ordered_buff[ring].end(), ordered_buff_cur[ring].begin(), ordered_buff_cur[ring].end());
         }
         accumulated_scan++;
         _point_cloud_size += _point_cloud_size;
@@ -364,7 +372,7 @@ void LiDARTag::_mainLoop() {
     std::vector<ClusterFamily_t> clusterbuff;
 
     pcl::PointCloud<PointXYZRI>::Ptr extracted_poi_pc =
-        LiDARTag::_lidarTagDetection(ordered_buff, clusterbuff);
+      LiDARTag::_lidarTagDetection(ordered_buff, clusterbuff);
 
     if (_log_data) {
       printClusterResult(clusterbuff);
@@ -403,15 +411,15 @@ void LiDARTag::_mainLoop() {
     // Prepare results for rviz
     visualization_msgs::MarkerArray cluster_markers;
     LiDARTag::_clusterToPclVectorAndMarkerPublisher(
-        clusterbuff, clusterpc, clusteredgepc, payloadpc, payload3dpc, tagpc,
-        ini_tagpc, edge_group1, edge_group2, edge_group3, edge_group4,
-        boundarypc, cluster_markers);
+      clusterbuff, clusterpc, clusteredgepc, payloadpc, payload3dpc, tagpc, ini_tagpc, edge_group1,
+      edge_group2, edge_group3, edge_group4, boundarypc, cluster_markers);
     // add clusters to mat files
     // LiDARTag::_saveTemporalCluster(clusterbuff, matData);
 
     // publish lidartag poses
     _lidartag_pose_pub.publish(_lidartag_pose_array);
-    LiDARTag::publishLidartagCluster(clusterbuff);
+
+    //publish lidartag corners
     // publish results for rviz
     LiDARTag::_plotIdealFrame();
     LiDARTag::_publishPC(extracted_poi_pc, _pub_frame, string("wholeedge"));
@@ -442,11 +450,10 @@ void LiDARTag::_mainLoop() {
       LiDARTag::_publishPC(ini_tagpc, _pub_frame, string("InitialTarget"));
     }
     // exit(0);
-    if (_sleep_to_display)
-      duration.sleep();
+    if (_sleep_to_display) duration.sleep();
     if (_debug_time) {
-      _timing.total_time = utils::spendElapsedTimeMilli(
-          std::chrono::steady_clock::now(), _timing.start_total_time);
+      _timing.total_time =
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _timing.start_total_time);
     }
     // ROS_INFO_STREAM("Hz (total): " << 1e3/_timing.total_time);
     // cout << "\033[1;31m====================================== \033[0m\n";
@@ -458,37 +465,32 @@ void LiDARTag::_mainLoop() {
         break;
       }
     }
-  } // ros::ok()
-    // LiDARTag::_saveMatFiles(matData);
+  }  // ros::ok()
+     // LiDARTag::_saveMatFiles(matData);
 }
 
 /*
  * A function to get all parameters from a roslaunch
  * if not get all parameters then it will use hard-coded parameters
  */
-void LiDARTag::_getParameters() {
+void LiDARTag::_getParameters()
+{
   bool GotPubFrame = ros::param::get("frame_name", _pub_frame);
-  bool GotThreshold =
-      ros::param::get("distance_threshold", _distance_threshold);
-  bool GotPublishTopic =
-      ros::param::get("lidartag_detection_topic", lidartag_detection_topic);
-  bool GotSleepToDisplay =
-      ros::param::get("sleep_to_display", _sleep_to_display);
-  bool GotSleepTimeForVis =
-      ros::param::get("sleep_time_for_visulization", _sleep_time_for_vis);
+  bool GotThreshold = ros::param::get("distance_threshold", _distance_threshold);
+  bool GotPublishTopic = ros::param::get("lidartag_detection_topic", lidartag_detection_topic);
+  bool GotSleepToDisplay = ros::param::get("sleep_to_display", _sleep_to_display);
+  bool GotSleepTimeForVis = ros::param::get("sleep_time_for_visulization", _sleep_time_for_vis);
   bool GotValgrindCheck = ros::param::get("valgrind_check", _valgrind_check);
   bool GotFakeTag = ros::param::get("fake_data", _fake_tag);
   bool GotCSV = ros::param::get("write_csv", _write_CSV);
-  bool GotMarkValidity =
-      ros::param::get("mark_cluster_validity", _mark_cluster_validity);
+  bool GotMarkValidity = ros::param::get("mark_cluster_validity", _mark_cluster_validity);
   bool GotPlaneFitting = ros::param::get("plane_fitting", _plane_fitting);
   bool GotOptPose = ros::param::get("optimize_pose", _pose_optimization);
   bool GotDecodeId = ros::param::get("decode_id", _id_decoding);
   bool GotAssignId = ros::param::get("assign_id", _assign_id);
   bool GotRingState = ros::param::get("has_ring", _has_ring);
   bool GotRingEstimation = ros::param::get("estimate_ring", _ring_estimation);
-  bool GotAdaptiveThresholding =
-      ros::param::get("adaptive_thresholding", _adaptive_thresholding);
+  bool GotAdaptiveThresholding = ros::param::get("adaptive_thresholding", _adaptive_thresholding);
   bool GotCollectData = ros::param::get("collect_data", _collect_dataset);
 
   bool GotLidarTopic = ros::param::get("pointcloud_topic", _pointcloud_topic);
@@ -496,42 +498,33 @@ void LiDARTag::_getParameters() {
   // bool GotSize = ros::param::get("tag_size", _payload_size);
 
   bool GotTagFamily = ros::param::get("tag_family", _tag_family);
-  bool GotTagHamming =
-      ros::param::get("tag_hamming_distance", _tag_hamming_distance);
-  bool GotMaxDecodeHamming =
-      ros::param::get("max_decode_hamming", _max_decode_hamming);
+  bool GotTagHamming = ros::param::get("tag_hamming_distance", _tag_hamming_distance);
+  bool GotMaxDecodeHamming = ros::param::get("max_decode_hamming", _max_decode_hamming);
   bool GotBlackBorder = ros::param::get("black_border", _black_border);
 
   bool GotDistanceBound = ros::param::get("distance_bound", _distance_bound);
-  bool GotIntensityBound =
-      ros::param::get("intensity_bound", _intensity_threshold);
+  bool GotIntensityBound = ros::param::get("intensity_bound", _intensity_threshold);
   bool GotDepthBound = ros::param::get("depth_bound", _depth_threshold);
-  bool GotFineClusterThreshold =
-      ros::param::get("fine_cluster_threshold", _fine_cluster_threshold);
+  bool GotFineClusterThreshold = ros::param::get("fine_cluster_threshold", _fine_cluster_threshold);
   bool GotVerticalFOV = ros::param::get("vertical_fov", _vertical_fov);
-  bool GotFillInGapThreshold =
-      ros::param::get("fill_in_gap_threshold", _filling_gap_max_index);
+  bool GotFillInGapThreshold = ros::param::get("fill_in_gap_threshold", _filling_gap_max_index);
   // bool GotFillInMaxPointsThreshold =
   //     ros::param::get(
   //             "fill_in_max_points_threshold",
   //             fill_in_max_points_threshold);
   bool GotPointsThresholdFactor =
-      ros::param::get("points_threshold_factor", _points_threshold_factor);
-  bool GotLineIntensityBound =
-      ros::param::get("line_intensity_bound", _line_intensity_bound);
-  bool GotPayloadIntensityThreshold = ros::param::get(
-      "payload_intensity_threshold", _payload_intensity_threshold);
+    ros::param::get("points_threshold_factor", _points_threshold_factor);
+  bool GotLineIntensityBound = ros::param::get("line_intensity_bound", _line_intensity_bound);
+  bool GotPayloadIntensityThreshold =
+    ros::param::get("payload_intensity_threshold", _payload_intensity_threshold);
 
   bool GotLatestModel = ros::param::get("latest_model", _latest_model);
   bool GotWeightPath = ros::param::get("weight_path", _weight_path);
 
-  bool GotMaxPointsOnPayload =
-      ros::param::get("max_points_on_payload", _max_point_on_payload);
+  bool GotMaxPointsOnPayload = ros::param::get("max_points_on_payload", _max_point_on_payload);
   bool GotXYZRI = ros::param::get("xyzri", _XYZRI);
-  bool GotMinPerGrid =
-      ros::param::get("min_retrun_per_grid", _min_returns_per_grid);
-  bool GotOptimizationMethod =
-      ros::param::get("optimization_solver", _optimization_solver);
+  bool GotMinPerGrid = ros::param::get("min_retrun_per_grid", _min_returns_per_grid);
+  bool GotOptimizationMethod = ros::param::get("optimization_solver", _optimization_solver);
   bool GotDecodeMethod = ros::param::get("decode_method", _decode_method);
   bool GotDecodeMode = ros::param::get("decode_mode", _decode_mode);
   bool GotGridViz = ros::param::get("grid_viz", _grid_viz);
@@ -546,64 +539,53 @@ void LiDARTag::_getParameters() {
   bool GotLibraryPath = ros::param::get("library_path", _library_path);
   bool GotNumCodes = ros::param::get("num_codes", _num_codes);
 
-  bool GotDistanceToPlaneThreshold = ros::param::get(
-      "distance_to_plane_threshold", _distance_to_plane_threshold);
-  bool GotMaxOutlierRatio =
-      ros::param::get("max_outlier_ratio", _max_outlier_ratio);
-  bool GotNumPoints = ros::param::get("num_points_for_plane_feature",
-                                      _num_points_for_plane_feature);
+  bool GotDistanceToPlaneThreshold =
+    ros::param::get("distance_to_plane_threshold", _distance_to_plane_threshold);
+  bool GotMaxOutlierRatio = ros::param::get("max_outlier_ratio", _max_outlier_ratio);
+  bool GotNumPoints =
+    ros::param::get("num_points_for_plane_feature", _num_points_for_plane_feature);
   bool GotNearBound = ros::param::get("nearby_factor", _nearby_factor);
   bool GotNumPointsRing = ros::param::get("number_points_ring", _np_ring);
   bool GotCoefficient = ros::param::get("linkage_tunable", _linkage_tunable);
   bool GotTagSizeList = ros::param::get("tag_size_list", _tag_size_list);
-  bool GotDerivativeMethod =
-      ros::param::get("euler_derivative", _derivative_method);
+  bool GotDerivativeMethod = ros::param::get("euler_derivative", _derivative_method);
   bool GotNumThreads = ros::param::get("num_threads", _num_threads);
   bool GotPrintInfo = ros::param::get("print_info", _print_ros_info);
   bool GotDebuginfo = ros::param::get("debug_info", _debug_info);
   bool GotDebugtime = ros::param::get("debug_time", _debug_time);
-  bool GotDebugDecodingtime =
-      ros::param::get("debug_decoding_time", _debug_decoding_time);
+  bool GotDebugDecodingtime = ros::param::get("debug_decoding_time", _debug_decoding_time);
   bool GotLogData = ros::param::get("log_data", _log_data);
-  bool GotOptimizePercent =
-      ros::param::get("optimize_percentage", _optimization_percent);
+  bool GotOptimizePercent = ros::param::get("optimize_percentage", _optimization_percent);
   bool GotCalibration = ros::param::get("calibration", _calibration);
-  bool GotMinimumRingPoints = ros::param::get("minimum_ring_boundary_points",
-                                              _minimum_ring_boundary_points);
+  bool GotMinimumRingPoints =
+    ros::param::get("minimum_ring_boundary_points", _minimum_ring_boundary_points);
   bool GotUpbound = ros::param::get("optimize_up_bound", _opt_ub);
   bool GotLowbound = ros::param::get("optimize_low_bound", _opt_lb);
-  bool GotNumAccumulation =
-      ros::param::get("num_accumulation", _num_accumulation);
+  bool GotNumAccumulation = ros::param::get("num_accumulation", _num_accumulation);
   bool GotCoaTunable = ros::param::get("coa_tunable", _coa_tunable);
   bool GotTagsizeTunable = ros::param::get("tagsize_tunable", _tagsize_tunable);
-  bool GotMaxClusterIndex =
-      ros::param::get("cluster_max_index", _cluster_max_index);
-  bool GotMinClusterIndex =
-      ros::param::get("cluster_min_index", _cluster_min_index);
+  bool GotMaxClusterIndex = ros::param::get("cluster_max_index", _cluster_max_index);
+  bool GotMinClusterIndex = ros::param::get("cluster_min_index", _cluster_min_index);
   bool GotMaxClusterPointsSize =
-      ros::param::get("cluster_max_points_size", _cluster_max_points_size);
+    ros::param::get("cluster_max_points_size", _cluster_max_points_size);
   bool GotMinClusterPointsSize =
-      ros::param::get("cluster_min_points_size", _cluster_min_points_size);
-  bool GotVisualizeCluster =
-      ros::param::get("pcl_visualize_cluster", _pcl_visualize_cluster);
+    ros::param::get("cluster_min_points_size", _cluster_min_points_size);
+  bool GotVisualizeCluster = ros::param::get("pcl_visualize_cluster", _pcl_visualize_cluster);
+  bool GotClearance = ros::param::get("clearance", _clearance);
   bool Pass = utils::checkParameters(
-      64, GotFakeTag, GotLidarTopic, GotBeamNum, GotOptPose, GotDecodeId,
-      GotPlaneFitting, GotAssignId, GotCSV, GotOutPutPath, GotDistanceBound,
-      GotIntensityBound, GotDepthBound, GotTagFamily, GotTagHamming,
-      GotMaxDecodeHamming, GotFineClusterThreshold, GotVerticalFOV,
-      GotFillInGapThreshold, GotMaxOutlierRatio, GotPointsThresholdFactor,
-      GotLineIntensityBound, GotDistanceToPlaneThreshold,
-      GotAdaptiveThresholding, GotCollectData, GotSleepToDisplay,
-      GotSleepTimeForVis, GotValgrindCheck, GotPayloadIntensityThreshold,
-      GotLatestModel, GotWeightPath, GotBlackBorder, GotMaxPointsOnPayload,
-      GotXYZRI, GotMinPerGrid, GotDecodeMethod, GotDecodeMode,
-      GotOptimizationMethod, GotGridViz, GotPublishTopic, GotThreshold,
-      GotNumPoints, GotNearBound, GotNumPointsRing, GotCoefficient,
-      GotTagSizeList, GotNumThreads, GotPrintInfo, GotOptimizePercent,
-      GotDebuginfo, GotDebugtime, GotLogData, GotDebugDecodingtime,
-      GotLibraryPath, GotNumCodes, GotCalibration, GotMinimumRingPoints,
-      GotRingState, GotRingEstimation, GotNumAccumulation, GotDerivativeMethod,
-      GotUpbound, GotLowbound, GotCoaTunable, GotTagsizeTunable);
+    64, GotFakeTag, GotLidarTopic, GotBeamNum, GotOptPose, GotDecodeId, GotPlaneFitting,
+    GotAssignId, GotCSV, GotOutPutPath, GotDistanceBound, GotIntensityBound, GotDepthBound,
+    GotTagFamily, GotTagHamming, GotMaxDecodeHamming, GotFineClusterThreshold, GotVerticalFOV,
+    GotFillInGapThreshold, GotMaxOutlierRatio, GotPointsThresholdFactor, GotLineIntensityBound,
+    GotDistanceToPlaneThreshold, GotAdaptiveThresholding, GotCollectData, GotSleepToDisplay,
+    GotSleepTimeForVis, GotValgrindCheck, GotPayloadIntensityThreshold, GotLatestModel,
+    GotWeightPath, GotBlackBorder, GotMaxPointsOnPayload, GotXYZRI, GotMinPerGrid, GotDecodeMethod,
+    GotDecodeMode, GotOptimizationMethod, GotGridViz, GotPublishTopic, GotThreshold, GotNumPoints,
+    GotNearBound, GotNumPointsRing, GotCoefficient, GotTagSizeList, GotNumThreads, GotPrintInfo,
+    GotOptimizePercent, GotDebuginfo, GotDebugtime, GotLogData, GotDebugDecodingtime,
+    GotLibraryPath, GotNumCodes, GotCalibration, GotMinimumRingPoints, GotRingState,
+    GotRingEstimation, GotNumAccumulation, GotDerivativeMethod, GotUpbound, GotLowbound,
+    GotCoaTunable, GotTagsizeTunable, GotClearance);
 
   if (!Pass) {
     // TODO: check compleness
@@ -616,9 +598,9 @@ void LiDARTag::_getParameters() {
     _pointcloud_topic = "/velodyne_points";
     lidartag_detection_topic = "/LiDARTag/lidar_tag/LiDARTagDetectionArray";
     _beam_num = 32;
-    _distance_bound = 7;      // for edge gradient
-    _intensity_threshold = 2; // for edge gradient
-    _depth_threshold = 0.5;   // for edge gradient
+    _distance_bound = 7;       // for edge gradient
+    _intensity_threshold = 2;  // for edge gradient
+    _depth_threshold = 0.5;    // for edge gradient
     _payload_intensity_threshold = 30;
     //_payload_size = 0.15;
 
@@ -636,7 +618,7 @@ void LiDARTag::_getParameters() {
     _filling_gap_max_index = 200;
     _filling_max_points_threshold = 4500;
 
-    _line_intensity_bound = 1000; // To determine the payload edge
+    _line_intensity_bound = 1000;  // To determine the payload edge
 
     // if the points on a "valid" tag is less than this factor,
     // then remove it  (the higher, the looser)
@@ -645,7 +627,7 @@ void LiDARTag::_getParameters() {
     _collect_dataset = 1;
 
     _sleep_to_display = 1;
-    _sleep_time_for_vis = 1.0;
+    _sleep_time_for_vis = 0.005;
     _valgrind_check = 0;
     _black_border = 1;
     _fake_tag = 0;
@@ -691,7 +673,7 @@ void LiDARTag::_getParameters() {
 
   // point association threshold (which cluster the point belongs to?)
   // cout << "_linkage_tunable: " << _linkage_tunable << endl;
-  _linkage_threshold = _linkage_tunable * _payload_size * SQRT2 / 4;
+  _linkage_threshold = _linkage_tunable * _payload_size * _clearance;
   if (_has_ring) {
     _use_ring = true;
   } else {
@@ -731,7 +713,8 @@ void LiDARTag::_getParameters() {
  * A function to get pcl ordered_buff
  * from a ros sensor-msgs form of pointcould queue
  * */
-std::vector<std::vector<LiDARPoints_t>> LiDARTag::_getOrderBuff() {
+std::vector<std::vector<LiDARPoints_t>> LiDARTag::_getOrderBuff()
+{
   _point_cloud1_queue_lock.lock();
   // ;boost::mutex::scoped_lock(_point_cloud1_queue_lock);
   if (_point_cloud1_queue.size() == 0) {
@@ -750,8 +733,7 @@ std::vector<std::vector<LiDARPoints_t>> LiDARTag::_getOrderBuff() {
   _current_scan_time = msg->header.stamp;
 
   // Convert to sensor_msg to pcl type
-  pcl::PointCloud<PointXYZRI>::Ptr pcl_pointcloud(
-      new pcl::PointCloud<PointXYZRI>);
+  pcl::PointCloud<PointXYZRI>::Ptr pcl_pointcloud(new pcl::PointCloud<PointXYZRI>);
   pcl::fromROSMsg(*msg, *pcl_pointcloud);
 
   if (!_has_ring && !_ring_estimated) {
@@ -759,11 +741,10 @@ std::vector<std::vector<LiDARPoints_t>> LiDARTag::_getOrderBuff() {
     _getAngleVector(pcl_pointcloud, angles);
     // cout << "angles_size" <<angles.size() << endl;
     std::ofstream fangles;
-    fangles.open(_outputs_path + "/angles.txt",
-                 std::ofstream::out | std::ofstream::app);
+    fangles.open(_outputs_path + "/angles.txt", std::ofstream::out | std::ofstream::app);
     if (!fangles.is_open()) {
-      cout << "Could not open angles.txt: " << _outputs_path
-           << "\n Currently at: " << __LINE__ << endl;
+      cout << "Could not open angles.txt: " << _outputs_path << "\n Currently at: " << __LINE__
+           << endl;
       exit(0);
     }
     fangles << std::endl;
@@ -816,13 +797,14 @@ std::vector<std::vector<LiDARPoints_t>> LiDARTag::_getOrderBuff() {
  *  Min    Min    Min
  * ---------------------------------------
  */
-void LiDARTag::_analyzeLiDARDevice() {
+void LiDARTag::_analyzeLiDARDevice()
+{
   _ring_estimated = false;
   _LiDAR_system.point_count_table.resize(100);
   _LiDAR_system.ring_average_table.reserve(_beam_num);
 
   // Initialize the table
-  MaxMin_t max_min{(int)1e5, -1, -1}; // min, ave, max
+  MaxMin_t max_min{(int)1e5, -1, -1};  // min, ave, max
 
   for (int j = 0; j < _beam_num; ++j) {
     _LiDAR_system.ring_average_table.push_back(max_min);
@@ -847,23 +829,20 @@ void LiDARTag::_analyzeLiDARDevice() {
   int accumulated_scan = 1;
   std::vector<std::vector<LiDARPoints_t>> ordered_buff(_beam_num);
   while (ros::ok()) {
-
     if (_num_accumulation == 1) {
       ordered_buff = LiDARTag::_getOrderBuff();
       if (ordered_buff.empty()) {
         continue;
       }
     } else {
-      std::vector<std::vector<LiDARPoints_t>> ordered_buff_cur =
-          LiDARTag::_getOrderBuff();
+      std::vector<std::vector<LiDARPoints_t>> ordered_buff_cur = LiDARTag::_getOrderBuff();
       if (ordered_buff_cur.empty()) {
         continue;
       }
       if (accumulated_scan < _num_accumulation) {
         for (int ring = 0; ring < _beam_num; ++ring) {
-          ordered_buff[ring].insert(ordered_buff[ring].end(),
-                                    ordered_buff_cur[ring].begin(),
-                                    ordered_buff_cur[ring].end());
+          ordered_buff[ring].insert(
+            ordered_buff[ring].end(), ordered_buff_cur[ring].begin(), ordered_buff_cur[ring].end());
         }
         accumulated_scan++;
         continue;
@@ -872,9 +851,9 @@ void LiDARTag::_analyzeLiDARDevice() {
     }
 
     // cout << "i: " << i++ << endl;
-    LiDARTag::_maxMinPtsInAScan(_LiDAR_system.point_count_table[num_scan],
-                                _LiDAR_system.max_min_table,
-                                _LiDAR_system.ring_average_table, ordered_buff);
+    LiDARTag::_maxMinPtsInAScan(
+      _LiDAR_system.point_count_table[num_scan], _LiDAR_system.max_min_table,
+      _LiDAR_system.ring_average_table, ordered_buff);
     num_scan++;
     clock_t end = clock();
     for (int ring = 0; ring < _beam_num; ++ring) {
@@ -930,17 +909,16 @@ void LiDARTag::_analyzeLiDARDevice() {
  * A function to calculate how many points are supposed to be
  * on a cluster at 1 meter away
  */
-void LiDARTag::_pointsPerSquareMeterAtOneMeter() {
+void LiDARTag::_pointsPerSquareMeterAtOneMeter()
+{
   double system_average;
   for (auto i = _LiDAR_system.ring_average_table.begin();
        i != _LiDAR_system.ring_average_table.end(); ++i) {
     system_average += (*i).average;
   }
   system_average /= _LiDAR_system.ring_average_table.size();
-  _LiDAR_system.beam_per_vertical_radian =
-      _beam_num / utils::deg2Rad(_vertical_fov);
-  _LiDAR_system.point_per_horizontal_radian =
-      system_average / utils::deg2Rad(360.0);
+  _LiDAR_system.beam_per_vertical_radian = _beam_num / utils::deg2Rad(_vertical_fov);
+  _LiDAR_system.point_per_horizontal_radian = system_average / utils::deg2Rad(360.0);
 }
 
 /*
@@ -948,9 +926,10 @@ void LiDARTag::_pointsPerSquareMeterAtOneMeter() {
  * i.e. to find extrema within 32 rings
  */
 void LiDARTag::_maxMinPtsInAScan(
-    std::vector<int> &point_count_table, std::vector<MaxMin_t> &max_min_table,
-    std::vector<MaxMin_t> &ring_average_table,
-    const std::vector<std::vector<LiDARPoints_t>> &ordered_buff) {
+  std::vector<int> & point_count_table, std::vector<MaxMin_t> & max_min_table,
+  std::vector<MaxMin_t> & ring_average_table,
+  const std::vector<std::vector<LiDARPoints_t>> & ordered_buff)
+{
   // every scan should have different largest/ smallest numbers
   int largest = -1;
   int smallest = 100000;
@@ -965,8 +944,7 @@ void LiDARTag::_maxMinPtsInAScan(
     if (ring_average_table[i].average < 0) {
       ring_average_table[i].average = ring_size;
     } else {
-      ring_average_table[i].average =
-          (ring_average_table[i].average + ring_size);
+      ring_average_table[i].average = (ring_average_table[i].average + ring_size);
     }
 
     if (ring_average_table[i].max < ring_size) {
@@ -996,9 +974,11 @@ void LiDARTag::_maxMinPtsInAScan(
  * which_publisher should be a string of "organized" or "original"
  * regardless lowercase and uppercase
  */
-void LiDARTag::_publishPC(const pcl::PointCloud<PointXYZRI>::Ptr &source_pc,
-                          const std::string &frame, string which_publisher) {
-  utils::tranferToLowercase(which_publisher); // check letter cases
+void LiDARTag::_publishPC(
+  const pcl::PointCloud<PointXYZRI>::Ptr & source_pc, const std::string & frame,
+  string which_publisher)
+{
+  utils::tranferToLowercase(which_publisher);  // check letter cases
   sensor_msgs::PointCloud2 pcs_waited_to_pub;
   pcl::toROSMsg(*source_pc, pcs_waited_to_pub);
   pcs_waited_to_pub.header.frame_id = frame;
@@ -1044,7 +1024,7 @@ void LiDARTag::_publishPC(const pcl::PointCloud<PointXYZRI>::Ptr &source_pc,
     else {
       throw "No such Publisher exists";
     }
-  } catch (const char *msg) {
+  } catch (const char * msg) {
     cout << "\033[1;31m========================= \033[0m\n";
     cerr << msg << endl;
     cout << "\033[1;31m========================= \033[0m\n";
@@ -1055,7 +1035,8 @@ void LiDARTag::_publishPC(const pcl::PointCloud<PointXYZRI>::Ptr &source_pc,
 /* [basic ros]
  * A function to push the received pointcloud into a queue in the class
  */
-void LiDARTag::_pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr &pc) {
+void LiDARTag::_pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr & pc)
+{
   // flag to make sure it receives a pointcloud
   // at the very begining of the program
   _point_cloud_received = 1;
@@ -1066,11 +1047,20 @@ void LiDARTag::_pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr &pc) {
   _point_cloud1_queue_lock.unlock();
 }
 
+void LiDARTag::dynparamCallback(
+  const lidartag_msgs::LiDARTagMsgsConfig & dyn_msg, const uint32_t level)
+{
+  _cluster_min_index = dyn_msg.cluster_min_index;
+  _cluster_max_index = dyn_msg.cluster_max_index;
+  _cluster_min_points_size = dyn_msg.cluster_min_points_size;
+  _cluster_max_points_size = dyn_msg.cluster_max_points_size;
+}
 /*
  * A function to make sure the program has received at least
  * one pointcloud at the very start of this program
  */
-inline void LiDARTag::_waitForPC() {
+inline void LiDARTag::_waitForPC()
+{
   while (ros::ok()) {
     if (_point_cloud_received) {
       ROS_INFO("Got pointcloud data");
@@ -1085,14 +1075,13 @@ inline void LiDARTag::_waitForPC() {
  * based on ring number
  * */
 inline void LiDARTag::_fillInOrderedPC(
-    const pcl::PointCloud<PointXYZRI>::Ptr &pcl_pointcloud,
-    std::vector<std::vector<LiDARPoints_t>> &ordered_buff) {
+  const pcl::PointCloud<PointXYZRI>::Ptr & pcl_pointcloud,
+  std::vector<std::vector<LiDARPoints_t>> & ordered_buff)
+{
   if (!_has_ring && _ring_estimated) {
     std::string ring_list;
-    for (auto &&it : _LiDAR_system.angle_list)
-      ring_list += (std::to_string(it) + " ");
-    ROS_INFO_STREAM_ONCE(
-        "Estimate Ring List Size: " << _LiDAR_system.angle_list.size());
+    for (auto && it : _LiDAR_system.angle_list) ring_list += (std::to_string(it) + " ");
+    ROS_INFO_STREAM_ONCE("Estimate Ring List Size: " << _LiDAR_system.angle_list.size());
     ROS_INFO_STREAM_ONCE("Estimate Ring List: " << ring_list);
     assert(("Ring List Error", _LiDAR_system.angle_list.size() <= _beam_num));
   }
@@ -1100,7 +1089,7 @@ inline void LiDARTag::_fillInOrderedPC(
   LiDARPoints_t lidar_point;
   int index[_beam_num] = {0};
   std::set<float>::iterator it;
-  for (auto &&p : *pcl_pointcloud) {
+  for (auto && p : *pcl_pointcloud) {
     if (p.x == 0 && p.y == 0 && p.z == 0) {
       continue;
     }
@@ -1148,7 +1137,8 @@ inline void LiDARTag::_fillInOrderedPC(
  * A function to compute angle between the line from origin to this point
  * and z=0 plane in lidar
  * */
-float LiDARTag::_getAnglefromPt(PointXYZRI &point) {
+float LiDARTag::_getAnglefromPt(PointXYZRI & point)
+{
   float distance = std::sqrt(std::pow(point.x, 2) + std::pow(point.y, 2));
   float theta = utils::rad2Deg(std::atan2(point.z, distance));
 
@@ -1157,9 +1147,9 @@ float LiDARTag::_getAnglefromPt(PointXYZRI &point) {
 }
 
 void LiDARTag::_getAngleVector(
-    const pcl::PointCloud<PointXYZRI>::Ptr &pcl_pointcloud,
-    std::vector<float> &angles) {
-  for (auto &&p : *pcl_pointcloud) {
+  const pcl::PointCloud<PointXYZRI>::Ptr & pcl_pointcloud, std::vector<float> & angles)
+{
+  for (auto && p : *pcl_pointcloud) {
     if (p.x == 0 && p.y == 0 && p.z == 0) {
       continue;
     }
@@ -1178,9 +1168,9 @@ void LiDARTag::_getAngleVector(
  * Main function
  */
 pcl::PointCloud<PointXYZRI>::Ptr LiDARTag::_lidarTagDetection(
-    const std::vector<std::vector<LiDARPoints_t>> &ordered_buff,
-    std::vector<ClusterFamily_t> &cluster_buff) {
-
+  const std::vector<std::vector<LiDARPoints_t>> & ordered_buff,
+  std::vector<ClusterFamily_t> & cluster_buff)
+{
   if (_debug_info || _debug_time)
     ROS_INFO_STREAM("--------------- Begining ---------------");
   else
@@ -1200,24 +1190,24 @@ pcl::PointCloud<PointXYZRI>::Ptr LiDARTag::_lidarTagDetection(
   LiDARTag::_gradientAndGroupEdges(ordered_buff, edge_buff, cluster_buff);
   if (_debug_time) {
     _timing.edging_and_clustering_time = utils::spendElapsedTimeMilli(
-        std::chrono::steady_clock::now(), _timing.start_computation_time);
+      std::chrono::steady_clock::now(), _timing.start_computation_time);
     _timing.timing = std::chrono::steady_clock::now();
   }
 
   // transform from a vector of vector (edge_buff) into a pcl vector (out)
-  boost::thread BuffToPclVectorThread(&LiDARTag::_buffToPclVector, this,
-                                      boost::ref(edge_buff), out);
+  boost::thread BuffToPclVectorThread(
+    &LiDARTag::_buffToPclVector, this, boost::ref(edge_buff), out);
   if (_debug_time) {
-    _timing.to_pcl_vector_time = utils::spendElapsedTimeMilli(
-        std::chrono::steady_clock::now(), _timing.timing);
+    _timing.to_pcl_vector_time =
+      utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _timing.timing);
   }
 
   LiDARTag::_fillInCluster(ordered_buff, cluster_buff);
   BuffToPclVectorThread.join();
   _result_statistics.point_cloud_size = _point_cloud_size;
   _result_statistics.edge_cloud_size = out->size();
-  _timing.total_duration = utils::spendElapsedTimeMilli(
-      std::chrono::steady_clock::now(), _timing.start_computation_time);
+  _timing.total_duration =
+    utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _timing.start_computation_time);
   // std::chrono::duration<double> duration =
   //     std::chrono::steady_clock::now() - clock_start;
   // _timing.duration = duration.count();
@@ -1230,49 +1220,44 @@ pcl::PointCloud<PointXYZRI>::Ptr LiDARTag::_lidarTagDetection(
     // ROS_INFO_STREAM("edge_flag: " << _edge_flag);
     // ROS_INFO_STREAM("mark_cluster_validity: " << _mark_cluster_validity);
     // ROS_INFO_STREAM("cluster buffer size: " << cluster_buff.size());
-    ROS_INFO_STREAM("-- Computation: " << 1e3 / _timing.total_duration
-                                       << " [Hz]");
+    ROS_INFO_STREAM("-- Computation: " << 1e3 / _timing.total_duration << " [Hz]");
   }
 
   if (_debug_info) {
     ROS_DEBUG_STREAM("--------------- summary ---------------");
+    ROS_DEBUG_STREAM("-- Original cloud size: " << _result_statistics.point_cloud_size);
+    ROS_DEBUG_STREAM("-- Edge cloud size: " << _result_statistics.edge_cloud_size);
+    ROS_DEBUG_STREAM("-- Original cluster: " << _result_statistics.original_cluster_size);
     ROS_DEBUG_STREAM(
-        "-- Original cloud size: " << _result_statistics.point_cloud_size);
+      "-- Removed by minimum returns: " << _result_statistics.cluster_removal.minimum_return);
     ROS_DEBUG_STREAM(
-        "-- Edge cloud size: " << _result_statistics.edge_cloud_size);
+      "-- Removed by maximum returns: " << _result_statistics.cluster_removal.maximum_return);
     ROS_DEBUG_STREAM(
-        "-- Original cluster: " << _result_statistics.original_cluster_size);
-    ROS_DEBUG_STREAM("-- Removed by minimum returns: "
-                     << _result_statistics.cluster_removal.minimum_return);
-    ROS_DEBUG_STREAM("-- Removed by maximum returns: "
-                     << _result_statistics.cluster_removal.maximum_return);
-    ROS_DEBUG_STREAM("-- Removed by plane fitting failure: "
-                     << _result_statistics.cluster_removal.plane_fitting);
-    ROS_DEBUG_STREAM("-- Removed by plane fitting ourliers: "
-                     << _result_statistics.cluster_removal.plane_outliers);
+      "-- Removed by plane fitting failure: " << _result_statistics.cluster_removal.plane_fitting);
     ROS_DEBUG_STREAM(
-        "-- Removed by payload boundary point: "
-        << _result_statistics.cluster_removal.boundary_point_check);
-    ROS_DEBUG_STREAM("-- Removed by payload ring points: "
-                     << _result_statistics.cluster_removal.minimum_ring_points);
-    ROS_DEBUG_STREAM("-- Removed by edge points: "
-                     << _result_statistics.cluster_removal.no_edge_check);
-    ROS_DEBUG_STREAM("-- Removed by line fitting: "
-                     << _result_statistics.cluster_removal.line_fitting);
-    ROS_DEBUG_STREAM("-- Removed by pose optimization: "
-                     << _result_statistics.cluster_removal.pose_optimization);
-    ROS_DEBUG_STREAM("-- Removed by decoding: "
-                     << _result_statistics.cluster_removal.decoding_failure);
+      "-- Removed by plane fitting ourliers: "
+      << _result_statistics.cluster_removal.plane_outliers);
     ROS_DEBUG_STREAM(
-        "-- Remaining Cluster: " << _result_statistics.remaining_cluster_size);
+      "-- Removed by payload boundary point: "
+      << _result_statistics.cluster_removal.boundary_point_check);
+    ROS_DEBUG_STREAM(
+      "-- Removed by payload ring points: "
+      << _result_statistics.cluster_removal.minimum_ring_points);
+    ROS_DEBUG_STREAM(
+      "-- Removed by edge points: " << _result_statistics.cluster_removal.no_edge_check);
+    ROS_DEBUG_STREAM(
+      "-- Removed by line fitting: " << _result_statistics.cluster_removal.line_fitting);
+    ROS_DEBUG_STREAM(
+      "-- Removed by pose optimization: " << _result_statistics.cluster_removal.pose_optimization);
+    ROS_DEBUG_STREAM(
+      "-- Removed by decoding: " << _result_statistics.cluster_removal.decoding_failure);
+    ROS_DEBUG_STREAM("-- Remaining Cluster: " << _result_statistics.remaining_cluster_size);
     ROS_DEBUG_STREAM("---------------------------------------");
   }
   if (_debug_time) {
     ROS_DEBUG_STREAM("--------------- Timing ---------------");
-    ROS_DEBUG_STREAM("computation_time: " << 1e3 / _timing.total_duration
-                                          << " [Hz]");
-    ROS_DEBUG_STREAM(
-        "edging_and_clustering_time: " << _timing.edging_and_clustering_time);
+    ROS_DEBUG_STREAM("computation_time: " << 1e3 / _timing.total_duration << " [Hz]");
+    ROS_DEBUG_STREAM("edging_and_clustering_time: " << _timing.edging_and_clustering_time);
 
     ROS_DEBUG_STREAM("to_pcl_vector_time: " << _timing.to_pcl_vector_time);
 
@@ -1288,13 +1273,11 @@ pcl::PointCloud<PointXYZRI>::Ptr LiDARTag::_lidarTagDetection(
 
     ROS_DEBUG_STREAM("split_edge_time: " << _timing.split_edge_time);
 
-    ROS_DEBUG_STREAM(
-        "pose_optimization_time: " << _timing.pose_optimization_time);
+    ROS_DEBUG_STREAM("pose_optimization_time: " << _timing.pose_optimization_time);
 
     ROS_DEBUG_STREAM("store_template_time: " << _timing.store_template_time);
 
-    ROS_DEBUG_STREAM(
-        "payload_decoding_time: " << _timing.payload_decoding_time);
+    ROS_DEBUG_STREAM("payload_decoding_time: " << _timing.payload_decoding_time);
     ROS_DEBUG_STREAM("computation_time: " << _timing.total_duration);
     ROS_DEBUG_STREAM("---------------------------------------");
     // cout << "payload_decoding_time: " << _timing.payload_decoding_time <<
@@ -1317,10 +1300,9 @@ pcl::PointCloud<PointXYZRI>::Ptr LiDARTag::_lidarTagDetection(
  * (2) group detected 'edge' into different group
  */
 void LiDARTag::_gradientAndGroupEdges(
-    const std::vector<std::vector<LiDARPoints_t>> &ordered_buff,
-    std::vector<std::vector<LiDARPoints_t>> &edge_buff,
-    std::vector<ClusterFamily_t> &cluster_buff) {
-
+  const std::vector<std::vector<LiDARPoints_t>> & ordered_buff,
+  std::vector<std::vector<LiDARPoints_t>> & edge_buff, std::vector<ClusterFamily_t> & cluster_buff)
+{
   int n = _num_points_for_plane_feature;
   // clock_t start = clock();
   // TODO: if suddently partial excluded, it will cause errors
@@ -1340,31 +1322,29 @@ void LiDARTag::_gradientAndGroupEdges(
       }
       if (edge_flag == 1 || edge_flag == 3) {
         _clusterClassifier(ordered_buff[i][j], cluster_buff);
-        const auto &point1 = ordered_buff[i][j].point;
-        const auto &Point1L = ordered_buff[i][j - 1].point;
-        const auto &Point1R = ordered_buff[i][j + 1].point;
+        const auto & point1 = ordered_buff[i][j].point;
+        const auto & Point1L = ordered_buff[i][j - 1].point;
+        const auto & Point1R = ordered_buff[i][j + 1].point;
         double DepthGrad1 = std::abs(
-            (Point1L.getVector3fMap() - point1.getVector3fMap()).norm() -
-            (point1.getVector3fMap() - Point1R.getVector3fMap()).norm());
+          (Point1L.getVector3fMap() - point1.getVector3fMap()).norm() -
+          (point1.getVector3fMap() - Point1R.getVector3fMap()).norm());
 
         // push the detected point that is an edge into a buff
-        LiDARPoints_t lidar_points = {ordered_buff[i][j].point,
-                                      ordered_buff[i][j].index, 1, DepthGrad1,
-                                      0};
+        LiDARPoints_t lidar_points = {ordered_buff[i][j].point, ordered_buff[i][j].index, 1,
+                                      DepthGrad1, 0};
         edge_buff[i].push_back(lidar_points);
       }
       if (edge_flag == 2 || edge_flag == 3) {
         _clusterClassifier(ordered_buff[i][j + n - 1], cluster_buff);
-        const auto &point2 = ordered_buff[i][j + n - 1].point;
-        const auto &Point2L = ordered_buff[i][j + n - 2].point;
-        const auto &Point2R = ordered_buff[i][j + n].point;
+        const auto & point2 = ordered_buff[i][j + n - 1].point;
+        const auto & Point2L = ordered_buff[i][j + n - 2].point;
+        const auto & Point2R = ordered_buff[i][j + n].point;
         double DepthGrad2 = std::abs(
-            (Point2L.getVector3fMap() - point2.getVector3fMap()).norm() -
-            (point2.getVector3fMap() - Point2R.getVector3fMap()).norm());
+          (Point2L.getVector3fMap() - point2.getVector3fMap()).norm() -
+          (point2.getVector3fMap() - Point2R.getVector3fMap()).norm());
         // push the detected point that is an edge into a buff
         LiDARPoints_t lidar_points = {ordered_buff[i][j + n - 1].point,
-                                      ordered_buff[i][j + n - 1].index, 1,
-                                      DepthGrad2, 0};
+                                      ordered_buff[i][j + n - 1].index, 1, DepthGrad2, 0};
         edge_buff[i].push_back(lidar_points);
       }
     }
@@ -1436,44 +1416,40 @@ void LiDARTag::_gradientAndGroupEdges(
  * (2) find edge points from two side points of these points
  */
 int LiDARTag::_getEdgePoints(
-    const std::vector<std::vector<LiDARPoints_t>> &ordered_buff, int i, int j,
-    int n) {
-  const auto &point = ordered_buff[i][j].point;
-  if (std::abs(point.x) > _distance_bound ||
-      std::abs(point.y) > _distance_bound ||
-      std::abs(point.z) > _distance_bound)
+  const std::vector<std::vector<LiDARPoints_t>> & ordered_buff, int i, int j, int n)
+{
+  const auto & point = ordered_buff[i][j].point;
+  if (
+    std::abs(point.x) > _distance_bound || std::abs(point.y) > _distance_bound ||
+    std::abs(point.z) > _distance_bound)
     return 0;
 
   // cout << "average on " << i << " ring: " <<
   //     _LiDAR_system.ring_average_table[i].average << endl;
 
-  double point_resolution =
-      2 * M_PI / _LiDAR_system.ring_average_table[i].average;
+  double point_resolution = 2 * M_PI / _LiDAR_system.ring_average_table[i].average;
   double near_bound =
-      std::max(0.1, _nearby_factor * point.getVector3fMap().norm() *
-                        std::sin(point_resolution));
+    std::max(0.1, _nearby_factor * point.getVector3fMap().norm() * std::sin(point_resolution));
   // cout << "near bound: " << near_bound << endl;
   // double near_bound =  _nearby_factor;
   for (int k = 0; k < n - 1; k++) {
-    const auto &point1 = ordered_buff[i][j + k].point;
-    const auto &point2 = ordered_buff[i][j + k + 1].point;
-    double distance =
-        (point1.getVector3fMap() - point2.getVector3fMap()).norm();
+    const auto & point1 = ordered_buff[i][j + k].point;
+    const auto & point2 = ordered_buff[i][j + k + 1].point;
+    double distance = (point1.getVector3fMap() - point2.getVector3fMap()).norm();
     // if (distance > near_bound)
-    if (distance > near_bound)
-      return 0;
+    if (distance > near_bound) return 0;
   }
-  const auto &point2 = ordered_buff[i][j + n - 1].point;
-  const auto &PointL = ordered_buff[i][j - 1].point;
-  const auto &PointR = ordered_buff[i][j + 1].point;
-  const auto &Point2L = ordered_buff[i][j + n - 2].point;
-  const auto &Point2R = ordered_buff[i][j + n].point;
-  double DepthGrad1 =
-      std::abs((PointL.getVector3fMap() - point.getVector3fMap()).norm() -
-               (point.getVector3fMap() - PointR.getVector3fMap()).norm());
-  double DepthGrad2 =
-      std::abs((Point2L.getVector3fMap() - point2.getVector3fMap()).norm() -
-               (point2.getVector3fMap() - Point2R.getVector3fMap()).norm());
+  const auto & point2 = ordered_buff[i][j + n - 1].point;
+  const auto & PointL = ordered_buff[i][j - 1].point;
+  const auto & PointR = ordered_buff[i][j + 1].point;
+  const auto & Point2L = ordered_buff[i][j + n - 2].point;
+  const auto & Point2R = ordered_buff[i][j + n].point;
+  double DepthGrad1 = std::abs(
+    (PointL.getVector3fMap() - point.getVector3fMap()).norm() -
+    (point.getVector3fMap() - PointR.getVector3fMap()).norm());
+  double DepthGrad2 = std::abs(
+    (Point2L.getVector3fMap() - point2.getVector3fMap()).norm() -
+    (point2.getVector3fMap() - Point2R.getVector3fMap()).norm());
   if (DepthGrad1 > _depth_threshold) {
     if (DepthGrad2 > _depth_threshold) {
       return 3;
@@ -1499,8 +1475,9 @@ int LiDARTag::_getEdgePoints(
  *     with the average value
  */
 void LiDARTag::_fillInCluster(
-    const std::vector<std::vector<LiDARPoints_t>> &ordered_buff,
-    std::vector<ClusterFamily_t> &cluster_buff) {
+  const std::vector<std::vector<LiDARPoints_t>> & ordered_buff,
+  std::vector<ClusterFamily_t> & cluster_buff)
+{
   std::ofstream fplanefit;
   if (_log_data) {
     std::string path(_outputs_path);
@@ -1527,8 +1504,7 @@ void LiDARTag::_fillInCluster(
       int min_index = cluster_buff[i].max_min_index_of_each_ring[j].min;
 
       // no points on this ring
-      if ((std::abs(min_index - 1e5) < 1e-5) ||
-          std::abs(max_index + 1) < 1e-5) {
+      if ((std::abs(min_index - 1e5) < 1e-5) || std::abs(max_index + 1) < 1e-5) {
         continue;
       }
 
@@ -1571,17 +1547,15 @@ void LiDARTag::_fillInCluster(
       }
     }
     if (_debug_time) {
-      _timing.fill_in_time += utils::spendElapsedTimeMilli(
-          std::chrono::steady_clock::now(), _timing.timing);
+      _timing.fill_in_time +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _timing.timing);
       _timing.timing = std::chrono::steady_clock::now();
     }
 
     // Mark cluster as invalid if too few points in cluster
     auto min_returns =
-        _min_returns_per_grid *
-        std::pow((std::sqrt(_tag_family) + 2 * _black_border), 2);
-    if ((cluster_buff[i].data.size() + cluster_buff[i].edge_points.size()) <
-        min_returns) {
+      _min_returns_per_grid * std::pow((std::sqrt(_tag_family) + 2 * _black_border), 2);
+    if ((cluster_buff[i].data.size() + cluster_buff[i].edge_points.size()) < min_returns) {
       _result_statistics.cluster_removal.minimum_return++;
       _result_statistics.remaining_cluster_size--;
 
@@ -1594,14 +1568,14 @@ void LiDARTag::_fillInCluster(
     }
 
     // Mark cluster as invalid if too many points in cluster
-    _maxPointsCheck(cluster_buff[i]);
+    cluster_buff[i].expected_points = _maxPointsCheck(cluster_buff[i]);
     if (cluster_buff[i].valid == false) {
       // tbb::task::self().cancel_group_execution();
       continue;
     }
     if (_debug_time) {
-      _timing.point_check_time += utils::spendElapsedTimeMilli(
-          std::chrono::steady_clock::now(), _timing.timing);
+      _timing.point_check_time +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _timing.timing);
       _timing.timing = std::chrono::steady_clock::now();
     }
 
@@ -1611,11 +1585,10 @@ void LiDARTag::_fillInCluster(
     } else {
       pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
       pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
-      if (!_rejectWithPlanarCheck(cluster_buff[i], inliers, coefficients,
-                                  fplanefit)) {
+      if (!_rejectWithPlanarCheck(cluster_buff[i], inliers, coefficients, fplanefit)) {
         if (_mark_cluster_validity) {
           cluster_buff[i].valid = false;
-          cluster_buff[i].detail_valid = 2;
+          cluster_buff[i].detail_valid = 3;
         }
         // tbb::task::self().cancel_group_execution();
         continue;
@@ -1623,40 +1596,36 @@ void LiDARTag::_fillInCluster(
       inlier_size = inliers->indices.size();
       // Mark cluster as invalid if too many outliers in plane fitting
       auto percentage_inliers =
-          inliers->indices.size() / double(cluster_buff[i].data.size() +
-                                           cluster_buff[i].edge_points.size());
+        inliers->indices.size() /
+        double(cluster_buff[i].data.size() + cluster_buff[i].edge_points.size());
       cluster_buff[i].percentages_inliers = percentage_inliers;
 
       if (_debug_info) {
         ROS_DEBUG_STREAM("==== _planeOutliers ====");
-        float distance = std::sqrt(pow(cluster_buff[i].average.x, 2) +
-                                   pow(cluster_buff[i].average.y, 2) +
-                                   pow(cluster_buff[i].average.z, 2));
+        float distance = std::sqrt(
+          pow(cluster_buff[i].average.x, 2) + pow(cluster_buff[i].average.y, 2) +
+          pow(cluster_buff[i].average.z, 2));
         ROS_DEBUG_STREAM("Distance : " << distance);
         ROS_DEBUG_STREAM(
-            "Actual Points: " << cluster_buff[i].data.size() +
-                                     cluster_buff[i].edge_points.size());
+          "Actual Points: " << cluster_buff[i].data.size() + cluster_buff[i].edge_points.size());
       }
 
       if (percentage_inliers < (1.0 - _max_outlier_ratio)) {
-        if (_debug_info)
-          ROS_DEBUG_STREAM("Status: " << false);
+        if (_debug_info) ROS_DEBUG_STREAM("Status: " << false);
         // tbb::task::self().cancel_group_execution();
         _result_statistics.cluster_removal.plane_outliers++;
         _result_statistics.remaining_cluster_size--;
         if (_mark_cluster_validity) {
           cluster_buff[i].valid = false;
-          cluster_buff[i].detail_valid = 3;
+          cluster_buff[i].detail_valid = 4;
           continue;
         }
       }
-      if (_debug_info)
-        ROS_DEBUG_STREAM("Status: " << true);
+      if (_debug_info) ROS_DEBUG_STREAM("Status: " << true);
 
       // Remove all outliers from cluster
       auto outliers_indices = utils::complementOfSet(
-          inliers->indices,
-          (cluster_buff[i].data.size() + cluster_buff[i].edge_points.size()));
+        inliers->indices, (cluster_buff[i].data.size() + cluster_buff[i].edge_points.size()));
       int edge_inlier = cluster_buff[i].edge_points.size();
       for (int k = 0; k < outliers_indices.size(); ++k) {
         int out_index = outliers_indices[k];
@@ -1664,15 +1633,13 @@ void LiDARTag::_fillInCluster(
           edge_inlier -= 1;
           cluster_buff[i].edge_points[out_index].valid = 0;
         } else {
-          cluster_buff[i]
-              .data[out_index - cluster_buff[i].edge_points.size()]
-              .valid = 0;
+          cluster_buff[i].data[out_index - cluster_buff[i].edge_points.size()].valid = 0;
         }
       }
       cluster_buff[i].edge_inliers = edge_inlier;
       if (_debug_time) {
-        _timing.plane_fitting_removal_time += utils::spendElapsedTimeMilli(
-            std::chrono::steady_clock::now(), _timing.timing);
+        _timing.plane_fitting_removal_time +=
+          utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _timing.timing);
         _timing.timing = std::chrono::steady_clock::now();
       }
     }
@@ -1710,8 +1677,7 @@ void LiDARTag::_fillInCluster(
     } else {
       if (_print_ros_info || _debug_info) {
         ROS_INFO_STREAM("--ID: " << cluster_buff[i].cluster_id);
-        ROS_INFO_STREAM(
-            "---rotation: " << cluster_buff[i].rkhs_decoding.rotation_angle);
+        ROS_INFO_STREAM("---rotation: " << cluster_buff[i].rkhs_decoding.rotation_angle);
       }
     }
     // }
@@ -1736,8 +1702,7 @@ void LiDARTag::_fillInCluster(
 
   // // Publish edge points in large clusters
   // LiDARTag::_publishPC(ClusterEdgePC, _pub_frame, string("clusteredgepc"));
-  if (_log_data)
-    fplanefit.close();
+  if (_log_data) fplanefit.close();
 }
 
 /* <A cluster>
@@ -1748,24 +1713,24 @@ void LiDARTag::_fillInCluster(
  *     tag_edges vector so as to do regression boundary lines
  * (3) It will *remove* if linefitting fails
  */
-bool LiDARTag::_adaptiveThresholding(ClusterFamily_t &cluster) {
+bool LiDARTag::_adaptiveThresholding(ClusterFamily_t & cluster)
+{
   if (_debug_time) {
     _timing.timing = std::chrono::steady_clock::now();
   }
   _organizeDataPoints(cluster);
   if (_debug_time) {
-    _timing.organize_points_time += utils::spendElapsedTimeMilli(
-        std::chrono::steady_clock::now(), _timing.timing);
+    _timing.organize_points_time +=
+      utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _timing.timing);
     _timing.timing = std::chrono::steady_clock::now();
   }
 
   if (!LiDARTag::_detectPayloadBoundries(cluster)) {
     // removal has been done inside the function
     if (_debug_time) {
-      _timing.line_fitting_time += utils::spendElapsedTimeMilli(
-          std::chrono::steady_clock::now(), _timing.timing);
+      _timing.line_fitting_time +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _timing.timing);
     }
-    cluster.detail_valid = 4;
     return false;
   } else {
     // TODO: calculate the average of edge points
@@ -1803,15 +1768,14 @@ bool LiDARTag::_adaptiveThresholding(ClusterFamily_t &cluster) {
     //     }
     // }
     if (_debug_time) {
-      _timing.pca_time += utils::spendElapsedTimeMilli(
-          std::chrono::steady_clock::now(), _timing.timing);
+      _timing.pca_time +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _timing.timing);
       _timing.timing = std::chrono::steady_clock::now();
     }
     // Fit line of the cluster
     if (!_transformSplitEdges(cluster)) {
       _result_statistics.cluster_removal.line_fitting++;
       _result_statistics.remaining_cluster_size--;
-      cluster.detail_valid = 5;
       return false;
     }
     // cout << "after split edge poins" << endl;
@@ -1828,8 +1792,8 @@ bool LiDARTag::_adaptiveThresholding(ClusterFamily_t &cluster) {
     //     }
     // }
     if (_debug_time) {
-      _timing.split_edge_time += utils::spendElapsedTimeMilli(
-          std::chrono::steady_clock::now(), _timing.timing);
+      _timing.split_edge_time +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _timing.timing);
       _timing.timing = std::chrono::steady_clock::now();
     }
 
@@ -1869,20 +1833,20 @@ bool LiDARTag::_adaptiveThresholding(ClusterFamily_t &cluster) {
         // cout << "about to return false after _optimizePose" <<
         // endl;
         //   cout << "pose optimization rejeted" << std::endl;
-        cluster.detail_valid = 6;
+        cluster.detail_valid = 13;
         return false;
       } else {
         if (_debug_time) {
-          _timing.pose_optimization_time += utils::spendElapsedTimeMilli(
-              std::chrono::steady_clock::now(), _timing.timing);
+          _timing.pose_optimization_time +=
+            utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _timing.timing);
           _timing.timing = std::chrono::steady_clock::now();
         }
 
         // cout << "about to store template points" << endl;
         _storeTemplatePts(cluster);
         if (_debug_time) {
-          _timing.store_template_time += utils::spendElapsedTimeMilli(
-              std::chrono::steady_clock::now(), _timing.timing);
+          _timing.store_template_time +=
+            utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _timing.timing);
           _timing.timing = std::chrono::steady_clock::now();
         }
 
@@ -1890,22 +1854,19 @@ bool LiDARTag::_adaptiveThresholding(ClusterFamily_t &cluster) {
           _assignClusterPose(cluster.pose_tag_to_lidar, cluster.pose, 0);
           return true;
         } else {
-          // cout << "about to deocde" << endl;
           if (!LiDARTag::_decodePayload(cluster)) {
             _result_statistics.cluster_removal.decoding_failure++;
             _result_statistics.remaining_cluster_size--;
-            // cout << "about to return false after deocding" << endl;
-            cluster.detail_valid = 7;
+            cluster.detail_valid = 14;
             return false;
           } else {
             if (_debug_time) {
-              _timing.payload_decoding_time += utils::spendElapsedTimeMilli(
-                  std::chrono::steady_clock::now(), _timing.timing);
+              _timing.payload_decoding_time +=
+                utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _timing.timing);
               _timing.timing = std::chrono::steady_clock::now();
             }
-            // cout << "about to assign pose" << endl;
-            _assignClusterPose(cluster.pose_tag_to_lidar, cluster.pose,
-                               cluster.rkhs_decoding.rotation_angle);
+            _assignClusterPose(
+              cluster.pose_tag_to_lidar, cluster.pose, cluster.rkhs_decoding.rotation_angle);
             return true;
           }
         }
@@ -2017,8 +1978,9 @@ bool LiDARTag::_adaptiveThresholding(ClusterFamily_t &cluster) {
  * A function to assign the pose to the cluster using the results of
  * L1-optimization and RKHS decoding results
  */
-void LiDARTag::_assignClusterPose(const Homogeneous_t &H_TL,
-                                  Homogeneous_t &H_LT, const int &ang_num) {
+void LiDARTag::_assignClusterPose(
+  const Homogeneous_t & H_TL, Homogeneous_t & H_LT, const int & ang_num)
+{
   float rotation_angle = -ang_num * 90;
   Eigen::Vector3f trans_v = Eigen::Vector3f::Zero(3);
   Eigen::Vector3f rot_v;
@@ -2028,8 +1990,7 @@ void LiDARTag::_assignClusterPose(const Homogeneous_t &H_TL,
   H_LT.homogeneous = (H * H_TL.homogeneous).inverse();
   H_LT.rotation = H_LT.homogeneous.topLeftCorner(3, 3);
   H_LT.translation = H_LT.homogeneous.topRightCorner(3, 1);
-  Eigen::Vector3f euler =
-      H_LT.rotation.eulerAngles(0, 1, 2); // x,y,z convention
+  Eigen::Vector3f euler = H_LT.rotation.eulerAngles(0, 1, 2);  // x,y,z convention
   H_LT.roll = euler[0];
   H_LT.pitch = euler[1];
   H_LT.yaw = euler[2];
@@ -2042,16 +2003,15 @@ void LiDARTag::_assignClusterPose(const Homogeneous_t &H_TL,
 /* <A cluster>
  * A function to store transformed points
  */
-void LiDARTag::_storeTemplatePts(ClusterFamily_t &cluster) {
+void LiDARTag::_storeTemplatePts(ClusterFamily_t & cluster)
+{
   cluster.rkhs_decoding.initial_template_points =
-      cluster.initial_pose.homogeneous * cluster.merged_data_h;
-  cluster.rkhs_decoding.initial_template_points.bottomRows(1) =
-      cluster.merged_data.bottomRows(1);
+    cluster.initial_pose.homogeneous * cluster.merged_data_h;
+  cluster.rkhs_decoding.initial_template_points.bottomRows(1) = cluster.merged_data.bottomRows(1);
 
   cluster.rkhs_decoding.template_points =
-      cluster.pose_tag_to_lidar.homogeneous * cluster.merged_data_h;
-  cluster.rkhs_decoding.template_points.bottomRows(1) =
-      cluster.merged_data.bottomRows(1);
+    cluster.pose_tag_to_lidar.homogeneous * cluster.merged_data_h;
+  cluster.rkhs_decoding.template_points.bottomRows(1) = cluster.merged_data.bottomRows(1);
 
   // cluster.rkhs_decoding.template_points.topRows(3) =
   //     cluster.merged_data.topRows(3);
@@ -2103,10 +2063,10 @@ void LiDARTag::_storeTemplatePts(ClusterFamily_t &cluster) {
 
 /* A function to publish pose of tag to the robot
  */
-void LiDARTag::_tagToRobot(const int &cluster_id,
-                           const Eigen::Vector3f &normal_vec,
-                           Homogeneous_t &pose, tf::Transform &transform,
-                           const PointXYZRI &ave) {
+void LiDARTag::_tagToRobot(
+  const int & cluster_id, const Eigen::Vector3f & normal_vec, Homogeneous_t & pose,
+  tf::Transform & transform, const PointXYZRI & ave)
+{
   Eigen::Vector3f x(1, 0, 0);
   Eigen::Vector3f y(0, 1, 0);
   Eigen::Vector3f z(0, 0, 1);
@@ -2137,31 +2097,28 @@ void LiDARTag::_tagToRobot(const int &cluster_id,
   // Eigen::Vector3f qi_camera_frame = qr_w*normal_vec + 0*qr +
   // qr.cross(normal_vec); // 0 is q.w of normalvec float qw_camera_frame =
   // qr_w*0 - qr.dot(normal_vec); // 0 is q.w of normalvec
-  Eigen::Vector3f qi_camera_frame =
-      normal_vec + 2 * qr_w * (qr.cross(normal_vec)) +
-      2 * qr.cross(qr.cross(normal_vec)); // 0 is q.w of normalvec
-  float qw_camera_frame = 0;              // 0 is q.w of normalvec
+  Eigen::Vector3f qi_camera_frame = normal_vec + 2 * qr_w * (qr.cross(normal_vec)) +
+                                    2 * qr.cross(qr.cross(normal_vec));  // 0 is q.w of normalvec
+  float qw_camera_frame = 0;                                             // 0 is q.w of normalvec
 
   Eigen::Vector3f q_i = qi_camera_frame;
   double q_w = qw_camera_frame;
-  double norm = std::sqrt(std::pow(q_i(0), 2) + std::pow(q_i(1), 2) +
-                          std::pow(q_i(2), 2) + std::pow(q_w, 2));
+  double norm =
+    std::sqrt(std::pow(q_i(0), 2) + std::pow(q_i(1), 2) + std::pow(q_i(2), 2) + std::pow(q_w, 2));
   q_i = (q_i / norm).eval();
   q_w = q_w / norm;
   tf::Quaternion q(q_i(0), q_i(1), q_i(2), q_w);
   transform.setRotation(q);
-  broadcaster_.sendTransform(
-      tf::StampedTransform(transform, _point_cloud_header.stamp, _pub_frame,
-                           to_string(cluster_id) + "_rotated"));
+  broadcaster_.sendTransform(tf::StampedTransform(
+    transform, _point_cloud_header.stamp, _pub_frame, to_string(cluster_id) + "_rotated"));
 
   tf::Quaternion q2(normal_vec(0), normal_vec(1), normal_vec(2), 0);
   transform.setRotation(q2);
-  broadcaster_.sendTransform(
-      tf::StampedTransform(transform, _point_cloud_header.stamp, _pub_frame,
-                           "LiDARTag-ID" + to_string(cluster_id)));
+  broadcaster_.sendTransform(tf::StampedTransform(
+    transform, _point_cloud_header.stamp, _pub_frame, "LiDARTag-ID" + to_string(cluster_id)));
 
   // publish lidar tag pose
-  lidartag_msgs::LiDARTagDetection lidartag_msg; // single message
+  lidartag_msgs::LiDARTagDetection lidartag_msg;  // single message
   lidartag_msg.id = cluster_id;
   lidartag_msg.size = _payload_size;
   geometry_msgs::Quaternion geo_q;
@@ -2180,8 +2137,7 @@ void LiDARTag::_tagToRobot(const int &cluster_id,
   lidartag_msg.pose.position.z = ave.z;
   lidartag_msg.pose.orientation = geo_q;
   lidartag_msg.header = _point_cloud_header;
-  lidartag_msg.header.frame_id =
-      std::string("lidartag_") + to_string(cluster_id);
+  lidartag_msg.header.frame_id = std::string("lidartag_") + to_string(cluster_id);
   lidartag_msg.frame_index = _point_cloud_header.seq;
   _lidartag_pose_array.header = _point_cloud_header;
   _lidartag_pose_array.frame_index = _point_cloud_header.seq;
@@ -2262,7 +2218,8 @@ void LiDARTag::_tagToRobot(const int &cluster_id,
  * 4. Organize "data" points only for boundry detection. When detecting
  *    boundaries, we don't care about PoI.
  */
-void LiDARTag::_organizeDataPoints(ClusterFamily_t &cluster) {
+void LiDARTag::_organizeDataPoints(ClusterFamily_t & cluster)
+{
   cluster.ordered_points_ptr.resize(_beam_num);
 
   cluster.merged_data.resize(4, cluster.inliers);
@@ -2274,12 +2231,10 @@ void LiDARTag::_organizeDataPoints(ClusterFamily_t &cluster) {
   float z_mean = 0;
   float i_mean = 0;
   for (int i = 0; i < cluster.edge_points.size(); ++i) {
-    if (cluster.edge_points[i].valid != 1)
-      continue;
+    if (cluster.edge_points[i].valid != 1) continue;
     _PointXYZRIToEigenVector(cluster.edge_points[i].point, cur_vec);
     cluster.merged_data.col(eigenpc_index) = cur_vec;
-    cluster.merged_data_h.col(eigenpc_index) << cur_vec(0), cur_vec(1),
-        cur_vec(2), 1;
+    cluster.merged_data_h.col(eigenpc_index) << cur_vec(0), cur_vec(1), cur_vec(2), 1;
     x_mean += cur_vec[0];
     y_mean += cur_vec[1];
     z_mean += cur_vec[2];
@@ -2304,24 +2259,21 @@ void LiDARTag::_organizeDataPoints(ClusterFamily_t &cluster) {
     // }
   }
   for (int i = 0; i < cluster.data.size(); ++i) {
-    if (cluster.data[i].valid != 1)
-      continue;
+    if (cluster.data[i].valid != 1) continue;
     _PointXYZRIToEigenVector(cluster.data[i].point, cur_vec);
     cluster.merged_data.col(eigenpc_index) = cur_vec;
-    cluster.merged_data_h.col(eigenpc_index) << cur_vec(0), cur_vec(1),
-        cur_vec(2), 1;
+    cluster.merged_data_h.col(eigenpc_index) << cur_vec(0), cur_vec(1), cur_vec(2), 1;
     x_mean += cur_vec[0];
     y_mean += cur_vec[1];
     z_mean += cur_vec[2];
     i_mean += cur_vec[3];
     eigenpc_index += 1;
 
-    LiDARPoints_t *ClusterPointPtr = &cluster.data[i];
+    LiDARPoints_t * ClusterPointPtr = &cluster.data[i];
     // ClusterPointPtr->point.intensity =
     //     cluster.data[i].point.intensity /
     //     cluster.max_intensity.intensity;
-    cluster.ordered_points_ptr[ClusterPointPtr->point.ring].push_back(
-        ClusterPointPtr);
+    cluster.ordered_points_ptr[ClusterPointPtr->point.ring].push_back(ClusterPointPtr);
 
     // if (isnan(cluster.merged_data(0, eigenpc_index)) ||
     //     isnan(cluster.merged_data(1, eigenpc_index)) ||
@@ -2345,8 +2297,9 @@ void LiDARTag::_organizeDataPoints(ClusterFamily_t &cluster) {
   cluster.rkhs_decoding.ave_intensity = cluster.average.intensity;
 
   for (int ring = 0; ring < _beam_num; ++ring) {
-    sort(cluster.ordered_points_ptr[ring].begin(),
-         cluster.ordered_points_ptr[ring].end(), utils::compareIndex);
+    sort(
+      cluster.ordered_points_ptr[ring].begin(), cluster.ordered_points_ptr[ring].end(),
+      utils::compareIndex);
   }
 
   // cluster.average.x = cluster.merged_data.row(0).mean();
@@ -2392,27 +2345,26 @@ void LiDARTag::_organizeDataPoints(ClusterFamily_t &cluster) {
  * (ii) For another half of the rings, we just find the start index and add the
  *      average number of points to the payload points
  */
-void LiDARTag::_extractPayloadWOThreshold(ClusterFamily_t &cluster) {
-  int last_round_length = 0; // Save to recover a missing ring
+void LiDARTag::_extractPayloadWOThreshold(ClusterFamily_t & cluster)
+{
+  int last_round_length = 0;  // Save to recover a missing ring
   PointXYZRI average{0, 0, 0, 0};
   for (int ring = 0; ring < _beam_num; ++ring) {
-
     // if (cluster.payload_right_boundary_ptr[ring]!=0)
     //     cluster.payload_boundary_ptr.push_back(cluster.payload_right_boundary_ptr[ring]);
 
     // if (cluster.payload_left_boundary_ptr[ring]!=0)
     //     cluster.payload_boundary_ptr.push_back(cluster.payload_left_boundary_ptr[ring]);
 
-    if (cluster.payload_right_boundary_ptr[ring] == 0 &&
-        cluster.payload_left_boundary_ptr[ring] == 0)
+    if (
+      cluster.payload_right_boundary_ptr[ring] == 0 && cluster.payload_left_boundary_ptr[ring] == 0)
       continue;
     // cout << "ring" << ring << endl;
-    else if (cluster.payload_right_boundary_ptr[ring] != 0 &&
-             cluster.payload_left_boundary_ptr[ring] != 0) {
-      cluster.payload_boundary_ptr.push_back(
-          cluster.payload_right_boundary_ptr[ring]);
-      cluster.payload_boundary_ptr.push_back(
-          cluster.payload_left_boundary_ptr[ring]);
+    else if (
+      cluster.payload_right_boundary_ptr[ring] != 0 &&
+      cluster.payload_left_boundary_ptr[ring] != 0) {
+      cluster.payload_boundary_ptr.push_back(cluster.payload_right_boundary_ptr[ring]);
+      cluster.payload_boundary_ptr.push_back(cluster.payload_left_boundary_ptr[ring]);
       int StartIndex = cluster.payload_left_boundary_ptr[ring]->index;
       int EndIndex = cluster.payload_right_boundary_ptr[ring]->index;
       last_round_length = EndIndex - StartIndex;
@@ -2421,10 +2373,9 @@ void LiDARTag::_extractPayloadWOThreshold(ClusterFamily_t &cluster) {
         if (cluster.ordered_points_ptr[ring][j]->index == StartIndex) {
           // Remove index itself because itself is not the part of a
           // payload
-          for (int k = j + 1; k < j + (EndIndex - StartIndex);
-               ++k) { // since start from 0
+          for (int k = j + 1; k < j + (EndIndex - StartIndex); ++k) {  // since start from 0
             if (k >= cluster.ordered_points_ptr[ring].size())
-              break; // make sure the index is valid
+              break;  // make sure the index is valid
             // cout << "j: " << j << endl;
             // cout << "k: " << k << endl;
             // cout << "validation1: " << endl;
@@ -2502,7 +2453,8 @@ void LiDARTag::_extractPayloadWOThreshold(ClusterFamily_t &cluster) {
  *    Two white points on each side.
  *     ooxoo
  */
-bool LiDARTag::_detectPayloadBoundries(ClusterFamily_t &cluster) {
+bool LiDARTag::_detectPayloadBoundries(ClusterFamily_t & cluster)
+{
   cluster.payload_right_boundary_ptr.resize(_beam_num);
   cluster.payload_left_boundary_ptr.resize(_beam_num);
   bool boundary_flag = true;
@@ -2512,13 +2464,12 @@ bool LiDARTag::_detectPayloadBoundries(ClusterFamily_t &cluster) {
   cluster.tag_edges.upper_ring = _beam_num;
   cluster.tag_edges.lower_ring = 0;
 
-  double detection_threshold =
-      _payload_intensity_threshold * cluster.average.intensity / 2;
+  double detection_threshold = _payload_intensity_threshold * cluster.average.intensity / 2;
   // double detection_threshold =
   //     (cluster.average.intensity - cluster.min_intensity.intensity)/
   //     (_payload_intensity_threshold*cluster.max_intensity.intensity);
 
-  int boundary_piont_count = 0; // Check there're sufficient points
+  int boundary_piont_count = 0;  // Check there're sufficient points
   int num_valid_rings = 0;
 
   bool found_right_ring_boundary;
@@ -2540,26 +2491,24 @@ bool LiDARTag::_detectPayloadBoundries(ClusterFamily_t &cluster) {
     // Find edges from the left of a ring
     // Start from 1 becasue we take another point on the left into account
     // size -1 because we compare with next point
-    for (int P = 1; P < ceil((cluster.ordered_points_ptr[ring].size() - 1) / 2);
-         ++P) {
-
+    for (int P = 1; P < ceil((cluster.ordered_points_ptr[ring].size() - 1) / 2); ++P) {
       // (1) By knowing it from white to black on the left calucate the
       // intensity gradient
       // (2) Since have thresholded already, we could also choose > 255
       // (3) To determin if p if the edge:
       //     1. compare with p+1 (to its right)
 
-      if ((cluster.ordered_points_ptr[ring][P]->point.intensity -
-               cluster.ordered_points_ptr[ring][P + 1]->point.intensity >
-           detection_threshold) &&
-          (cluster.ordered_points_ptr[ring][P - 1]->point.intensity -
-               cluster.ordered_points_ptr[ring][P + 1]->point.intensity >
-           detection_threshold)) {
+      if (
+        (cluster.ordered_points_ptr[ring][P]->point.intensity -
+           cluster.ordered_points_ptr[ring][P + 1]->point.intensity >
+         detection_threshold) &&
+        (cluster.ordered_points_ptr[ring][P - 1]->point.intensity -
+           cluster.ordered_points_ptr[ring][P + 1]->point.intensity >
+         detection_threshold)) {
         // if ((cluster.ordered_points_ptr[ring][P]->point.intensity -
         //      cluster.ordered_points_ptr[ring][P+1]->point.intensity >
         //      detection_threshold)) {
-        cluster.payload_left_boundary_ptr[ring] =
-            cluster.ordered_points_ptr[ring][P];
+        cluster.payload_left_boundary_ptr[ring] = cluster.ordered_points_ptr[ring][P];
         boundary_piont_count++;
         found_left_ring_boundary = true;
         break;
@@ -2572,24 +2521,23 @@ bool LiDARTag::_detectPayloadBoundries(ClusterFamily_t &cluster) {
     // two points on the right -1  : because we compare with left point
     for (int P = cluster.ordered_points_ptr[ring].size() - 2;
          P > floor((cluster.ordered_points_ptr[ring].size() - 1) / 2); --P) {
-
       // (1) By knowing it from white to black on the left to calucate the
       // intensity gradient
       // (2) Since have thresholded already, we could also choose > 255
       // cluster.payload_right_boundary_ptr[ring] =
       // cluster.ordered_points_ptr[ring][P];
-      if ((cluster.ordered_points_ptr[ring][P]->point.intensity -
-               cluster.ordered_points_ptr[ring][P - 1]->point.intensity >
-           detection_threshold) &&
-          (cluster.ordered_points_ptr[ring][P + 1]->point.intensity -
-               cluster.ordered_points_ptr[ring][P - 1]->point.intensity >
-           detection_threshold)) {
+      if (
+        (cluster.ordered_points_ptr[ring][P]->point.intensity -
+           cluster.ordered_points_ptr[ring][P - 1]->point.intensity >
+         detection_threshold) &&
+        (cluster.ordered_points_ptr[ring][P + 1]->point.intensity -
+           cluster.ordered_points_ptr[ring][P - 1]->point.intensity >
+         detection_threshold)) {
         // if ((cluster.ordered_points_ptr[ring][P]->point.intensity -
         //      cluster.ordered_points_ptr[ring][P-1]->point.intensity >
         //      detection_threshold)) {
 
-        cluster.payload_right_boundary_ptr[ring] =
-            cluster.ordered_points_ptr[ring][P];
+        cluster.payload_right_boundary_ptr[ring] = cluster.ordered_points_ptr[ring][P];
         boundary_piont_count++;
         found_right_ring_boundary = true;
 
@@ -2611,21 +2559,20 @@ bool LiDARTag::_detectPayloadBoundries(ClusterFamily_t &cluster) {
     _result_statistics.cluster_removal.boundary_point_check++;
     _result_statistics.remaining_cluster_size--;
     boundary_flag = false;
-  } else if (num_valid_rings <
-             std::min(int(sqrt(_tag_family)), _minimum_ring_boundary_points)) {
+    cluster.detail_valid = 5;
+  } else if (num_valid_rings < std::min(int(sqrt(_tag_family)), _minimum_ring_boundary_points)) {
     _result_statistics.cluster_removal.minimum_ring_points++;
     _result_statistics.remaining_cluster_size--;
     ring_point_flag = false;
+    cluster.detail_valid = 6;
   }
 
   if (_debug_info) {
     ROS_DEBUG_STREAM("==== _detectPayloadBoundries ====");
     float distance =
-        std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.y, 2) +
-                  pow(cluster.average.z, 2));
+      std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.y, 2) + pow(cluster.average.z, 2));
     ROS_DEBUG_STREAM("Distance : " << distance);
-    ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() +
-                                              cluster.edge_points.size());
+    ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() + cluster.edge_points.size());
     ROS_DEBUG_STREAM("Boundary threshold : " << detection_threshold);
     ROS_DEBUG_STREAM("Boundary_piont_count : " << boundary_piont_count);
     ROS_DEBUG_STREAM("Num_valid_rings: " << num_valid_rings);
@@ -2635,11 +2582,11 @@ bool LiDARTag::_detectPayloadBoundries(ClusterFamily_t &cluster) {
   return boundary_flag && ring_point_flag;
 }
 
-Homogeneous_t LiDARTag::_estimatePose(ClusterFamily_t &cluster) {
+Homogeneous_t LiDARTag::_estimatePose(ClusterFamily_t & cluster)
+{
   Homogeneous_t pose;
   // translation  min sign
-  pose.translation << -cluster.average.x, -cluster.average.y,
-      -cluster.average.z;
+  pose.translation << -cluster.average.x, -cluster.average.y, -cluster.average.z;
 
   // rotation//
   Eigen::Vector3f x_axis(1, 0, 0);
@@ -2648,8 +2595,7 @@ Homogeneous_t LiDARTag::_estimatePose(ClusterFamily_t &cluster) {
 
   Eigen::Vector3f normal_vector = cluster.normal_vector;
   Eigen::Vector3f edge_vector = _estimateEdgeVector(cluster);
-  Eigen::Vector3f base_vector2 =
-      utils::cross_product(normal_vector, edge_vector);
+  Eigen::Vector3f base_vector2 = utils::cross_product(normal_vector, edge_vector);
 
   Eigen::Matrix3f V, W;
   V.col(0) = normal_vector;
@@ -2678,36 +2624,33 @@ Homogeneous_t LiDARTag::_estimatePose(ClusterFamily_t &cluster) {
   pose.homogeneous.topRightCorner(3, 1) = pose.translation;
   pose.homogeneous.row(3) << 0, 0, 0, 1;
   if (_debug_info) {
-    std::cout << "============================================================="
-              << std::endl;
+    std::cout << "=============================================================" << std::endl;
     std::cout << "estimate euler angle: \n"
-              << pose.roll * 180 / M_PI << "  " << pose.pitch * 180 / M_PI
-              << "  " << pose.yaw * 180 / M_PI << std::endl;
+              << pose.roll * 180 / M_PI << "  " << pose.pitch * 180 / M_PI << "  "
+              << pose.yaw * 180 / M_PI << std::endl;
     std::cout << "estimate transformation: \n" << pose.homogeneous << std::endl;
   }
 
   return pose;
 }
 
-Eigen::Vector3f LiDARTag::_estimateEdgeVector(ClusterFamily_t &cluster) {
+Eigen::Vector3f LiDARTag::_estimateEdgeVector(ClusterFamily_t & cluster)
+{
   if (_debug_info) {
     ROS_DEBUG_STREAM("==== _estimateEdgeVector ====");
     float distance =
-        std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.y, 2) +
-                  pow(cluster.average.z, 2));
+      std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.y, 2) + pow(cluster.average.z, 2));
     ROS_DEBUG_STREAM("Distance : " << distance);
-    ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() +
-                                              cluster.edge_points.size());
+    ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() + cluster.edge_points.size());
   }
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
   // cloud->points.resize(_beam_num);
   for (std::size_t i = 0; i < _beam_num; ++i) {
-    if (!cluster.payload_left_boundary_ptr[i])
-      continue;
-    pcl::PointXYZ p(cluster.payload_left_boundary_ptr[i]->point.x,
-                    cluster.payload_left_boundary_ptr[i]->point.y,
-                    cluster.payload_left_boundary_ptr[i]->point.z);
+    if (!cluster.payload_left_boundary_ptr[i]) continue;
+    pcl::PointXYZ p(
+      cluster.payload_left_boundary_ptr[i]->point.x, cluster.payload_left_boundary_ptr[i]->point.y,
+      cluster.payload_left_boundary_ptr[i]->point.z);
     cloud->points.push_back(p);
   }
   if (_debug_info) {
@@ -2735,11 +2678,10 @@ Eigen::Vector3f LiDARTag::_estimateEdgeVector(ClusterFamily_t &cluster) {
     }
   }
 
-  Eigen::Vector3f edge_vector(coefficients->values[3], coefficients->values[4],
-                              coefficients->values[5]);
+  Eigen::Vector3f edge_vector(
+    coefficients->values[3], coefficients->values[4], coefficients->values[5]);
   edge_vector.normalize();
-  if (edge_vector(2) < 0)
-    edge_vector = -edge_vector;
+  if (edge_vector(2) < 0) edge_vector = -edge_vector;
   if (_debug_info) {
     ROS_DEBUG_STREAM("Edge vector: " << edge_vector.transpose());
   }
@@ -2756,33 +2698,27 @@ Eigen::Vector3f LiDARTag::_estimateEdgeVector(ClusterFamily_t &cluster) {
  * associating four corner points with the corners of template
  * TODO: make this modular
  */
-bool LiDARTag::_transformSplitEdges(ClusterFamily_t &cluster) {
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1(
-      new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2(
-      new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud3(
-      new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud4(
-      new pcl::PointCloud<pcl::PointXYZ>);
+bool LiDARTag::_transformSplitEdges(ClusterFamily_t & cluster)
+{
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud3(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud4(new pcl::PointCloud<pcl::PointXYZ>);
 
-  pcl::PointCloud<PointXYZRI>::Ptr TransformedPC(
-      new pcl::PointCloud<PointXYZRI>);
+  pcl::PointCloud<PointXYZRI>::Ptr TransformedPC(new pcl::PointCloud<PointXYZRI>);
   TransformedPC->reserve(_point_cloud_size);
   TransformedPC->clear();
 
-  pcl::PointCloud<PointXYZRI>::Ptr TransformedPCTag(
-      new pcl::PointCloud<PointXYZRI>);
+  pcl::PointCloud<PointXYZRI>::Ptr TransformedPCTag(new pcl::PointCloud<PointXYZRI>);
   TransformedPCTag->reserve(_point_cloud_size);
   TransformedPCTag->clear();
 
-  pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_edge_pc(
-      new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_edge_pc(new pcl::PointCloud<pcl::PointXYZ>);
   transformed_edge_pc->reserve(_point_cloud_size);
   transformed_edge_pc->clear();
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr before_transformed_edge_pc(
-      new pcl::PointCloud<pcl::PointXYZ>);
+    new pcl::PointCloud<pcl::PointXYZ>);
   before_transformed_edge_pc->resize(cluster.edge_points.size());
 
   // separate edge points into 4 groups
@@ -2798,14 +2734,12 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t &cluster) {
   _before_transformed_edge_pc_pub.publish(before_transformed_edge_pc_msg);
 
   for (int i = 0; i < cluster.edge_points.size(); ++i) {
-    if (cluster.edge_points[i].valid != 1)
-      continue;
+    if (cluster.edge_points[i].valid != 1) continue;
     Eigen::Vector3f edge_point(
-        cluster.edge_points[i].point.x - cluster.average.x,
-        cluster.edge_points[i].point.y - cluster.average.y,
-        cluster.edge_points[i].point.z - cluster.average.z);
-    Eigen::Matrix<float, 3, 3, Eigen::DontAlign> transform_matrix =
-        cluster.principal_axes;
+      cluster.edge_points[i].point.x - cluster.average.x,
+      cluster.edge_points[i].point.y - cluster.average.y,
+      cluster.edge_points[i].point.z - cluster.average.z);
+    Eigen::Matrix<float, 3, 3, Eigen::DontAlign> transform_matrix = cluster.principal_axes;
     // cluster.principal_axes << -0.866, 0.180, -0.466, -0.492, -0.130, 0.861,
     //     0.095, 0.975, 0.201;
     // Eigen::Matrix<float, 3, 3, Eigen::DontAlign> transform_matrix;
@@ -2846,17 +2780,16 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t &cluster) {
 
   if (_debug_info) {
     ROS_DEBUG_STREAM("==== _transformSplitEdges ====");
-    float distance =
-        std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.z, 2));
+    float distance = std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.z, 2));
     ROS_DEBUG_STREAM("Distance : " << distance);
-    ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() +
-                                              cluster.edge_points.size());
+    ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() + cluster.edge_points.size());
   }
   int num_edge_points = 3;
-  if (cloud1->size() < num_edge_points || cloud2->size() < num_edge_points ||
-      cloud3->size() < num_edge_points || cloud4->size() < num_edge_points) {
-    if (_debug_info)
-      ROS_DEBUG_STREAM("Status: " << false);
+  if (
+    cloud1->size() < num_edge_points || cloud2->size() < num_edge_points ||
+    cloud3->size() < num_edge_points || cloud4->size() < num_edge_points) {
+    if (_debug_info) ROS_DEBUG_STREAM("Status: " << false);
+    cluster.detail_valid = 7;
     return false;
   }
 
@@ -2889,14 +2822,10 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t &cluster) {
   Eigen::Vector4f line2;
   Eigen::Vector4f line3;
   Eigen::Vector4f line4;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud1(
-      new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud2(
-      new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud3(
-      new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud4(
-      new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud1(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud2(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud3(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr line_cloud4(new pcl::PointCloud<pcl::PointXYZ>);
   line_cloud1->reserve(_point_cloud_size);
   line_cloud1->clear();
   line_cloud2->reserve(_point_cloud_size);
@@ -2911,27 +2840,27 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t &cluster) {
   // sensor_msgs::PointCloud2 line_cloud4_msg;
 
   if (!LiDARTag::_getLines(cloud1, line1, line_cloud1)) {
-    if (_debug_info)
-      ROS_DEBUG_STREAM("Status: " << false);
+    if (_debug_info) ROS_DEBUG_STREAM("Status: " << false);
 
+    cluster.detail_valid = 8;
     return false;
   }
   if (!LiDARTag::_getLines(cloud2, line2, line_cloud2)) {
-    if (_debug_info)
-      ROS_DEBUG_STREAM("Status: " << false);
+    if (_debug_info) ROS_DEBUG_STREAM("Status: " << false);
 
+    cluster.detail_valid = 9;
     return false;
   }
   if (!LiDARTag::_getLines(cloud3, line3, line_cloud3)) {
-    if (_debug_info)
-      ROS_DEBUG_STREAM("Status: " << false);
+    if (_debug_info) ROS_DEBUG_STREAM("Status: " << false);
 
+    cluster.detail_valid = 10;
     return false;
   }
   if (!LiDARTag::_getLines(cloud4, line4, line_cloud4)) {
-    if (_debug_info)
-      ROS_DEBUG_STREAM("Status: " << false);
+    if (_debug_info) ROS_DEBUG_STREAM("Status: " << false);
 
+    cluster.detail_valid = 11;
     return false;
   }
 
@@ -2940,10 +2869,10 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t &cluster) {
   Eigen::Vector3f intersection2 = _getintersec(line2, line3);
   Eigen::Vector3f intersection3 = _getintersec(line3, line4);
   Eigen::Vector3f intersection4 = _getintersec(line1, line4);
-  if (!_estimateTargetSize(cluster, intersection1, intersection2, intersection3,
-                           intersection4))
+  if (!_estimateTargetSize(cluster, intersection1, intersection2, intersection3, intersection4)) {
+    cluster.detail_valid = 12;
     return false;
-
+  }
   // pcl::toROSMsg(*line_cloud1, line_cloud1_msg);
   // pcl::toROSMsg(*line_cloud2, line_cloud2_msg);
   // pcl::toROSMsg(*line_cloud3, line_cloud3_msg);
@@ -2967,8 +2896,8 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t &cluster) {
   transformed_edge_pc_msg.header.frame_id = _pub_frame;
   _transformed_edge_pc_pub.publish(transformed_edge_pc_msg);
 
-  std::vector<Eigen::VectorXf> intersection_list{intersection1, intersection2,
-                                                 intersection3, intersection4};
+  std::vector<Eigen::VectorXf> intersection_list{intersection1, intersection2, intersection3,
+                                                 intersection4};
   publishIntersections(intersection_list);
   _intersection1 = intersection1;
   _intersection2 = intersection2;
@@ -2985,8 +2914,7 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t &cluster) {
   //       -0.325841, 0.167202, 0.319495, 0.728342, -0.0662743, -0.686448,
   //       0.0829155;
 
-  Eigen::MatrixXf ordered_payload_vertices =
-      _getOrderedCorners(payload_vertices, cluster);
+  Eigen::MatrixXf ordered_payload_vertices = _getOrderedCorners(payload_vertices, cluster);
   Eigen::MatrixXf Vertices = Eigen::MatrixXf::Zero(3, 5);
   //   ordered_payload_vertices << -0.0151639, -0.629135, 0.0127609, 0.624599,
   //       -0.178287, -0.325841, 0.167202, 0.319495, 0.728342, -0.0662743,
@@ -3015,6 +2943,25 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t &cluster) {
   // used for visualization for corner points
   PointXYZRI showpoint;
   PointXYZRI showpoint_tag;
+  Eigen::MatrixXf::Index col;
+
+  // Eigen::IOFormat mat_format(Eigen::StreamPrecision, 0, ", ", ";\n", "", "",
+  //                            "[", "]");
+  // std::cout << "ordered payload vertices = " << std::endl;
+  // std::cout << ordered_payload_vertices.format(mat_format) << std::endl;
+
+  ordered_payload_vertices.row(1).minCoeff(&col);
+  utils::eigen2Corners(ordered_payload_vertices.col(col), _tag_corners.right);
+
+  ordered_payload_vertices.row(1).maxCoeff(&col);
+  utils::eigen2Corners(ordered_payload_vertices.col(col), _tag_corners.left);
+
+  ordered_payload_vertices.row(2).minCoeff(&col);
+  utils::eigen2Corners(ordered_payload_vertices.col(col), _tag_corners.down);
+
+  ordered_payload_vertices.row(2).maxCoeff(&col);
+  utils::eigen2Corners(ordered_payload_vertices.col(col), _tag_corners.top);
+
   for (int i = 0; i < 4; ++i) {
     showpoint.intensity = 50;
     showpoint.x = ordered_payload_vertices.col(i)(0);
@@ -3044,18 +2991,14 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t &cluster) {
 
   // save initial lidar to tag pose matrix
   cluster.initial_pose.rotation = R;
-  cluster.initial_pose.translation << -cluster.average.x, -cluster.average.y,
-      -cluster.average.z;
+  cluster.initial_pose.translation << -cluster.average.x, -cluster.average.y, -cluster.average.z;
   cluster.initial_pose.translation = R * cluster.initial_pose.translation;
-  Eigen::Vector3f euler_angles =
-      cluster.initial_pose.rotation.eulerAngles(0, 1, 2);
+  Eigen::Vector3f euler_angles = cluster.initial_pose.rotation.eulerAngles(0, 1, 2);
   cluster.initial_pose.roll = euler_angles[0];
   cluster.initial_pose.pitch = euler_angles[1];
   cluster.initial_pose.yaw = euler_angles[2];
-  cluster.initial_pose.homogeneous.topLeftCorner(3, 3) =
-      cluster.initial_pose.rotation;
-  cluster.initial_pose.homogeneous.topRightCorner(3, 1) =
-      cluster.initial_pose.translation;
+  cluster.initial_pose.homogeneous.topLeftCorner(3, 3) = cluster.initial_pose.rotation;
+  cluster.initial_pose.homogeneous.topRightCorner(3, 1) = cluster.initial_pose.translation;
   cluster.initial_pose.homogeneous.row(3) << 0, 0, 0, 1;
   if (_debug_info) {
     ROS_DEBUG_STREAM("Initial rotation matrix: \n" << R);
@@ -3067,10 +3010,10 @@ bool LiDARTag::_transformSplitEdges(ClusterFamily_t &cluster) {
 /* [Grouped edge points]
  * A function to line fitting 4 lines of the tag
  */
-bool LiDARTag::_getLines(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
-                         Eigen::Vector4f &line,
-                         pcl::PointCloud<pcl::PointXYZ>::Ptr &line_cloud) {
-
+bool LiDARTag::_getLines(
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, Eigen::Vector4f & line,
+  pcl::PointCloud<pcl::PointXYZ>::Ptr & line_cloud)
+{
   pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
   pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
   pcl::SACSegmentation<pcl::PointXYZ> seg;
@@ -3097,16 +3040,17 @@ bool LiDARTag::_getLines(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
   extract.setIndices(inliers);
   extract.setNegative(false);
   extract.filter(*line_cloud);
-  line << coefficients->values[0], coefficients->values[1],
-      coefficients->values[3], coefficients->values[4];
+  line << coefficients->values[0], coefficients->values[1], coefficients->values[3],
+    coefficients->values[4];
   return true;
 }
 
 /* [Unordered corner points]
  * A function to reorder the undered corner points from PCA
  */
-Eigen::MatrixXf LiDARTag::_getOrderedCorners(Eigen::MatrixXf &payload_vertices,
-                                             ClusterFamily_t &cluster) {
+Eigen::MatrixXf LiDARTag::_getOrderedCorners(
+  Eigen::MatrixXf & payload_vertices, ClusterFamily_t & cluster)
+{
   double max_z = payload_vertices.col(0)(2);
   int index_max_z = 0;
   for (int i = 0; i < 4; ++i) {
@@ -3115,20 +3059,21 @@ Eigen::MatrixXf LiDARTag::_getOrderedCorners(Eigen::MatrixXf &payload_vertices,
       index_max_z = i;
     }
   }
-  Eigen::Vector3f top(payload_vertices.col(index_max_z)(0),
-                      payload_vertices.col(index_max_z)(1),
-                      payload_vertices.col(index_max_z)(2));
+  Eigen::Vector3f top(
+    payload_vertices.col(index_max_z)(0), payload_vertices.col(index_max_z)(1),
+    payload_vertices.col(index_max_z)(2));
   int next_index = index_max_z + 1;
   if (next_index > 3) {
     next_index = next_index - 4;
   }
-  Eigen::Vector3f next(payload_vertices.col(next_index)(0),
-                       payload_vertices.col(next_index)(1),
-                       payload_vertices.col(next_index)(2));
+  Eigen::Vector3f next(
+    payload_vertices.col(next_index)(0), payload_vertices.col(next_index)(1),
+    payload_vertices.col(next_index)(2));
   Eigen::Vector3f cross_vector = top.cross(next);
-  Eigen::Vector3f to_center(payload_vertices.row(0).mean() + cluster.average.x,
-                            payload_vertices.row(1).mean() + cluster.average.y,
-                            payload_vertices.row(2).mean() + cluster.average.z);
+  Eigen::Vector3f to_center(
+    payload_vertices.row(0).mean() + cluster.average.x,
+    payload_vertices.row(1).mean() + cluster.average.y,
+    payload_vertices.row(2).mean() + cluster.average.z);
   double direction = cross_vector.dot(to_center);
   Eigen::MatrixXf output(3, 4);
   int output_index;
@@ -3152,11 +3097,10 @@ Eigen::MatrixXf LiDARTag::_getOrderedCorners(Eigen::MatrixXf &payload_vertices,
  * [Note] The given four points are assumed in either cw or ccw.
  * TODO: can be faster using std::lower_bound
  */
-bool LiDARTag::_estimateTargetSize(ClusterFamily_t &cluster,
-                                   const Eigen::Vector3f &point1,
-                                   const Eigen::Vector3f &point2,
-                                   const Eigen::Vector3f &point3,
-                                   const Eigen::Vector3f &point4) {
+bool LiDARTag::_estimateTargetSize(
+  ClusterFamily_t & cluster, const Eigen::Vector3f & point1, const Eigen::Vector3f & point2,
+  const Eigen::Vector3f & point3, const Eigen::Vector3f & point4)
+{
   double distance1 = (point1 - point2).norm();
   double distance2 = (point2 - point3).norm();
   double distance3 = (point3 - point4).norm();
@@ -3173,8 +3117,7 @@ bool LiDARTag::_estimateTargetSize(ClusterFamily_t &cluster,
       gap = gap_temp;
       tagsize = _tag_size_list[i];
       size_num = i;
-    } else
-      return false;
+    }
   }
 
   // float tagsize_tunable = 0.1;
@@ -3184,7 +3127,6 @@ bool LiDARTag::_estimateTargetSize(ClusterFamily_t &cluster,
   } else {
     cluster.tag_size = tagsize;
     cluster.rkhs_decoding.size_num = size_num;
-    ;
     status = true;
   }
 
@@ -3192,11 +3134,9 @@ bool LiDARTag::_estimateTargetSize(ClusterFamily_t &cluster,
   if (_debug_info) {
     ROS_DEBUG_STREAM("==== _estimateTargetSize ====");
     float distance =
-        std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.y, 2) +
-                  pow(cluster.average.z, 2));
+      std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.y, 2) + pow(cluster.average.z, 2));
     ROS_DEBUG_STREAM("Distance : " << distance);
-    ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() +
-                                              cluster.edge_points.size());
+    ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() + cluster.edge_points.size());
     ROS_DEBUG_STREAM("Estimated side1 legth: " << distance1);
     ROS_DEBUG_STREAM("Estimated side2 legth: " << distance2);
     ROS_DEBUG_STREAM("Estimated side3 legth: " << distance3);
@@ -3209,15 +3149,13 @@ bool LiDARTag::_estimateTargetSize(ClusterFamily_t &cluster,
     else
       ROS_DEBUG_STREAM("Status: " << status);
   }
-
   return status;
 }
 /* [two lines]
  * A function to compute the intersection of two lines
  */
-Eigen::Vector3f LiDARTag::_getintersec(Eigen::Vector4f line1,
-                                       Eigen::Vector4f line2) {
-
+Eigen::Vector3f LiDARTag::_getintersec(Eigen::Vector4f line1, Eigen::Vector4f line2)
+{
   float c = line1(0);
   float d = line1(1);
   float a = line1(2);
@@ -3238,7 +3176,8 @@ Eigen::Vector3f LiDARTag::_getintersec(Eigen::Vector4f line1,
  * A function to estimate a cluster's principle axis
  */
 // Eigen::MatrixXf
-void LiDARTag::_estimatePrincipleAxis(ClusterFamily_t &cluster) {
+void LiDARTag::_estimatePrincipleAxis(ClusterFamily_t & cluster)
+{
   // Eigen::MatrixXf EigenPC(3, cluster.inliers);
   // int eigenpc_index = 0;
   // for (int i=0; i<cluster.edge_points.size(); ++i){
@@ -3310,11 +3249,9 @@ void LiDARTag::_estimatePrincipleAxis(ClusterFamily_t &cluster) {
   if (_debug_info) {
     ROS_DEBUG_STREAM("==== _estimatePrincipleAxis ====");
     float distance =
-        std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.y, 2) +
-                  pow(cluster.average.z, 2));
+      std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.y, 2) + pow(cluster.average.z, 2));
     ROS_DEBUG_STREAM("Distance : " << distance);
-    ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() +
-                                              cluster.edge_points.size());
+    ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() + cluster.edge_points.size());
     // Eigen::VectorXf sv = svd.singularValues();
     // ROS_DEBUG_STREAM("Singular values: " << sv[0] << ", " << sv[1] << ", "
     //                                      << sv[2]);
@@ -3401,7 +3338,8 @@ void LiDARTag::_estimatePrincipleAxis(ClusterFamily_t &cluster) {
  * A function of ros spin
  * reason: in order to put it into background as well as able to run other tasks
  */
-void LiDARTag::_rosSpin() {
+void LiDARTag::_rosSpin()
+{
   while (ros::ok() && !_stop) {
     ros::spinOnce();
   }
@@ -3413,8 +3351,8 @@ void LiDARTag::_rosSpin() {
  * into a standard type (PointXYZRI) of pcl vector (out)
  */
 void LiDARTag::_buffToPclVector(
-    const std::vector<std::vector<LiDARPoints_t>> &edge_buff,
-    pcl::PointCloud<PointXYZRI>::Ptr Out) {
+  const std::vector<std::vector<LiDARPoints_t>> & edge_buff, pcl::PointCloud<PointXYZRI>::Ptr Out)
+{
   for (int ringnumber = 0; ringnumber < _beam_num; ++ringnumber) {
     if (edge_buff.at(ringnumber).size() != 0) {
       for (int i = 0; i < edge_buff.at(ringnumber).size(); ++i) {
@@ -3427,12 +3365,11 @@ void LiDARTag::_buffToPclVector(
 /*
  * A function to draw a line between two points
  */
-void LiDARTag::_assignLine(visualization_msgs::Marker &Marker,
-                           visualization_msgs::MarkerArray MarkArray,
-                           const uint32_t Shape, const string ns,
-                           const double r, const double g, const double b,
-                           const PointXYZRI point1, const PointXYZRI point2,
-                           const int count) {
+void LiDARTag::_assignLine(
+  visualization_msgs::Marker & Marker, visualization_msgs::MarkerArray MarkArray,
+  const uint32_t Shape, const string ns, const double r, const double g, const double b,
+  const PointXYZRI point1, const PointXYZRI point2, const int count)
+{
   Marker.header.frame_id = _pub_frame;
   Marker.header.stamp = _current_scan_time;
   // Marker.ns = string("Boundary_") + to_string(cluster.cluster_id);
@@ -3470,8 +3407,8 @@ void LiDARTag::_assignLine(visualization_msgs::Marker &Marker,
 /*
  * A function to transform an eigen type of vector to pcl point type
  */
-void LiDARTag::_eigenVectorToPointXYZRI(const Eigen::Vector4f &Vector,
-                                        PointXYZRI &point) {
+void LiDARTag::_eigenVectorToPointXYZRI(const Eigen::Vector4f & Vector, PointXYZRI & point)
+{
   point.x = Vector[0];
   point.y = Vector[1];
   point.z = Vector[2];
@@ -3481,8 +3418,8 @@ void LiDARTag::_eigenVectorToPointXYZRI(const Eigen::Vector4f &Vector,
 /*
  * A function to transform a pcl point type to an eigen vector
  */
-void LiDARTag::_PointXYZRIToEigenVector(const PointXYZRI &point,
-                                        Eigen::Vector4f &Vector) {
+void LiDARTag::_PointXYZRIToEigenVector(const PointXYZRI & point, Eigen::Vector4f & Vector)
+{
   Vector[0] = point.x;
   Vector[1] = point.y;
   Vector[2] = point.z;
@@ -3492,7 +3429,9 @@ void LiDARTag::_PointXYZRIToEigenVector(const PointXYZRI &point,
 /* [not used] [not finished]
  * A function to group edges
  */
-template <typename Container> void LiDARTag::_freeVec(Container &c) {
+template <typename Container>
+void LiDARTag::_freeVec(Container & c)
+{
   while (!c.empty()) {
     if (c.back() != nullptr) {
       delete c.back();
@@ -3502,12 +3441,13 @@ template <typename Container> void LiDARTag::_freeVec(Container &c) {
   }
 }
 
-void LiDARTag::_freePCL(pcl::PointCloud<LiDARPoints_t *> &vec) {
-  while (!vec.empty())
-    delete vec.back(), vec.erase(vec.end());
+void LiDARTag::_freePCL(pcl::PointCloud<LiDARPoints_t *> & vec)
+{
+  while (!vec.empty()) delete vec.back(), vec.erase(vec.end());
 }
 
-void LiDARTag::_freeTagLineStruc(TagLines_t &tag_edges) {
+void LiDARTag::_freeTagLineStruc(TagLines_t & tag_edges)
+{
   LiDARTag::_freeVec(tag_edges.upper_line);
   LiDARTag::_freeVec(tag_edges.lower_line);
   LiDARTag::_freeVec(tag_edges.left_line);
@@ -3519,12 +3459,11 @@ void LiDARTag::_freeTagLineStruc(TagLines_t &tag_edges) {
   LiDARTag::_freeVec(tag_edges.top_right);
 }
 
-void LiDARTag::_printStatistics(
-    const std::vector<ClusterFamily_t> &cluster_buff) {
+void LiDARTag::_printStatistics(const std::vector<ClusterFamily_t> & cluster_buff)
+{
   // XXX: timings are all in milliseconds
   auto valid_clusters = _getValidClusters(cluster_buff);
-  ROS_INFO_STREAM(
-      "[Writing CSV] Remaining Clusters: " << valid_clusters.size());
+  ROS_INFO_STREAM("[Writing CSV] Remaining Clusters: " << valid_clusters.size());
 
   std::ofstream fstats;
   std::ofstream ftiming;
@@ -3537,8 +3476,8 @@ void LiDARTag::_printStatistics(
   if (_iter == 0) {
     fstats.open(_outputs_path + "/stats.csv", ios::trunc);
     if (!fstats.is_open()) {
-      cout << "Could not open stats.txt: " << _outputs_path
-           << "\n Currently at: " << __LINE__ << endl;
+      cout << "Could not open stats.txt: " << _outputs_path << "\n Currently at: " << __LINE__
+           << endl;
       exit(0);
     }
     fstats << "iter, pc size, PoI size, clusters size, "
@@ -3548,11 +3487,10 @@ void LiDARTag::_printStatistics(
            << "pose optimization, decoding fail, "
            << "remaining" << endl;
   } else {
-    fstats.open(_outputs_path + "/stats.csv",
-                std::ofstream::out | std::ofstream::app);
+    fstats.open(_outputs_path + "/stats.csv", std::ofstream::out | std::ofstream::app);
     if (!fstats.is_open()) {
-      cout << "Could not open stats.txt: " << _outputs_path
-           << "\n Currently at: " << __LINE__ << endl;
+      cout << "Could not open stats.txt: " << _outputs_path << "\n Currently at: " << __LINE__
+           << endl;
       exit(0);
     }
   }
@@ -3590,8 +3528,8 @@ void LiDARTag::_printStatistics(
     if (_iter == 0) {
       ftiming.open(_outputs_path + "/timing_all.txt", ios::trunc);
       if (!ftiming.is_open()) {
-        cout << "Could not open timing_all.txt: " << _outputs_path
-             << "\n Currently at " << __FILE__ << " at " << __LINE__ << endl;
+        cout << "Could not open timing_all.txt: " << _outputs_path << "\n Currently at " << __FILE__
+             << " at " << __LINE__ << endl;
         exit(0);
       }
       ftiming << "iter, duration, PoI_clustering, "
@@ -3600,11 +3538,10 @@ void LiDARTag::_printStatistics(
               << "split_edge, pose_optimization, store_template, "
               << "payload_decoding" << endl;
     } else {
-      ftiming.open(_outputs_path + "/timing_all.txt",
-                   std::ofstream::out | std::ofstream::app);
+      ftiming.open(_outputs_path + "/timing_all.txt", std::ofstream::out | std::ofstream::app);
       if (!ftiming.is_open()) {
-        cout << "Could not open timing_all.txt: " << _outputs_path
-             << "\n Currently at " << __FILE__ << " at " << __LINE__ << endl;
+        cout << "Could not open timing_all.txt: " << _outputs_path << "\n Currently at " << __FILE__
+             << " at " << __LINE__ << endl;
         exit(0);
       }
     }
@@ -3627,17 +3564,17 @@ void LiDARTag::_printStatistics(
     if (_iter == 0) {
       ftiming.open(_outputs_path + "/timing_computation_only.txt", ios::trunc);
       if (!ftiming.is_open()) {
-        cout << "Could not open computation_time.txt: " << _outputs_path
-             << "\n Currently at " << __FILE__ << " at " << __LINE__ << endl;
+        cout << "Could not open computation_time.txt: " << _outputs_path << "\n Currently at "
+             << __FILE__ << " at " << __LINE__ << endl;
         exit(0);
       }
       ftiming << "iter, duration" << endl;
     } else {
-      ftiming.open(_outputs_path + "/timing_computation_only.txt",
-                   std::ofstream::out | std::ofstream::app);
+      ftiming.open(
+        _outputs_path + "/timing_computation_only.txt", std::ofstream::out | std::ofstream::app);
       if (!ftiming.is_open()) {
-        cout << "Could not open computation_time.txt: " << _outputs_path
-             << "\n Currently at " << __FILE__ << " at " << __LINE__ << endl;
+        cout << "Could not open computation_time.txt: " << _outputs_path << "\n Currently at "
+             << __FILE__ << " at " << __LINE__ << endl;
         exit(0);
       }
     }
@@ -3651,8 +3588,8 @@ void LiDARTag::_printStatistics(
     if (_iter == 0) {
       fdecoding.open(_outputs_path + "/decoding_analysis.txt", ios::trunc);
       if (!fdecoding.is_open()) {
-        cout << "Could not open decoding_analysis.txt: " << _outputs_path
-             << "\n Currently at " << __FILE__ << " at " << __LINE__ << endl;
+        cout << "Could not open decoding_analysis.txt: " << _outputs_path << "\n Currently at "
+             << __FILE__ << " at " << __LINE__ << endl;
         exit(0);
       }
       fdecoding << "iter, original, matrix, vector, "
@@ -3660,11 +3597,11 @@ void LiDARTag::_printStatistics(
                 << "manual scdl tbb vec, tbb scdl tbb vec, "
                 << "tbb kd tree" << endl;
     } else {
-      fdecoding.open(_outputs_path + "/decoding_analysis.txt",
-                     std::ofstream::out | std::ofstream::app);
+      fdecoding.open(
+        _outputs_path + "/decoding_analysis.txt", std::ofstream::out | std::ofstream::app);
       if (!fdecoding.is_open()) {
-        cout << "Could not open decoding_analysis.txt: " << _outputs_path
-             << "\n Currently at " << __FILE__ << " at " << __LINE__ << endl;
+        cout << "Could not open decoding_analysis.txt: " << _outputs_path << "\n Currently at "
+             << __FILE__ << " at " << __LINE__ << endl;
         exit(0);
       }
     }
@@ -3683,13 +3620,12 @@ void LiDARTag::_printStatistics(
   // pose and clustering
   if (_iter == 0) {
     for (int i = 0; i < _num_tag_sizes; ++i) {
-      std::string _tag_file_path = _outputs_path + "tag_size" +
-                                   std::to_string(_tag_size_list[i]) +
-                                   "pose.txt";
+      std::string _tag_file_path =
+        _outputs_path + "tag_size" + std::to_string(_tag_size_list[i]) + "pose.txt";
       fpose.open(_tag_file_path, std::ofstream::trunc);
       if (!fpose.is_open()) {
-        cout << "Could not open fpose file: " << _tag_file_path
-             << "Currently at :" << __LINE__ << endl;
+        cout << "Could not open fpose file: " << _tag_file_path << "Currently at :" << __LINE__
+             << endl;
         exit(0);
       }
       // fpose << "iter, id, rot_num, x, y, z, r, p, y";
@@ -3700,9 +3636,8 @@ void LiDARTag::_printStatistics(
     }
 
     for (int i = 0; i < _num_tag_sizes; ++i) {
-      std::string _corners_file_path = _outputs_path + "tag_size" +
-                                       std::to_string(_tag_size_list[i]) +
-                                       "corners.csv";
+      std::string _corners_file_path =
+        _outputs_path + "tag_size" + std::to_string(_tag_size_list[i]) + "corners.csv";
       fcorners.open(_corners_file_path, std::ofstream::trunc);
       if (!fcorners.is_open()) {
         cout << "Could not open fcorners file: " << _corners_file_path
@@ -3710,26 +3645,24 @@ void LiDARTag::_printStatistics(
         exit(0);
       }
       // fpose << "iter, id, rot_num, x, y, z, r, p, y";
-      fcorners << "iter, 1x, 1y, 1z, 2x, 2y, 2z, 3x, 3y, 3z, 4x, 4y, 4z"
-               << endl;
+      fcorners << "iter, 1x, 1y, 1z, 2x, 2y, 2z, 3x, 3y, 3z, 4x, 4y, 4z" << endl;
       fcorners << std::endl;
       fcorners.close();
     }
 
     fclusters.open(_outputs_path + "/clusters.csv", std::ofstream::trunc);
     if (!fclusters.is_open()) {
-      cout << "Could not open cluster file: " << _outputs_path
-           << "Currently at :" << __LINE__ << endl;
+      cout << "Could not open cluster file: " << _outputs_path << "Currently at :" << __LINE__
+           << endl;
       exit(0);
     }
     fclusters << "It is recorded if there is any valid cluster" << endl;
     fclusters << "iter, valid cluster size, valid cluter points" << endl;
   } else {
-    fclusters.open(_outputs_path + "/clusters.csv",
-                   std::ofstream::out | std::ofstream::app);
+    fclusters.open(_outputs_path + "/clusters.csv", std::ofstream::out | std::ofstream::app);
     if (!fclusters.is_open()) {
-      cout << "Could not open cluster file: " << _outputs_path
-           << "Currently at :" << __LINE__ << endl;
+      cout << "Could not open cluster file: " << _outputs_path << "Currently at :" << __LINE__
+           << endl;
       exit(0);
     }
   }
@@ -3738,9 +3671,8 @@ void LiDARTag::_printStatistics(
     fclusters << _iter << ",";
     fclusters << valid_clusters.size() << ",";
     for (const auto cluster_idx : valid_clusters) {
-      std::string _tag_file_path =
-          _outputs_path + "tag_size" +
-          std::to_string(cluster_buff[cluster_idx].tag_size) + "pose.txt";
+      std::string _tag_file_path = _outputs_path + "tag_size" +
+                                   std::to_string(cluster_buff[cluster_idx].tag_size) + "pose.txt";
       fpose.open(_tag_file_path, std::ofstream::out | std::ofstream::app);
       fpose << _iter << ",";
       fpose << cluster_buff[cluster_idx].rkhs_decoding.id << ",";
@@ -3765,27 +3697,22 @@ void LiDARTag::_printStatistics(
       fclusters << cluster_buff[cluster_idx].data.size() << ",";
       fpose.close();
 
-      Eigen::Vector4f corner_lidar1(0, cluster_buff[cluster_idx].tag_size / 2,
-                                    cluster_buff[cluster_idx].tag_size / 2, 1);
-      Eigen::Vector4f corner_lidar2(0, cluster_buff[cluster_idx].tag_size / 2,
-                                    -cluster_buff[cluster_idx].tag_size / 2, 1);
-      Eigen::Vector4f corner_lidar3(0, -cluster_buff[cluster_idx].tag_size / 2,
-                                    -cluster_buff[cluster_idx].tag_size / 2, 1);
-      Eigen::Vector4f corner_lidar4(0, -cluster_buff[cluster_idx].tag_size / 2,
-                                    cluster_buff[cluster_idx].tag_size / 2, 1);
-      Eigen::Vector4f corner_tag1 =
-          cluster_buff[cluster_idx].pose.homogeneous * corner_lidar1;
-      Eigen::Vector4f corner_tag2 =
-          cluster_buff[cluster_idx].pose.homogeneous * corner_lidar2;
-      Eigen::Vector4f corner_tag3 =
-          cluster_buff[cluster_idx].pose.homogeneous * corner_lidar3;
-      Eigen::Vector4f corner_tag4 =
-          cluster_buff[cluster_idx].pose.homogeneous * corner_lidar4;
-      std::string _corners_file_path =
-          _outputs_path + "tag_size" +
-          std::to_string(cluster_buff[cluster_idx].tag_size) + "corners.csv";
-      fcorners.open(_corners_file_path,
-                    std::ofstream::out | std::ofstream::app);
+      Eigen::Vector4f corner_lidar1(
+        0, cluster_buff[cluster_idx].tag_size / 2, cluster_buff[cluster_idx].tag_size / 2, 1);
+      Eigen::Vector4f corner_lidar2(
+        0, cluster_buff[cluster_idx].tag_size / 2, -cluster_buff[cluster_idx].tag_size / 2, 1);
+      Eigen::Vector4f corner_lidar3(
+        0, -cluster_buff[cluster_idx].tag_size / 2, -cluster_buff[cluster_idx].tag_size / 2, 1);
+      Eigen::Vector4f corner_lidar4(
+        0, -cluster_buff[cluster_idx].tag_size / 2, cluster_buff[cluster_idx].tag_size / 2, 1);
+      Eigen::Vector4f corner_tag1 = cluster_buff[cluster_idx].pose.homogeneous * corner_lidar1;
+      Eigen::Vector4f corner_tag2 = cluster_buff[cluster_idx].pose.homogeneous * corner_lidar2;
+      Eigen::Vector4f corner_tag3 = cluster_buff[cluster_idx].pose.homogeneous * corner_lidar3;
+      Eigen::Vector4f corner_tag4 = cluster_buff[cluster_idx].pose.homogeneous * corner_lidar4;
+      std::string _corners_file_path = _outputs_path + "tag_size" +
+                                       std::to_string(cluster_buff[cluster_idx].tag_size) +
+                                       "corners.csv";
+      fcorners.open(_corners_file_path, std::ofstream::out | std::ofstream::app);
       fcorners << _iter << ",";
       fcorners << corner_tag1(0) << ",";
       fcorners << corner_tag1(1) << ",";
@@ -3809,18 +3736,17 @@ void LiDARTag::_printStatistics(
   _iter++;
 }
 
-std::vector<int>
-LiDARTag::_getValidClusters(const std::vector<ClusterFamily_t> &cluster_buff) {
+std::vector<int> LiDARTag::_getValidClusters(const std::vector<ClusterFamily_t> & cluster_buff)
+{
   std::vector<int> valid_clusters{};
   for (int i = 0; i < cluster_buff.size(); ++i) {
     if (cluster_buff[i].valid) {
       valid_clusters.push_back(i);
     }
   }
-  std::sort(
-      valid_clusters.begin(), valid_clusters.end(), [&](int idx1, int idx2) {
-        return cluster_buff[idx1].data.size() < cluster_buff[idx2].data.size();
-      });
+  std::sort(valid_clusters.begin(), valid_clusters.end(), [&](int idx1, int idx2) {
+    return cluster_buff[idx1].data.size() < cluster_buff[idx2].data.size();
+  });
   return valid_clusters;
 }
 
@@ -3915,7 +3841,8 @@ LiDARTag::_getValidClusters(const std::vector<ClusterFamily_t> &cluster_buff) {
 //     }
 
 // }
-void LiDARTag::_detectionArrayPublisher(const ClusterFamily_t &cluster) {
+void LiDARTag::_detectionArrayPublisher(const ClusterFamily_t & cluster)
+{
   // if(cluster.average.x < 0) return;
 
   lidartag_msgs::LiDARTagDetection detection;
@@ -3951,12 +3878,13 @@ void LiDARTag::_detectionArrayPublisher(const ClusterFamily_t &cluster) {
   // ROS_INFO_STREAM("LiDARTag Got wrong tags");
 }
 void LiDARTag::keyboardEventOccurred(
-    const pcl::visualization::KeyboardEvent &event, void *nothing) {
-  if (event.getKeySym() == "space" && event.keyDown())
-    loop = true;
+  const pcl::visualization::KeyboardEvent & event, void * nothing)
+{
+  if (event.getKeySym() == "space" && event.keyDown()) loop = true;
 }
 
-void LiDARTag::visualiseClusterBuff(vector<ClusterFamily_t> &cluster_buff) {
+void LiDARTag::visualiseClusterBuff(vector<ClusterFamily_t> & cluster_buff)
+{
   ROS_INFO("visualiseClusterBuff start");
   cluster_buff_time_stamp_sec = _point_cloud_header.stamp.sec;
   cluster_buff_time_stamp_nsec = _point_cloud_header.stamp.nsec;
@@ -3966,12 +3894,10 @@ void LiDARTag::visualiseClusterBuff(vector<ClusterFamily_t> &cluster_buff) {
 
   pcl::visualization::PCLVisualizer viewer("Cluster buff visualization");
   int v1(0);
-  float bckgr_gray_level = 0.0; // Black
+  float bckgr_gray_level = 0.0;  // Black
   float txt_gray_lvl = 1.0 - bckgr_gray_level;
-  pcl::PointCloud<LiDARPoints_t>::Ptr cluster_pc(
-      new pcl::PointCloud<LiDARPoints_t>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr output_pc(
-      new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<LiDARPoints_t>::Ptr cluster_pc(new pcl::PointCloud<LiDARPoints_t>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr output_pc(new pcl::PointCloud<pcl::PointXYZ>);
   std::stringstream ss;
   std::string index;
   std::string pc_size;
@@ -3987,16 +3913,12 @@ void LiDARTag::visualiseClusterBuff(vector<ClusterFamily_t> &cluster_buff) {
     output_pc->points[i].z = cluster_pc->points[i].point.z;
   }
   pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> cluster_color(
-      output_pc, 20, 180, 20);
+    output_pc, 20, 180, 20);
   viewer.addPointCloud(output_pc, cluster_color, "cluster", v1);
-  viewer.addText(index, 10, 80, 16, txt_gray_lvl, txt_gray_lvl, txt_gray_lvl,
-                 "index", v1);
-  viewer.addText(pc_size, 10, 60, 16, txt_gray_lvl, txt_gray_lvl, txt_gray_lvl,
-                 "pc_size", v1);
-  viewer.setBackgroundColor(bckgr_gray_level, bckgr_gray_level,
-                            bckgr_gray_level, v1);
-  viewer.registerKeyboardCallback(&LiDARTag::keyboardEventOccurred, *this,
-                                  (void *)NULL);
+  viewer.addText(index, 10, 80, 16, txt_gray_lvl, txt_gray_lvl, txt_gray_lvl, "index", v1);
+  viewer.addText(pc_size, 10, 60, 16, txt_gray_lvl, txt_gray_lvl, txt_gray_lvl, "pc_size", v1);
+  viewer.setBackgroundColor(bckgr_gray_level, bckgr_gray_level, bckgr_gray_level, v1);
+  viewer.registerKeyboardCallback(&LiDARTag::keyboardEventOccurred, *this, (void *)NULL);
   int index_num = 0;
   while (!viewer.wasStopped()) {
     viewer.spinOnce();
@@ -4022,13 +3944,11 @@ void LiDARTag::visualiseClusterBuff(vector<ClusterFamily_t> &cluster_buff) {
       ss.str("");
       ss << index_num;
       index = "cluster buff index = " + ss.str();
-      viewer.updateText(index, 10, 80, 16, txt_gray_lvl, txt_gray_lvl,
-                        txt_gray_lvl, "index");
+      viewer.updateText(index, 10, 80, 16, txt_gray_lvl, txt_gray_lvl, txt_gray_lvl, "index");
       ss.str("");
       ss << output_pc->points.size();
       pc_size = "cluster point cloud size = " + ss.str();
-      viewer.updateText(pc_size, 10, 60, 16, txt_gray_lvl, txt_gray_lvl,
-                        txt_gray_lvl, "pc_size");
+      viewer.updateText(pc_size, 10, 60, 16, txt_gray_lvl, txt_gray_lvl, txt_gray_lvl, "pc_size");
     }
     loop = false;
   }
@@ -4037,8 +3957,8 @@ void LiDARTag::visualiseClusterBuff(vector<ClusterFamily_t> &cluster_buff) {
   output_pc->clear();
 }
 
-void LiDARTag::writeClusterBuff(vector<ClusterFamily_t> &cluster_buff,
-                                std::ofstream &fbuff) {
+void LiDARTag::writeClusterBuff(vector<ClusterFamily_t> & cluster_buff, std::ofstream & fbuff)
+{
   ROS_INFO("writeClusterBuff start");
   cluster_buff_time_stamp_sec = _point_cloud_header.stamp.sec;
   cluster_buff_time_stamp_nsec = _point_cloud_header.stamp.nsec;
@@ -4046,10 +3966,8 @@ void LiDARTag::writeClusterBuff(vector<ClusterFamily_t> &cluster_buff,
   std::cout << "time stamp: sec = " << cluster_buff_time_stamp_sec << endl;
   std::cout << "time stamp: nsec = " << cluster_buff_time_stamp_nsec << endl;
 
-  pcl::PointCloud<LiDARPoints_t>::Ptr cluster_pc(
-      new pcl::PointCloud<LiDARPoints_t>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr output_pc(
-      new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<LiDARPoints_t>::Ptr cluster_pc(new pcl::PointCloud<LiDARPoints_t>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr output_pc(new pcl::PointCloud<pcl::PointXYZ>);
   *cluster_pc = cluster_buff[0].data;
   output_pc->points.resize(cluster_pc->points.size());
   for (size_t i = 0; i < cluster_pc->points.size(); i++) {
@@ -4065,8 +3983,9 @@ void LiDARTag::writeClusterBuff(vector<ClusterFamily_t> &cluster_buff,
     index_num++;
     *cluster_pc = cluster_buff[index_num].data;
     output_pc->points.resize(cluster_pc->points.size());
-    if (output_pc->points.size() < 1400 || 1600 < output_pc->points.size() ||
-        index_num < 50 || 80 < index_num) {
+    if (
+      output_pc->points.size() < 1400 || 1600 < output_pc->points.size() || index_num < 50 ||
+      80 < index_num) {
       continue;
     }
 
@@ -4077,7 +3996,7 @@ void LiDARTag::writeClusterBuff(vector<ClusterFamily_t> &cluster_buff,
       output_pc->points[i].y = cluster_pc->points[i].point.y;
       output_pc->points[i].z = cluster_pc->points[i].point.z;
     }
-    fbuff << fixed << std::setprecision(10); // TODO:
+    fbuff << fixed << std::setprecision(10);  // TODO:
     fbuff << ros::Time::now() << ",";
     fbuff << cluster_buff_time_stamp_sec << ",";
     fbuff << cluster_buff_time_stamp_nsec << ",";
@@ -4095,19 +4014,14 @@ void LiDARTag::writeClusterBuff(vector<ClusterFamily_t> &cluster_buff,
   output_pc->clear();
 }
 
-void LiDARTag::publishLidartagCluster(
-    const vector<ClusterFamily_t> &cluster_buff) {
-  pcl::PointCloud<LiDARPoints_t>::Ptr cluster_pc(
-      new pcl::PointCloud<LiDARPoints_t>);
-  pcl::PointCloud<LiDARPoints_t>::Ptr cluster_ep_pc(
-      new pcl::PointCloud<LiDARPoints_t>);
-  pcl::PointCloud<LiDARPoints_t>::Ptr cluster_tr_ep_pc(
-      new pcl::PointCloud<LiDARPoints_t>);
+void LiDARTag::publishLidartagCluster(const vector<ClusterFamily_t> & cluster_buff)
+{
+  pcl::PointCloud<LiDARPoints_t>::Ptr cluster_pc(new pcl::PointCloud<LiDARPoints_t>);
+  pcl::PointCloud<LiDARPoints_t>::Ptr cluster_ep_pc(new pcl::PointCloud<LiDARPoints_t>);
+  pcl::PointCloud<LiDARPoints_t>::Ptr cluster_tr_ep_pc(new pcl::PointCloud<LiDARPoints_t>);
   pcl::PointCloud<PointXYZRI>::Ptr output_pc(new pcl::PointCloud<PointXYZRI>);
-  pcl::PointCloud<PointXYZRI>::Ptr output_ep_pc(
-      new pcl::PointCloud<PointXYZRI>);
-  pcl::PointCloud<PointXYZRI>::Ptr output_tr_ep_pc(
-      new pcl::PointCloud<PointXYZRI>);
+  pcl::PointCloud<PointXYZRI>::Ptr output_ep_pc(new pcl::PointCloud<PointXYZRI>);
+  pcl::PointCloud<PointXYZRI>::Ptr output_tr_ep_pc(new pcl::PointCloud<PointXYZRI>);
   sensor_msgs::PointCloud2 output_data_msg;
   sensor_msgs::PointCloud2 output_ep_msg;
   sensor_msgs::PointCloud2 output_tr_ep_msg;
@@ -4118,10 +4032,11 @@ void LiDARTag::publishLidartagCluster(
     if (index_num + 1 > cluster_buff.size()) {
       return;
     }
-
-    if (cluster_buff[index_num].data.size() < _cluster_min_points_size ||
-        _cluster_max_points_size < cluster_buff[index_num].data.size() ||
-        index_num < _cluster_min_index || _cluster_max_index < index_num) {
+    int points_size =
+      cluster_buff[index_num].data.size() + cluster_buff[index_num].edge_points.size();
+    if (
+      points_size < _cluster_min_points_size || points_size > _cluster_max_points_size ||
+      index_num < _cluster_min_index || index_num > _cluster_max_index) {
       index_num++;
       continue;
     }
@@ -4150,16 +4065,14 @@ void LiDARTag::publishLidartagCluster(
       output_ep_pc->points[i].y = cluster_ep_pc->points[i].point.y;
       output_ep_pc->points[i].z = cluster_ep_pc->points[i].point.z;
       output_ep_pc->points[i].ring = cluster_ep_pc->points[i].point.ring;
-      output_ep_pc->points[i].intensity =
-          cluster_ep_pc->points[i].point.intensity;
+      output_ep_pc->points[i].intensity = cluster_ep_pc->points[i].point.intensity;
     }
     for (size_t i = 0; i < cluster_tr_ep_pc->points.size(); i++) {
       output_tr_ep_pc->points[i].x = cluster_tr_ep_pc->points[i].point.x;
       output_tr_ep_pc->points[i].y = cluster_tr_ep_pc->points[i].point.y;
       output_tr_ep_pc->points[i].z = cluster_tr_ep_pc->points[i].point.z;
       output_tr_ep_pc->points[i].ring = cluster_tr_ep_pc->points[i].point.ring;
-      output_tr_ep_pc->points[i].intensity =
-          cluster_tr_ep_pc->points[i].point.intensity;
+      output_tr_ep_pc->points[i].intensity = cluster_tr_ep_pc->points[i].point.intensity;
     }
     pcl::toROSMsg(*output_pc, output_data_msg);
     pcl::toROSMsg(*output_ep_pc, output_ep_msg);
@@ -4184,8 +4097,8 @@ void LiDARTag::publishLidartagCluster(
   output_ep_pc->clear();
   output_tr_ep_pc->clear();
 }
-void LiDARTag::publishIntersections(
-    const std::vector<Eigen::VectorXf> intersection_list) {
+void LiDARTag::publishIntersections(const std::vector<Eigen::VectorXf> intersection_list)
+{
   visualization_msgs::MarkerArray intersection_marker_array;
   intersection_marker_array.markers.resize(4);
   int index = 0;
@@ -4195,10 +4108,8 @@ void LiDARTag::publishIntersections(
     intersection_marker_array.markers[index].header.stamp = ros::Time::now();
     intersection_marker_array.markers[index].ns = "intersection_marker";
     intersection_marker_array.markers[index].id = index;
-    intersection_marker_array.markers[index].type =
-        visualization_msgs::Marker::CUBE;
-    intersection_marker_array.markers[index].action =
-        visualization_msgs::Marker::ADD;
+    intersection_marker_array.markers[index].type = visualization_msgs::Marker::CUBE;
+    intersection_marker_array.markers[index].action = visualization_msgs::Marker::ADD;
     intersection_marker_array.markers[index].lifetime = d;
     intersection_marker_array.markers[index].scale.x = 0.1;
     intersection_marker_array.markers[index].scale.y = 0.1;
@@ -4218,25 +4129,24 @@ void LiDARTag::publishIntersections(
   }
   _intersection_marker_array_pub.publish(intersection_marker_array);
 }
-void LiDARTag::printClusterResult(
-    const std::vector<ClusterFamily_t> &cluster_buff) {
+void LiDARTag::printClusterResult(const std::vector<ClusterFamily_t> & cluster_buff)
+{
   std::ofstream fresult;
   if (_iter == 0) {
     fresult.open(_outputs_path + "/results.csv", std::ofstream::out);
     if (!fresult.is_open()) {
-      std::cout << "Could not open results.csv: " << _outputs_path
-                << "\n Crrently at: " << __LINE__ << std::endl;
+      std::cout << "Could not open results.csv: " << _outputs_path << "\n Crrently at: " << __LINE__
+                << std::endl;
       exit(0);
     }
     fresult << "valid,id,x,y,z,roll,pitch,yaw,tag_size";
     fresult << std::endl;
 
   } else {
-    fresult.open(_outputs_path + "/results.csv",
-                 std::ofstream::out | std::ofstream::app);
+    fresult.open(_outputs_path + "/results.csv", std::ofstream::out | std::ofstream::app);
     if (!fresult.is_open()) {
-      cout << "Could not open results.csv: " << _outputs_path
-           << "\n Currently at: " << __LINE__ << endl;
+      cout << "Could not open results.csv: " << _outputs_path << "\n Currently at: " << __LINE__
+           << endl;
       exit(0);
     }
   }
@@ -4260,4 +4170,4 @@ void LiDARTag::printClusterResult(
   fresult.close();
   fresult << std::endl;
 }
-}; // namespace BipedLab
+};  // namespace BipedLab

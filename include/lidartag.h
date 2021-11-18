@@ -39,6 +39,7 @@
 #include <string>
 #include <vector>
 
+#include <dynamic_reconfigure/server.h>
 #include <jsk_rviz_plugins/OverlayText.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
@@ -48,6 +49,7 @@
 #include <visualization_msgs/MarkerArray.h> // Marker
 
 // threadings
+#include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
 #include <tbb/tbb.h>
 
@@ -64,10 +66,16 @@
 #include <velodyne_pointcloud/point_types.h>
 #include <velodyne_pointcloud/pointcloudXYZIR.h>
 
+#include "lidartag_msgs/Corners.h"
+#include "lidartag_msgs/CornersArray.h"
 #include "lidartag_msgs/LiDARTagDetection.h"
 #include "lidartag_msgs/LiDARTagDetectionArray.h"
+#include "lidartag_msgs/LiDARTagMsgsConfig.h"
 #include "thread_pool.h"
 #include "types.h"
+#include "utils.h"
+
+#include "apriltag_utils.h"
 
 // #include "mat.h"
 // #include "matrix.h"
@@ -119,6 +127,7 @@ private:
   int _cluster_min_index;
   int _cluster_max_points_size;
   int _cluster_min_points_size;
+  double _clearance;
   Eigen::Vector3f _intersection1;
   Eigen::Vector3f _intersection2;
   Eigen::Vector3f _intersection3;
@@ -183,6 +192,24 @@ private:
   ros::Publisher _transformed_edge_pc_pub;
   ros::Publisher _average_point_pub;
   ros::Publisher _before_transformed_edge_pc_pub;
+  ros::Publisher _corners_array_pub;
+  ros::Publisher _left_corners_pub;
+  ros::Publisher _right_corners_pub;
+  ros::Publisher _down_corners_pub;
+  ros::Publisher _top_corners_pub;
+  ros::Publisher _boundary_corners_array_pub;
+  ros::Publisher _left_boundary_corners_pub;
+  ros::Publisher _right_boundary_corners_pub;
+  ros::Publisher _down_boundary_corners_pub;
+  ros::Publisher _top_boundary_corners_pub;
+  ros::Publisher _boundary_points_pub;
+  ros::Publisher _colored_cluster_buff_pub;
+  ros::Publisher _ps_cluster_buff__pub;
+  ros::Publisher _in_cluster_buff__pub;
+
+  boost::shared_ptr<
+      dynamic_reconfigure::Server<lidartag_msgs::LiDARTagMsgsConfig>>
+      srv_;
   // Flag
   int _point_cloud_received; // check if a scan of point cloud has received or
                              // not
@@ -267,11 +294,15 @@ private:
   double _coa_tunable;
   double _tagsize_tunable;
   int _min_returns_per_grid;
+  corners _tag_corners;
+  corners _tag_boundary_corners;
+
   GrizTagFamily_t *tf;
   lidartag_msgs::LiDARTagDetectionArray
       _lidartag_pose_array; // an array of apriltags
   lidartag_msgs::LiDARTagDetectionArray detectionsToPub;
-
+  lidartag_msgs::CornersArray pub_corners_array_;
+  lidartag_msgs::CornersArray _boundary_corners_array_;
   // threadings
   int _num_threads;
   std::shared_ptr<ThreadPool> _thread_vec;
@@ -797,7 +828,7 @@ private:
   std::vector<int>
   _getValidClusters(const std::vector<ClusterFamily_t> &ClusterBuff);
 
-  void _maxPointsCheck(ClusterFamily_t &Cluster);
+  int _maxPointsCheck(ClusterFamily_t &Cluster);
 
   bool _rejectWithPlanarCheck(ClusterFamily_t &Cluster,
                               pcl::PointIndices::Ptr inliers,
@@ -832,6 +863,17 @@ private:
   void
   publishIntersections(const std::vector<Eigen::VectorXf> intersection_list);
   void printClusterResult(const std::vector<ClusterFamily_t> &cluster_buff);
+  void addCorners(corners tag_corners, ClusterFamily_t cluster);
+  void addBoundaryCorners(corners tag_boundary_corners,
+                              ClusterFamily_t cluster);
+  void getBoundaryCorners(ClusterFamily_t cluster, pcl::PointCloud<PointXYZRI>::Ptr boundaryPts);
+  void colorClusters(const std::vector<ClusterFamily_t> &cluster);
+  void
+  displayClusterPointSize(const std::vector<ClusterFamily_t> &cluster_buff);
+  void
+  displayClusterIndexNumber(const std::vector<ClusterFamily_t> &cluster_buff);
+  void dynparamCallback(const lidartag_msgs::LiDARTagMsgsConfig &dyn_msg,
+                        const uint32_t level);
 }; // GrizTag
 } // namespace BipedLab
 #endif

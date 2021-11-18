@@ -259,9 +259,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 4.203895392974451e-45
+      Max Intensity: 127.62503814697266
       Min Color: 0; 0; 0
-      Min Intensity: 4.203895392974451e-45
+      Min Intensity: 127.62503814697266
       Name: EstimatedCorners
       Position Transformer: XYZ
       Queue Size: 10
@@ -395,9 +395,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: -999999
+      Max Intensity: 69
       Min Color: 0; 0; 0
-      Min Intensity: 999999
+      Min Intensity: 0
       Name: 3DTransformedPoints
       Position Transformer: XYZ
       Queue Size: 10
@@ -456,27 +456,6 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
-    - Align Bottom: false
-      Background Alpha: 0.800000011920929
-      Background Color: 0; 0; 0
-      Class: jsk_rviz_plugin/OverlayText
-      Enabled: true
-      Foreground Alpha: 0.800000011920929
-      Foreground Color: 25; 255; 240
-      Invert Shadow: false
-      Name: OverlayText
-      Overtake BG Color Properties: false
-      Overtake FG Color Properties: true
-      Overtake Position Properties: false
-      Topic: /LiDARTag/lidartag_main/detail_valid_text
-      Value: true
-      font: DejaVu Sans Mono
-      height: 128
-      left: 0
-      line width: 10
-      text size: 12
-      top: 0
-      width: 128
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
@@ -543,5 +522,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1920
-  X: 1920
+  X: 0
   Y: 0

@@ -8,6 +8,7 @@ Panels:
         - /Status1
         - /FillInClusterB&W1/Namespaces1
         - /Tamplate1/Namespaces1
+        - /TF1/Frames1
       Splitter Ratio: 0.6219239234924316
     Tree Height: 759
   - Class: rviz/Selection
@@ -256,12 +257,12 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 127.62503814697266
+      Max Intensity: 1.2751816025355835e-43
       Min Color: 0; 0; 0
-      Min Intensity: 127.62503814697266
+      Min Intensity: 1.2751816025355835e-43
       Name: EstimatedCorners
       Position Transformer: XYZ
       Queue Size: 10
@@ -273,7 +274,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -591,9 +592,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 58
+      Max Intensity: 54
       Min Color: 0; 0; 0
-      Min Intensity: 1
+      Min Intensity: 4
       Name: PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
@@ -855,6 +856,58 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /LiDARTag/lidartag_main/left_corner
+      Name: Marker
+      Namespaces:
+        tag_left_corners: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /LiDARTag/lidartag_main/top_corners
+      Name: Marker
+      Namespaces:
+        tag_top_corners: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /LiDARTag/lidartag_main/down_corners
+      Name: Marker
+      Namespaces:
+        tag_down_corners: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /LiDARTag/lidartag_main/right_corners
+      Name: Marker
+      Namespaces:
+        tag_right_corners: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+        pandar:
+          Value: false
+        tag0:
+          Value: true
+      Marker Scale: 3
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        pandar:
+          tag0:
+            {}
+      Update Interval: 0
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
@@ -883,25 +936,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.955667972564697
+      Distance: 13.005271911621094
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.19010627269744873
-        Y: -1.2467411756515503
-        Z: 0.5246328711509705
+        X: 0.16102802753448486
+        Y: -3.5522372722625732
+        Z: 0.9273033738136292
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.18479768931865692
+      Pitch: 1.3997970819473267
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.4966797828674316
+      Yaw: 1.7066789865493774
     Saved: ~
 Window Geometry:
   Displays:

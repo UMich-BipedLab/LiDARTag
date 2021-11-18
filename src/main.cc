@@ -28,18 +28,17 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include <ros/ros.h>
 #include <lidartag.h>
+#include <ros/ros.h>
 
 using namespace std;
 
-int main(int argc, char **argv){
+int main(int argc, char ** argv)
+{
+  ros::init(argc, argv, "lidar_tag_node");
+  BipedLab::LiDARTag lidar_tag;
 
-    ros::init(argc, argv, "lidar_tag_node");
-    BipedLab::LiDARTag lidar_tag;
+  cout << "Done!" << endl;
 
-    cout << "Done!" << endl;
-
-    return 0;
+  return 0;
 }
-
