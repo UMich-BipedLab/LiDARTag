@@ -3,19 +3,9 @@ project (lidartag)
 
 # CMAKE TWEAKS
 #========================================================================
-# set(CMAKE_CXX_STANDARD 14)
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3 -DEIGEN_NO_DEBUG -march=native -Wl,--no-as-needed")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3 -DEIGEN_NO_DEBUG -march=native -Wl,--no-as-needed")
-# set(MATLAB_INCLUDE_DIRS /usr/local/MATLAB/R2019b/extern/include/)
-# set(MATLAB_LIBRARIES_DIRS /usr/local/MATLAB/R2019b/bin/glnxa64)
-# set(MATLAB_LIBRARIES ${MATLAB_LIBRARIES_DIRS}/libmat.so ${MATLAB_LIBRARIES_DIRS}/libmx.so)
-# list(APPEND CMAKE_PREFIX_PATH "/home/brucebot/softwares/oneTBB")
-# list(APPEND CMAKE_PREFIX_PATH "/usr/local/include")
-# list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib/cmake")
-# list(APPEND CMAKE_PREFIX_PATH "/home/brucebot/softwares/tbb_outsourced/build2")
-# set(CMAKE_MODULE_PATH "/home/brucebot/softwares/TBB/build/;/usr/local/lib/;/usr/local/lib/cmake/;${CMAKE_MODULE_PATH}")
-LIST(APPEND CMAKE_MODULE_PATH "/home/shigeki/tag_ws/src/LiDARTag/cmake")
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 message(STATUS "=============================================CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
 find_package(catkin REQUIRED COMPONENTS
@@ -30,23 +20,25 @@ find_package(catkin REQUIRED COMPONENTS
     roslib
     lidartag_msgs
 )
+
+
 # CHECK THE DEPENDENCIES
 find_package(NLopt REQUIRED)
+
 find_package(OpenCV REQUIRED)
+
 # PCL
 find_package(PCL 1.2 REQUIRED)
 find_package(Boost REQUIRED
              COMPONENTS filesystem system signals regex date_time program_options thread
 )
-# find_package(Eigen3)
-#include(cmake)
-# include(${CMAKE_CURRENT_SOURCE_DIR}/../A/CMakeLists.txt)
-# find_package(Eigen3 HINTS /home/brucebot/softwares/eigen_git/cmake/)
-# set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
-# message(STATUS "=============================================Eigen path: ${EIGEN3_INCLUDE_DIR}")
-# set(EIGEN3_INCLUDE_DIR "/usr/local/include/eigen3/")
 
+# NLOPT
 message(STATUS "===============================NLOPT lib: ${NLOPT_LIBRARIES}")
+
+
+
+# TBB
 find_package(TBB REQUIRED)
 if(TBB_FOUND)
     message(STATUS "=============================================TBB FOUND")
@@ -64,24 +56,30 @@ endif()
 
 # find_package(Eigen3)
 # if(NOT EIGEN3_FOUND)
-# message(STATUS "=============================================EIGEN3 NOT FOUND")
 #   # Fallback to cmake_modules
 #   find_package(cmake_modules REQUIRED)
-#   #message(STATUS "=============================================Eigen path: ${EIGEN3_INCLUDE_DIR}")
-#   # find_package(Eigen REQUIRED)
-#   message(STATUS "=============================================Eigen include path: ${EIGEN3_INCLUDE_DIR}")
-#   set(/usr/local/include/eigen3 ${EIGEN3_INCLUDE_DIR})
-#   message(STATUS "=============================================Eigen include path: ${EIGEN3_INCLUDE_DIR}")
-#   #  set(EIGEN3_LIBRARIES ${EIGEN_LIBRARIES})  # Not strictly necessary as Eigen is head only
+#   # message(STATUS "=============================================Eigen path: ${EIGEN3_INCLUDE_DIR}")
+#   find_package(Eigen REQUIRED)
+#   set(EIGEN3_INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS})
+#   set(EIGEN3_LIBRARIES ${EIGEN_LIBRARIES})  # Not strictly necessary as Eigen is head only
 #   # Possibly map additional variables to the EIGEN3_ prefix.
 # else()
-#   message(STATUS "=============================================EIGEN3 FOUND")
-#   message(STATUS "=============================================Eigen include path: ${EIGEN3_INCLUDE_DIR}")
-#   set(/usr/local/include/eigen3 ${EIGEN3_INCLUDE_DIR})
-#   message(STATUS "=============================================Eigen include path: ${EIGEN3_INCLUDE_DIR}")
-#   endif()
+#   # message(STATUS "=============================================Eigen path: ${EIGEN3_INCLUDE_DIR}")
+#   set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
+# endif()
+
+message(STATUS "Trying to include Eigen library")
+set(EIGEN3_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/internal_eigen3/eigen)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+find_package(Eigen3 3.4.0 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
+message(STATUS "================================== EIGEN (internal): " ${EIGEN3_VERSION})
+
+
 
 find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
+
+
 
 catkin_package(
   INCLUDE_DIRS include
@@ -92,20 +90,22 @@ catkin_package(
   std_msgs 
 	tf
   DEPENDS
-	# Eigen3
+	Eigen3
 )
 
 include_directories(
   include 
-  /usr/local/include/eigen3
   ${catkin_INCLUDE_DIRS}
 	${PCL_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
   ${TBB_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   )
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
+
+
 
 # COMPILE THE SOURCE
 #========================================================================

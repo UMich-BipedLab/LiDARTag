@@ -85,7 +85,10 @@ Those are the packages used in the LiDARTag package. It seems many but if you fo
 2. Please install [TBB library](https://github.com/oneapi-src/oneTBB). You may need to modify the CMakeLists.txt according to your installation.
 3. Please install [NLopt](https://nlopt.readthedocs.io/en/latest/). You may need to midify the CMakeLists.txt according to your installation.
 4. Please download [LiDARTag_msgs](https://github.com/UMich-BipedLab/LiDARTag_msgs) and place them under your catkin workspace.
+5. The issue of Eigen version has been fixed by using an internal Eigen library instead of the system-wise Eigen library.
+<!--
 5. Plesae ensure you have a correct Eigen Library on your system by downloading it from the [GitLab](https://gitlab.com/libeigen/eigen.git) and checkout `6f0f6f792e441c32727ed945686fefe02e6bdbc6`. Any commit older than this should also work.
+-->
 
 ## Installation of Related Libraries
 ### ROS Melodic
@@ -103,11 +106,13 @@ cmake --build . --config Release -- -j 6;
 sudo cmake --build . --target install
 ```
 
+<!--
 ###### Notes
 Ensure the followings in the CMakeList.txt are correct:
 1. FindTBB.cmake is under _LiDARTag/cmake/_
 2. LIST(APPEND CMAKE_MODULE_PATH "YOUR_PATH/LiDARTag/cmake/")
 	* Please change **YOUR_PATH** to your path to the LiDARTag package (something like this: catkin/src/LiDARTag/cmake).
+-->
 
 
 ### NLopt library
