@@ -37,7 +37,7 @@
 #include <velodyne_pointcloud/pointcloudXYZIR.h> 
 
 #include <fstream>
-#include <ros/package.h> // package
+#include "rclcpp/rclcpp.hpp" // package
 
 #include "ultra_puck.h"
 #include "lidartag.h"
@@ -169,14 +169,14 @@ namespace BipedLab {
         }
 
         if (_debug_info) {
-            ROS_DEBUG_STREAM("==== _maxPointsCheck ====");
-            ROS_DEBUG_STREAM("Distance : " << distance << ", num_horizontal_points: " << num_horizontal_points);
-            ROS_DEBUG_STREAM("Expected Points: " << expected_points);
-            ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() + cluster.edge_points.size());
+            RCLCPP_DEBUG_STREAM(get_logger(), "==== _maxPointsCheck ====");
+            RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance << ", num_horizontal_points: " << num_horizontal_points);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Expected Points: " << expected_points);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
             if ((cluster.data.size() + cluster.edge_points.size()) > expected_points)
-                ROS_DEBUG_STREAM("Status: " << false);
+                RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << false);
             else 
-                ROS_DEBUG_STREAM("Status: " << true);
+                RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << true);
         }
     }
 
@@ -218,21 +218,21 @@ namespace BipedLab {
         seg.segment(*inliers, *coefficients);
         cluster.inliers = inliers->indices.size();
         if (_debug_info) {
-            ROS_DEBUG_STREAM("==== _rejectWithPlanarCheck ====");
+            RCLCPP_DEBUG_STREAM(get_logger(), "==== _rejectWithPlanarCheck ====");
             float distance =
                 std::sqrt(pow(cluster.average.x, 2) +
                         pow(cluster.average.y, 2) +
                         pow(cluster.average.z, 2));
-            ROS_DEBUG_STREAM("Distance : " << distance);
-            ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() + cluster.edge_points.size());
-            ROS_DEBUG_STREAM("Inliers     : " << inliers->indices.size());
-            ROS_DEBUG_STREAM("Outliers    : " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
+            RCLCPP_DEBUG_STREAM(get_logger(), "Inliers     : " << inliers->indices.size());
+            RCLCPP_DEBUG_STREAM(get_logger(), "Outliers    : " << 
                 cluster.data.size() - inliers->indices.size());
         }
         if (inliers->indices.size() == 0) {
             if (_debug_info) {
-                ROS_DEBUG_STREAM("Status: " << false);
-                ROS_WARN_STREAM("Failed to fit a plane model to the cluster.");
+                RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << false);
+                RCLCPP_WARN_STREAM(get_logger(), "Failed to fit a plane model to the cluster.");
             }
             _result_statistics.cluster_removal.plane_fitting++;
             _result_statistics.remaining_cluster_size--;
@@ -241,7 +241,7 @@ namespace BipedLab {
         }
 
         if (_debug_info) 
-            ROS_DEBUG_STREAM("Status: " << true);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << true);
         if (_log_data) {
             fplanefit << "Successfully fit plane!" << endl;
             fplanefit << "Cluster Size: " << cluster.data.size() << endl;

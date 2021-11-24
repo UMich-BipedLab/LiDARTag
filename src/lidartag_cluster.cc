@@ -28,7 +28,7 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include <ros/package.h> // package
+#include "rclcpp/rclcpp.hpp"// package
 #include "lidartag.h"
 #include "ultra_puck.h"
 
@@ -146,45 +146,45 @@ namespace BipedLab {
 
 
                 // Check every time when new marker added 
-                // visualization_msgs::MarkerArray CheckArray;
-                // visualization_msgs::Marker CheckMarker;
-                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE, 
+                // visualization_msgs::msg::MarkerArray CheckArray;
+                // visualization_msgs::msg::Marker CheckMarker;
+                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::msg::Marker::CUBE, 
                 //                       "Check0", 
                 //                       1, 0, 0,
                 //                       top_most_point, 0, 0.05);
                 // CheckArray.markers.push_back(CheckMarker);
 
-                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE, 
+                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::msg::Marker::CUBE, 
                 //                       "Check1", 
                 //                       1, 0, 0,
                 //                       bottom_most_point, 1, 0.05);
                 // CheckArray.markers.push_back(CheckMarker);
 
-                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE, 
+                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::msg::Marker::CUBE, 
                 //                       "Check2", 
                 //                       1, 0, 0,
                 //                       front_most_point, 2, 0.05);
                 // CheckArray.markers.push_back(CheckMarker);
 
-                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE, 
+                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::msg::Marker::CUBE, 
                 //                       "Check3", 
                 //                       1, 0, 0,
                 //                       back_most_point, 3, 0.05);
                 // CheckArray.markers.push_back(CheckMarker);
 
-                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE, 
+                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::msg::Marker::CUBE, 
                 //                       "Check4", 
                 //                       1, 0, 0,
                 //                       left_most_point, 4, 0.05);
                 // CheckArray.markers.push_back(CheckMarker);
 
-                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE, 
+                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::msg::Marker::CUBE, 
                 //                       "Check5", 
                 //                       1, 0, 0,
                 //                       right_most_point, 5, 0.05);
                 // CheckArray.markers.push_back(CheckMarker);
 
-                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::Marker::SPHERE, 
+                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::msg::Marker::SPHERE, 
                 //                       "Check6", 
                 //                       0, 1, 0,
                 //                       Point, 5, 0.1);

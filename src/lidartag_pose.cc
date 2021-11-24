@@ -1099,21 +1099,21 @@ namespace BipedLab {
         int status = 1;
 
         if (_debug_info) {
-            ROS_DEBUG_STREAM("==== _optimizePose ====");
+            RCLCPP_DEBUG_STREAM(get_logger(), "==== _optimizePose ====");
             float distance =
                 std::sqrt(pow(cluster.average.x, 2) +
                         pow(cluster.average.y, 2) +
                         pow(cluster.average.z, 2));
-            ROS_DEBUG_STREAM("Distance : " << distance);
-            ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() + cluster.edge_points.size());
-            ROS_DEBUG_STREAM("Inital Cost: " << initial_cost);
-            ROS_DEBUG_STREAM("Cost Threshold: " <<
+            RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
+            RCLCPP_DEBUG_STREAM(get_logger(), "Inital Cost: " << initial_cost);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Cost Threshold: " <<
                     _optimization_percent * cluster.inliers/100);
         }
 
         if (initial_cost > _optimization_percent * cluster.inliers/100) {
             status = -1;
-            ROS_DEBUG_STREAM("Status: " << status);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << status);
 
             return status;
         }
@@ -1126,7 +1126,7 @@ namespace BipedLab {
         // float coa_tunable = 0.75;
         if (coverage_area < _coa_tunable) {
             status = -2;
-            ROS_DEBUG_STREAM("Status: " << false);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << false);
 
             return status;
         }
@@ -1318,21 +1318,21 @@ namespace BipedLab {
 
             // if (result != 1) {
             //     nlopt_result results_nlopt = static_cast<nlopt_result>(result);
-            //     ROS_WARN_STREAM("Optimization result: " << nlopt_result_to_string(results_nlopt));
+            //     RCLCPP_WARN_STREAM(get_logger(), "Optimization result: " << nlopt_result_to_string(results_nlopt));
 
             //     return false; // timeout
             // }
             if (minf > _optimization_percent * cluster.inliers / 1000) {
                 status = -3;
                 if (_debug_info) {
-                    ROS_WARN_STREAM("Optimized Cost too large: "
+                    RCLCPP_WARN_STREAM(get_logger(), "Optimized Cost too large: "
                             << std::setprecision(3) << minf);
-                    ROS_WARN_STREAM("Inital Cost: " << initial_cost);
+                    RCLCPP_WARN_STREAM(get_logger(), "Inital Cost: " << initial_cost);
                 }
                 if (initial_cost < 0.1 * _optimization_percent * cluster.inliers / 1000) {
                     status = 2;
                     if (_debug_info) {
-                        ROS_WARN_STREAM("Use initial pose.");
+                        RCLCPP_WARN_STREAM(get_logger(), "Use initial pose.");
                     }
 
                     cluster.pose_tag_to_lidar.homogeneous =
@@ -1361,12 +1361,12 @@ namespace BipedLab {
 
             if (_debug_info) {
                 if (_derivative_method) {
-                    ROS_DEBUG_STREAM("Optimzed euler angle : "
+                    RCLCPP_DEBUG_STREAM(get_logger(), "Optimzed euler angle : "
                         << x[3]*180/M_PI << ", "
                         << x[4]*180/M_PI << ", "
                         << x[5]*180/M_PI);
                 } else {
-                    ROS_DEBUG_STREAM("Optimzed lie algebra : "
+                    RCLCPP_DEBUG_STREAM(get_logger(), "Optimzed lie algebra : "
                         << x[3]<< ", "
                         << x[4] << ", "
                         << x[5]);
@@ -1387,15 +1387,15 @@ namespace BipedLab {
 
             if (_debug_info) {
                 nlopt_result results_nlopt = static_cast<nlopt_result>(result);
-                ROS_DEBUG_STREAM("Optimization result: " << std::string(nlopt_result_to_string(results_nlopt)));
-                ROS_DEBUG_STREAM("Optimized cost is: " << std::setprecision(3) << minf);
-                ROS_DEBUG_STREAM("Found minimum at \n" << homogeneous);
+                RCLCPP_DEBUG_STREAM(get_logger(), "Optimization result: " << std::string(nlopt_result_to_string(results_nlopt)));
+                RCLCPP_DEBUG_STREAM(get_logger(), "Optimized cost is: " << std::setprecision(3) << minf);
+                RCLCPP_DEBUG_STREAM(get_logger(), "Found minimum at \n" << homogeneous);
             }
         }
         catch(std::exception &e) {
             status = -4;
             if (_debug_info)
-                ROS_WARN_STREAM("Pose optimization failed: " << e.what());
+                RCLCPP_WARN_STREAM(get_logger(), "Pose optimization failed: " << e.what());
             if (initial_cost < 0.1 * _optimization_percent * cluster.inliers / 1000) {
                 status = 3;
                 cluster.pose_tag_to_lidar.homogeneous =
@@ -1405,12 +1405,12 @@ namespace BipedLab {
                 cluster.pose_tag_to_lidar.rotation =
                     cluster.initial_pose.homogeneous.topLeftCorner(3,3);
                 if (_debug_info)
-                    ROS_WARN_STREAM("Use initial pose.");
+                    RCLCPP_WARN_STREAM(get_logger(), "Use initial pose.");
             }
         }
 
         if (_debug_info) {
-            ROS_DEBUG_STREAM("Status: " << status);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << status);
         }
 
         return status;

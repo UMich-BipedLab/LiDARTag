@@ -42,7 +42,6 @@
 #include <boost/filesystem.hpp>
 
 
-
 #include <velodyne_pointcloud/point_types.h>
 #include <velodyne_pointcloud/pointcloudXYZIR.h> 
 #include "lidartag.h"
@@ -54,9 +53,9 @@ namespace BipedLab {
 namespace utils {
 double spendCPUTime(const std::clock_t &t_end, const std::clock_t &t_start);
 double spendCPUHz(const std::clock_t &t_end, const std::clock_t &t_start);
-double printSpendCPUHz(
+void printSpendCPUHz(
         const std::clock_t &t_end, const std::clock_t &t_start);
-double printSpendCPUHz(
+void printSpendCPUHz(
         const std::clock_t &t_end, const std::clock_t &t_start, std::string txt);
 
 double spendElapsedTimeMilli(
@@ -71,12 +70,12 @@ double spendElapsedHz(
         const std::chrono::steady_clock::time_point &t_end,
         const std::chrono::steady_clock::time_point &t_start);
 
-double printSpendElapsedHz(
+void printSpendElapsedHz(
         const std::chrono::steady_clock::time_point &t_end,
         const std::chrono::steady_clock::time_point &t_start,
         std::string txt);
 
-double printSpendElapsedHz(
+void printSpendElapsedHz(
         const std::chrono::steady_clock::time_point &t_end,
         const std::chrono::steady_clock::time_point &t_start);
 
@@ -234,7 +233,7 @@ T blockMatrix(int t_n, ...);
 
 
 // template <class T>
-Eigen::Matrix4d poseToEigenMatrix(const geometry_msgs::Pose &t_pose);
+Eigen::Matrix4d poseToEigenMatrix(const geometry_msgs::msg::Pose &t_pose);
 // Eigen::Matrix4d poseToEigenMatrix(const T &pose);
 
 template <class T>
@@ -243,6 +242,7 @@ Eigen::Matrix3d qToR(const T &t_pose);
 Eigen::Matrix3d qToR(const Eigen::Vector3f &t_pose);
 
 // q1q2 = q2q1q2^-1
+[[deprecated("Implementation was empty in the original repository")]]
 Eigen::Matrix3d qMultiplication(const double &t_q1_w, const Eigen::Vector3f &t_q1, 
                                 const double &t_q2_w, const Eigen::Vector3f &t_q2);
 

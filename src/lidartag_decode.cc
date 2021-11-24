@@ -28,7 +28,7 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include <ros/package.h> // package
+#include "rclcpp/rclcpp.hpp" // package
 #include <functional>
 #include <numeric>
 
@@ -199,17 +199,17 @@ int LiDARTag::_getCodeWeightedGaussian(string &Code, Homogeneous_t &pose,
      */
 
     // For visualization
-    visualization_msgs::MarkerArray GridMarkerArray;
-    visualization_msgs::Marker GridMarker;
+    visualization_msgs::msg::MarkerArray GridMarkerArray;
+    visualization_msgs::msg::Marker GridMarker;
 
-    visualization_msgs::Marker LineStrip;
+    visualization_msgs::msg::Marker LineStrip;
     LineStrip.header.frame_id = _pub_frame;
     LineStrip.header.stamp = _current_scan_time;
     LineStrip.ns = "boundary" ;
-    LineStrip.action = visualization_msgs::Marker::ADD;
+    LineStrip.action = visualization_msgs::msg::Marker::ADD;
     LineStrip.pose.orientation.w= 1.0;
     LineStrip.id = 1;
-    LineStrip.type = visualization_msgs::Marker::LINE_STRIP;
+    LineStrip.type = visualization_msgs::msg::Marker::LINE_STRIP;
     LineStrip.scale.x = 0.002;
     LineStrip.color.b = 1.0;
     LineStrip.color.a = 1.0;
@@ -238,25 +238,25 @@ int LiDARTag::_getCodeWeightedGaussian(string &Code, Homogeneous_t &pose,
 
     }
     if(_grid_viz){
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Grid_" + string("11"), 
                       0, 0, 0,
                       p11, 1, 0.01);
         GridMarkerArray.markers.push_back(GridMarker);
 
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Grid_" + string("21"),
                       0, 0, 0,
                       p21, 1, 0.01);
         GridMarkerArray.markers.push_back(GridMarker);
 
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Grid_" + string("31"), 
                       0, 0, 0,
                       p31, 1, 0.01);
         GridMarkerArray.markers.push_back(GridMarker);
 
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Grid_" + string("41"), 
                       0, 0, 0,
                       p41, 1, 0.01);
@@ -274,25 +274,25 @@ int LiDARTag::_getCodeWeightedGaussian(string &Code, Homogeneous_t &pose,
     }
 
     if(_grid_viz){
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Grid_" + string("12"), 
                       0, 0, 0,
                       p12, 1, 0.01);
         GridMarkerArray.markers.push_back(GridMarker);
 
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Grid_" + string("22"),
                       0, 0, 0,
                       p22, 1, 0.01);
         GridMarkerArray.markers.push_back(GridMarker);
 
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Grid_" + string("32"), 
                       0, 0, 0,
                       p32, 1, 0.01);
         GridMarkerArray.markers.push_back(GridMarker);
 
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Grid_" + string("42"), 
                       0, 0, 0,
                       p42, 1, 0.01);
@@ -329,25 +329,25 @@ int LiDARTag::_getCodeWeightedGaussian(string &Code, Homogeneous_t &pose,
     }
 
     if(_grid_viz){
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Grid_" + string("1"), 
                       1, 1, 1,
                       p1, 1, 0.01);
         GridMarkerArray.markers.push_back(GridMarker);
 
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Grid_" + string("2"),
                       1, 1, 1,
                       p2, 1, 0.01);
         GridMarkerArray.markers.push_back(GridMarker);
 
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Grid_" + string("3"), 
                       1, 1, 1,
                       p3, 1, 0.01);
         GridMarkerArray.markers.push_back(GridMarker);
 
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Grid_" + string("4"), 
                       1, 1, 1,
                       p4, 1, 0.01);
@@ -374,31 +374,31 @@ int LiDARTag::_getCodeWeightedGaussian(string &Code, Homogeneous_t &pose,
     Eigen::Vector3f Angle = utils::rotationMatrixToEulerAngles(R);
 
     if(_grid_viz){
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Model_" + string("1"), 
                       0, 1, 0,
                       utils::toVelodyne(Vertices.col(1)), 1, 0.01);
         GridMarkerArray.markers.push_back(GridMarker);
 
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Model_" + string("2"),
                       0, 1, 0,
                       utils::toVelodyne(Vertices.col(2)), 1, 0.01);
         GridMarkerArray.markers.push_back(GridMarker);
 
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Model_" + string("3"), 
                       0, 1, 0,
                       utils::toVelodyne(Vertices.col(3)), 1, 0.01);
         GridMarkerArray.markers.push_back(GridMarker);
 
-        LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::CUBE, 
+        LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::CUBE, 
                       "Model_" + string("4"), 
                       0, 1, 0,
                       utils::toVelodyne(Vertices.col(4)), 1, 0.01);
         GridMarkerArray.markers.push_back(GridMarker);
 
-        geometry_msgs::Point p;
+        geometry_msgs::msg::Point p;
         p.x = Vertices(0, 1);
         p.y = Vertices(1, 1);
         p.z = Vertices(2, 1);
@@ -457,7 +457,7 @@ int LiDARTag::_getCodeWeightedGaussian(string &Code, Homogeneous_t &pose,
         utils::assignCellIndex(_payload_size, R, p, 
                                average, d + 2*_black_border, Votes[i]);
         if(_grid_viz){
-            LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::SPHERE, 
+            LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::SPHERE, 
                           "TransPoints", 
                           vR[Votes[i].cell], vG[Votes[i].cell], vB[Votes[i].cell],
                           p, i, 0.005);
@@ -495,18 +495,18 @@ int LiDARTag::_getCodeWeightedGaussian(string &Code, Homogeneous_t &pose,
         
         for (int j=0; j<Grid[i].size(); ++j){
             if(_grid_viz){
-                LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::SPHERE, 
+                LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::SPHERE, 
                         "Point" + to_string(i), 
                         r, g, b,
                         *(Grid[i][j]->p), j, 0.005);
                 GridMarkerArray.markers.push_back(GridMarker);
-                LiDARTag::_assignMarker(GridMarker, visualization_msgs::Marker::SPHERE, 
+                LiDARTag::_assignMarker(GridMarker, visualization_msgs::msg::Marker::SPHERE, 
                         "Center" + to_string(i), 
                         1, 1, 1,
                         Grid[i][j]->centroid, j, 0.005);
                 GridMarkerArray.markers.push_back(GridMarker);
                 LiDARTag::_assignMarker(GridMarker, 
-                        visualization_msgs::Marker::TEXT_VIEW_FACING, 
+                        visualization_msgs::msg::Marker::TEXT_VIEW_FACING, 
                         "Prob" + to_string(i), 
                         1, 1, 1,
                         *(Grid[i][j]->p), j, 0.003, 
@@ -527,8 +527,8 @@ int LiDARTag::_getCodeWeightedGaussian(string &Code, Homogeneous_t &pose,
     Code += "UL";
 
     if(_grid_viz){
-        _payload_grid_pub.publish(GridMarkerArray); 
-        _payload_grid_line_pub.publish(LineStrip); 
+        _payload_grid_pub->publish(GridMarkerArray); 
+        _payload_grid_line_pub->publish(LineStrip); 
     }
     return 0;
 }
@@ -1778,26 +1778,26 @@ int LiDARTag::_getCodeRKHS(
     if (id_score < 12) {
         status = 0;
         if (_debug_info) {
-            ROS_WARN_STREAM("==== _getCodeRKHS ====");
-            ROS_WARN_STREAM("Size number: " << size_num);
-            ROS_WARN_STREAM("Score is too small: " << id_score);
-            ROS_WARN_STREAM("Status: " << status);
-            ROS_WARN_STREAM("========================");
+            RCLCPP_WARN_STREAM(get_logger(), "==== _getCodeRKHS ====");
+            RCLCPP_WARN_STREAM(get_logger(), "Size number: " << size_num);
+            RCLCPP_WARN_STREAM(get_logger(), "Score is too small: " << id_score);
+            RCLCPP_WARN_STREAM(get_logger(), "Status: " << status);
+            RCLCPP_WARN_STREAM(get_logger(), "========================");
         }
     } else {
         status = 1;
         if (_debug_info) {
-            ROS_DEBUG_STREAM("==== _getCodeRKHS ====");
-            ROS_DEBUG_STREAM("Size number: " << size_num);
-            ROS_DEBUG_STREAM("num_points: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "==== _getCodeRKHS ====");
+            RCLCPP_DEBUG_STREAM(get_logger(), "Size number: " << size_num);
+            RCLCPP_DEBUG_STREAM(get_logger(), "num_points: " << 
                     rkhs_decoding.template_points_3d.cols());
-            ROS_DEBUG_STREAM("id: " << rkhs_decoding.id);
-            ROS_DEBUG_STREAM("id_score: " << rkhs_decoding.id_score);
-            ROS_DEBUG_STREAM("rotation: " << rkhs_decoding.rotation_angle);
-            ROS_DEBUG_STREAM("file: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "id: " << rkhs_decoding.id);
+            RCLCPP_DEBUG_STREAM(get_logger(), "id_score: " << rkhs_decoding.id_score);
+            RCLCPP_DEBUG_STREAM(get_logger(), "rotation: " << rkhs_decoding.rotation_angle);
+            RCLCPP_DEBUG_STREAM(get_logger(), "file: " << 
                     _rkhs_function_name_list[size_num][rkhs_decoding.id]);
-            ROS_DEBUG_STREAM("Status: " << status);
-            ROS_DEBUG_STREAM("========================");
+            RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << status);
+            RCLCPP_DEBUG_STREAM(get_logger(), "========================");
         }
     }
 
@@ -1857,19 +1857,19 @@ bool LiDARTag::_decodePayload(ClusterFamily_t &Cluster){
             uint64_t Rcode = stoull(Code, nullptr, 2);
             BipedAprilLab::QuickDecodeCodeword(tf, Rcode, &Cluster.entry);
             Cluster.cluster_id = Cluster.entry.id;
-            ROS_INFO_STREAM("id: " << Cluster.entry.id);
-            ROS_DEBUG_STREAM("hamming: " << Cluster.entry.hamming);
-            ROS_DEBUG_STREAM("rotation: " << Cluster.entry.rotation);
+            RCLCPP_INFO_STREAM(get_logger(), "id: " << Cluster.entry.id);
+            RCLCPP_DEBUG_STREAM(get_logger(), "hamming: " << Cluster.entry.hamming);
+            RCLCPP_DEBUG_STREAM(get_logger(), "rotation: " << Cluster.entry.rotation);
         } else {
             // too big, return as an invalid tag 
             Code = "1111111111111111UL";
-            ROS_DEBUG_STREAM("\nCODE: " << Code);
+            RCLCPP_DEBUG_STREAM(get_logger(), "\nCODE: " << Code);
             uint64_t Rcode = stoull(Code, nullptr, 2);
             BipedAprilLab::QuickDecodeCodeword(tf, Rcode, &Cluster.entry);
             Cluster.cluster_id = 8888;
-            ROS_DEBUG_STREAM("id: " << Cluster.cluster_id);
-            ROS_DEBUG_STREAM("hamming: " << Cluster.entry.hamming);
-            ROS_DEBUG_STREAM("rotation: " << Cluster.entry.rotation);
+            RCLCPP_DEBUG_STREAM(get_logger(), "id: " << Cluster.cluster_id);
+            RCLCPP_DEBUG_STREAM(get_logger(), "hamming: " << Cluster.entry.hamming);
+            RCLCPP_DEBUG_STREAM(get_logger(), "rotation: " << Cluster.entry.rotation);
         }
     }
 

@@ -40,16 +40,19 @@
 #include <vector>
 #include <memory>
 
-#include <ros/ros.h>
-#include <tf/transform_broadcaster.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <visualization_msgs/Marker.h> // Marker
-#include <visualization_msgs/MarkerArray.h> // Marker
-
+#include <rclcpp/rclcpp.hpp>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2/LinearMath/Transform.h>
+#include "tf2/transform_datatypes.h"
+#include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 // threadings
+#include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
 #include <tbb/tbb.h>
 
 // To trasnform to pcl format
@@ -60,13 +63,13 @@
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/ModelCoefficients.h>
+#include "pcl/PCLPointCloud2.h"
 
 #include <velodyne_pointcloud/point_types.h>
 #include <velodyne_pointcloud/pointcloudXYZIR.h> 
 
-
-#include "lidartag_msgs/LiDARTagDetection.h"
-#include "lidartag_msgs/LiDARTagDetectionArray.h"
+#include <lidartag_msgs/msg/lidar_tag_detection.hpp>
+#include <lidartag_msgs/msg/lidar_tag_detection_array.hpp>
 #include "types.h"
 #include "thread_pool.h"
 
@@ -75,9 +78,9 @@
 // #include "tensorflow_ros_test/lib.h"
 
 namespace BipedLab{
-    class LiDARTag{
+    class LiDARTag: public rclcpp::Node{
         public:
-            LiDARTag();
+            LiDARTag(const rclcpp::NodeOptions & options);
 
         private:
             /*****************************************************
@@ -111,54 +114,55 @@ namespace BipedLab{
             std::string _assign_id; // Directly assign Id, mainly for calibration usage
 
             // ROS
-            ros::NodeHandle _nh;
-            ros::Subscriber _LiDAR1_sub;
-            ros::Publisher _original_pc_pub;
-            ros::Publisher _edge_pub;
-            ros::Publisher _transformed_points_pub;
-            ros::Publisher _transformed_points_tag_pub;
-            ros::Publisher _edge1_pub;
-            ros::Publisher _edge2_pub;
-            ros::Publisher _edge3_pub;
-            ros::Publisher _edge4_pub;
-            ros::Publisher _boundary_pub;
-            ros::Publisher _cluster_pub;
-            ros::Publisher _payload_pub;
-            ros::Publisher _payload3d_pub;
-            ros::Publisher _tag_pub;
-            ros::Publisher _ini_tag_pub;
-        //     ros::Publisher _index_pub;
-            ros::Publisher _cluster_marker_pub;  // cluster markers
-            ros::Publisher _boundary_marker_pub; // cluster boundary
-            ros::Publisher _id_marker_pub;
-            ros::Publisher _payload_marker_pub; // payload boundary
-            ros::Publisher _payload_grid_pub; // grid visualization
-            ros::Publisher _payload_grid_line_pub; // grid visualization
-            ros::Publisher _ideal_frame_pub;
-            ros::Publisher _tag_frame_pub;
-            ros::Publisher _edge_vector_pub;
-            ros::Publisher _lidartag_pose_pub; // Publish LiDAR pose
-            ros::Publisher _clustered_points_pub; // Points after minor clusters removed
-            ros::Publisher _detectionArray_pub;
+            //rclcpp::NodeHandle _nh; // TODO KL: Delete after it works
+            tf2_ros::TransformBroadcaster broadcaster_;
+            
+            rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr _lidar1_sub;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _original_pc_pub;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _edge_pub;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _transformed_points_pub;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _transformed_points_tag_pub;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _edge1_pub;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _edge2_pub;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _edge3_pub;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _edge4_pub;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _boundary_pub;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _cluster_pub;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _payload_pub;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _payload3d_pub;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _tag_pub;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _ini_tag_pub;
+            rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _cluster_marker_pub;  // cluster markers
+            rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _boundary_marker_pub; // cluster boundary
+            rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _id_marker_pub;
+            rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _payload_marker_pub; // payload boundary
+            rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _payload_grid_pub; // grid visualization
+            rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr _payload_grid_line_pub; // grid visualization
+            rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _ideal_frame_pub;
+            rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr _tag_frame_pub;
+            rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _edge_vector_pub;
+            rclcpp::Publisher<lidartag_msgs::msg::LidarTagDetectionArray>::SharedPtr _lidartag_pose_pub; // Publish LiDAR pose
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _clustered_points_pub; // Points after minor clusters removed
+            rclcpp::Publisher<lidartag_msgs::msg::LidarTagDetectionArray>::SharedPtr _detectionArray_pub;
 
             // Flag
             int _point_cloud_received; // check if a scan of point cloud has received or not
             int _stop; // Just a switch for exiting this program while using valgrind
 
-            // ros::Publisher DebugPointCheckPub_; // Debug
-            // ros::Publisher DebugBoundaryPointPub_; // Debug
-            // ros::Publisher DebugNoEdgePub_; // Debug
-            // ros::Publisher DebugExtractPayloadPub_; // Debug
+            // rclcpp::Publisher DebugPointCheckPub_; // Debug
+            // rclcpp::Publisher DebugBoundaryPointPub_; // Debug
+            // rclcpp::Publisher DebugNoEdgePub_; // Debug
+            // rclcpp::Publisher DebugExtractPayloadPub_; // Debug
 
-            //ros::Publisher TextPub_; // publish text
-            // visualization_msgs::MarkerArray _markers; 
+            //rclcpp::Publisher TextPub_; // publish text
+            // visualization_msgs::msg::MarkerArray _markers; 
 
             // Queue for pc data
-            std::queue<sensor_msgs::PointCloud2ConstPtr> _point_cloud1_queue;
+            std::queue<sensor_msgs::msg::PointCloud2::SharedPtr> _point_cloud1_queue;
 
 
             // LiDAR parameters
-            ros::Time _current_scan_time; // store current time of the lidar scan
+            rclcpp::Time _current_scan_time; // store current time of the lidar scan
             std::string _pointcloud_topic; // subscribe channel
             std::string _pub_frame; // publish under what frame?
             std::string lidartag_detection_topic;
@@ -169,7 +173,7 @@ namespace BipedLab{
 
             // PointCould data (for a single scan)
             int _point_cloud_size;
-            std_msgs::Header _point_cloud_header;
+            std_msgs::msg::Header _point_cloud_header;
 
             // Edge detection parameters
             double _intensity_threshold;
@@ -224,8 +228,8 @@ namespace BipedLab{
             double _tagsize_tunable;
             int _min_returns_per_grid;
             GrizTagFamily_t *tf;
-            lidartag_msgs::LiDARTagDetectionArray _lidartag_pose_array; // an array of apriltags
-            lidartag_msgs::LiDARTagDetectionArray detectionsToPub;
+            lidartag_msgs::msg::LidarTagDetectionArray _lidartag_pose_array; // an array of apriltags
+            lidartag_msgs::msg::LidarTagDetectionArray detectionsToPub;
 
 
 
@@ -295,7 +299,7 @@ namespace BipedLab{
             /* [basic ros]
              * A function to push the received pointcloud into a queue in the class
              */
-            inline void _pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr &pc);
+            inline void _pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr pc);
 
 
             /* [Transform/Publish]
@@ -554,10 +558,9 @@ namespace BipedLab{
             /* [Pose: tag to robot]
              * A function to publish pose of tag to the robot
              */
-			void _tagToRobot(const int &t_cluster_id, const Eigen::Vector3f &t_normal_vec, 
-                             Homogeneous_t &t_pose, 
-							 tf::Transform &t_transform, const PointXYZRI &t_ave);
-
+            void _tagToRobot(const int &t_cluster_id, const Eigen::Vector3f &t_normal_vec, 
+                Homogeneous_t &t_pose, 
+                tf2::Transform &t_transform, const PointXYZRI &t_ave);
 
             /* [Payload decoding]
              * A function to decode payload with different means
@@ -796,10 +799,10 @@ namespace BipedLab{
                                                        pcl::PointCloud<PointXYZRI>::Ptr t_edge3,
                                                        pcl::PointCloud<PointXYZRI>::Ptr t_edge4,
                                                        pcl::PointCloud<PointXYZRI>::Ptr t_boundary_pts,
-                                                       visualization_msgs::MarkerArray &t_marker_array);
+                                                       visualization_msgs::msg::MarkerArray &t_marker_array);
             void _plotIdealFrame();
             void _plotTagFrame(const ClusterFamily_t &t_cluster);
-            visualization_msgs::Marker _visualizeVector(Eigen::Vector3f edge_vector, PointXYZRI centriod, int t_ID);
+            visualization_msgs::msg::Marker _visualizeVector(Eigen::Vector3f edge_vector, PointXYZRI centriod, int t_ID);
             /* [accumulating temporal cluster]
             * A function to save temporal clusters data
             */
@@ -810,15 +813,15 @@ namespace BipedLab{
             */
             // void _saveMatFiles(std::vector<std::vector<pcl::PointCloud<LiDARPoints_t>>>& matData);
             
-            // [A function to put clusterFamily to LiDARTagDetectionArray]
+            // [A function to put clusterFamily to LidarTagDetectionArray]
             void _detectionArrayPublisher(const ClusterFamily_t &Cluster);
 
             
             /* [Drawing]
              * A function to draw lines in rviz
              */
-            void _assignLine(visualization_msgs::Marker &marker, 
-                             visualization_msgs::MarkerArray t_mark_array,
+            void _assignLine(visualization_msgs::msg::Marker &marker, 
+                             visualization_msgs::msg::MarkerArray t_mark_array,
                              const uint32_t shape, const std::string ns,
                              const double r, const double g, const double b,
                              const PointXYZRI t_point1, const PointXYZRI t_point2, 
@@ -828,13 +831,13 @@ namespace BipedLab{
             /* [Drawing]
              * A function to assign markers in rviz
              */
-            void _assignMarker(visualization_msgs::Marker &t_marker, const uint32_t t_shape, 
+            void _assignMarker(visualization_msgs::msg::Marker &t_marker, const uint32_t t_shape, 
                                const std::string t_namespace,
                                const double r, const double g, const double b,
                                const PointXYZRI &t_point, const int t_count, 
                                const double t_size, const std::string Text="");
 
-            void _assignVectorMarker(visualization_msgs::Marker &t_marker, const uint32_t t_shape, 
+            void _assignVectorMarker(visualization_msgs::msg::Marker &t_marker, const uint32_t t_shape, 
                                const std::string t_namespace,
                                const double r, const double g, const double b,
                                const int t_count, const double t_size, Eigen::Vector3f t_edge_vector, const PointXYZRI &t_centriod, 

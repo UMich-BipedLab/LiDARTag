@@ -46,13 +46,13 @@ double spendCPUHz(const std::clock_t &t_end, const std::clock_t &t_start){
     return 1.0/spendCPUTime(t_end, t_start);
 }
 
-double printSpendCPUHz(
+void printSpendCPUHz(
         const std::clock_t &t_end, const std::clock_t &t_start, std::string txt){
     std::cout << std::fixed << std::setprecision(2)
               << txt << spendCPUHz(t_end, t_start) << " [Hz]"  << std::endl;
 }
 
-double printSpendCPUHz(
+void printSpendCPUHz(
         const std::clock_t &t_end, const std::clock_t &t_start){
     std::string text = "CPU time used: ";
     printSpendCPUHz(t_end, t_start, text);
@@ -83,7 +83,7 @@ double spendElapsedHz(
     return 1.0/spendElapsedTime(t_end, t_start);
 }
 
-double printSpendElapsedHz(
+void printSpendElapsedHz(
         const std::chrono::steady_clock::time_point &t_end, 
         const std::chrono::steady_clock::time_point &t_start,
         std::string txt){
@@ -91,9 +91,10 @@ double printSpendElapsedHz(
               << txt << spendElapsedHz(t_end, t_start) << " [Hz]"  << std::endl;
 }
 
-double printSpendElapsedHz(
+void printSpendElapsedHz(
         const std::chrono::steady_clock::time_point &t_end, 
         const std::chrono::steady_clock::time_point &t_start){
+
     std::string text = "Elapsed time: ";
     printSpendElapsedHz(t_end, t_start, text);
 }
@@ -593,7 +594,7 @@ T blockMatrix(int t_n, ...){
 // pose is geometry_msgs pose
 // template <class T>
 // Eigen::Matrix4d poseToEigenMatrix(const T &pose){
-Eigen::Matrix4d poseToEigenMatrix(const geometry_msgs::Pose &t_pose){
+Eigen::Matrix4d poseToEigenMatrix(const geometry_msgs::msg::Pose &t_pose){
     Eigen::Matrix4d matrix_pose = Eigen::Matrix4d::Identity();
     matrix_pose(0, 3) = t_pose.position.x;
     matrix_pose(1, 3) = t_pose.position.y;
@@ -654,6 +655,8 @@ Eigen::Matrix3d qToR(const Eigen::Vector3f &t_pose){
 
 Eigen::Matrix3d qMultiplication(const double &q1_w, const Eigen::Vector3f &q1, 
         const double &q2_w, const Eigen::Vector3f &q2){
+
+    return Eigen::Matrix3d::Identity();            
 }
 
 /*

@@ -31,8 +31,8 @@
 
 <launch>
 
-<!-- LiDARTag node -->
-  <group ns="LiDARTag">
+<!-- LidarTag node -->
+  <group ns="LidarTag">
     <!-- valgrind /-/-tool=callgrind /-/-callgrind-out-file='callgrind.lidar_tag.%p'  -->
     <node pkg="lidartag" 
     launch-prefix="" 
@@ -45,8 +45,8 @@
         <param name="write_csv" type="bool" value="true" />
 
         <!-- Analysis File Paths -->
-        <param name="outputs_path" type="string" value="/home/brucebot/workspace/catkin/src/LiDARTag/outputs/" />
-        <param name="library_path" type="string" value="/home/brucebot/workspace/catkin/src/LiDARTag/lib/" />
+        <param name="outputs_path" type="string" value="/home/brucebot/workspace/catkin/src/LidarTag/outputs/" />
+        <param name="library_path" type="string" value="/home/brucebot/workspace/catkin/src/LidarTag/lib/" />
 
 
         <param name="adaptive_thresholding" type="int" value="0" /> 
@@ -80,7 +80,7 @@
         <param name="pointcloud_topic" type="string" value="/velodyne_points" /> 
         <!-- <param name="pointcloud_topic" type="string" value="/sync_cam_lidar/velodyne_points_sync" />  -->
 <!--             <param name="camera_topic" type="string" value="/sync_cam_lidar/image_sync" />  -->
-        <param name="lidartag_detection_topic" value="/LiDARTag/lidar_tag/LiDARTagDetectionArray"/>
+        <param name="lidartag_detection_topic" value="/LidarTag/lidar_tag/LidarTagDetectionArray"/>
         <param name="beam_number" type="int" value="32" /> 
         <param name="vertical_fov" type="double" value="40" /> 
 

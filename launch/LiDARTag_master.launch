@@ -31,8 +31,8 @@
 
 <launch>
 
-    <!-- LiDARTag node -->
-      <group ns="LiDARTag">
+    <!-- LidarTag node -->
+      <group ns="LidarTag">
         <!-- valgrind /-/-tool=callgrind /-/-callgrind-out-file='callgrind.lidar_tag.%p'  -->
         <node pkg="lidartag" launch-prefix="" type="lidartag_main" name="lidartag_main" output="screen" />
 
@@ -76,7 +76,7 @@
 
             <!--  LiDAR System  -->
             <param name="pointcloud_topic" type="string" value="/velodyne_points" />
-            <param name="lidartag_detection_topic" value="/LiDARTag/lidar_tag/LiDARTagDetectionArray"/>
+            <param name="lidartag_detection_topic" value="/LidarTag/lidar_tag/LidarTagDetectionArray"/>
             <param name="beam_number" type="int" value="32" /> 
             <param name="vertical_fov" type="int" value="40" /> 
             <param name="num_accumulation" type="int" value="1" />

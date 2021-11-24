@@ -28,15 +28,44 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include <ros/ros.h>
+//#include <ros/ros.h>
 #include <lidartag.h>
+
+#include "rclcpp/rclcpp.hpp"
+/*#include "sensor_msgs/msg/point_cloud2.hpp"
+#include "rclcpp/clock.hpp"
+
+#include "pcl/PCLPointCloud2.h"
+#include "pcl/point_types.h"
+#include "pcl/registration/gicp.h"
+#include "pcl_conversions/pcl_conversions.h"
+#include "pcl_ros/transforms.hpp"
+#include "pcl/io/pcd_io.h"
+#include "pcl/filters/voxel_grid.h"
+#include "pcl/segmentation/sac_segmentation.h"
+#include "pcl/filters/extract_indices.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "autoware_calibration_msgs/srv/extrinsic_calibrator.hpp" */
+
+
+
 
 using namespace std;
 
 int main(int argc, char **argv){
 
-    ros::init(argc, argv, "lidar_tag_node");
-    BipedLab::LiDARTag lidar_tag;
+    rclcpp::init(argc, argv);
+    rclcpp::NodeOptions node_options;
+    rclcpp::executors::MultiThreadedExecutor executor;
+    auto node = std::make_shared<BipedLab::LiDARTag>(node_options);
+    executor.add_node(node);
+    executor.spin();
+    rclcpp::shutdown();
+
+    //ros::init(argc, argv, "lidar_tag_node");
+    //BipedLab::LiDARTag lidar_tag;
 
     cout << "Done!" << endl;
 

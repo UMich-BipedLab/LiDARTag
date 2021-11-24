@@ -46,8 +46,8 @@
 #include <unsupported/Eigen/MatrixFunctions> // matrix exponential
 #include <unsupported/Eigen/CXX11/Tensor> // tensor output
 
-#include <ros/package.h> // package
-#include <ros/console.h>
+#include "rclcpp/rclcpp.hpp" // package
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include "lidartag.h"
 #include "apriltag_utils.h"
@@ -72,8 +72,9 @@ using namespace std;
 using namespace std::chrono;
 
 namespace BipedLab {
-    LiDARTag::LiDARTag():
-        _nh("~"), _point_cloud_received(0),
+    LiDARTag::LiDARTag(const rclcpp::NodeOptions & options):
+        Node("lidar_tag_node", options),
+        broadcaster_(*this), _point_cloud_received(0),
 		_pub_frame("velodyne"), // what frame of the published pointcloud should be 
         _stop(0), // Just a switch for exiting this program while using valgrind
         _thread_vec(nullptr) {
@@ -85,81 +86,84 @@ namespace BipedLab {
             }
 
             if (_decode_method!=0 && _decode_method!=1 && _decode_method!=2){
-                ROS_ERROR("Please use 0, 1 or 2 for decode_method in the launch file");
-                ROS_INFO_STREAM("currently using: "<< _decode_method);
+                RCLCPP_ERROR(get_logger(), "Please use 0, 1 or 2 for decode_method in the launch file");
+                RCLCPP_INFO_STREAM(get_logger(), "currently using: "<< _decode_method);
             }
             cout << "\033[1;32m=========================== \033[0m\n";
             cout << "\033[1;32m=========================== \033[0m\n";
 
-            ROS_INFO("ALL INITIALIZED!");
-            _LiDAR1_sub = 
-                _nh.subscribe<sensor_msgs::PointCloud2>(_pointcloud_topic, 50, 
-                        &LiDARTag::_pointCloudCallback, this);
+            RCLCPP_INFO(get_logger(),"ALL INITIALIZED!");
+
+            // this->create_subscription<sensor_msgs::msg::PointCloud2>("~/input/pointcloud_map", 1, std::bind(&ExtrinsicMapBasedCalibrator::targetPointcloudCallback, this, std::placeholders::_1), subscription_option);
+
+            _lidar1_sub = 
+                this->create_subscription<sensor_msgs::msg::PointCloud2>(_pointcloud_topic, rclcpp::QoS(1).best_effort()/*50*/, 
+                        std::bind(&LiDARTag::_pointCloudCallback, this,std::placeholders::_1));
 			_edge_pub = 
-                _nh.advertise<sensor_msgs::PointCloud2>("WholeEdgedPC", 10);
+                this->create_publisher<sensor_msgs::msg::PointCloud2>("WholeEdgedPC", 10);
             _transformed_points_pub = 
-                _nh.advertise<sensor_msgs::PointCloud2>(
+                this->create_publisher<sensor_msgs::msg::PointCloud2>(
                         "TransformedPoints", 10);
             _transformed_points_tag_pub =
-                _nh.advertise<sensor_msgs::PointCloud2>(
+                this->create_publisher<sensor_msgs::msg::PointCloud2>(
                         "TransformedPointsTag", 10);
             _edge1_pub =
-                _nh.advertise<sensor_msgs::PointCloud2>(
+                this->create_publisher<sensor_msgs::msg::PointCloud2>(
                         "EdgeGroup1", 10);
             _edge2_pub =
-                _nh.advertise<sensor_msgs::PointCloud2>(
+                this->create_publisher<sensor_msgs::msg::PointCloud2>(
                         "EdgeGroup2", 10);
             _edge3_pub =
-                _nh.advertise<sensor_msgs::PointCloud2>(
+                this->create_publisher<sensor_msgs::msg::PointCloud2>(
                         "EdgeGroup3", 10);
             _edge4_pub =
-                _nh.advertise<sensor_msgs::PointCloud2>(
+                this->create_publisher<sensor_msgs::msg::PointCloud2>(
                         "EdgeGroup4", 10);
             _boundary_pub =
-                _nh.advertise<sensor_msgs::PointCloud2>(
+                this->create_publisher<sensor_msgs::msg::PointCloud2>(
                         "BoundaryPts", 10);                        
 			_cluster_pub = 
-                _nh.advertise<sensor_msgs::PointCloud2>("DetectedPC", 10);
+                this->create_publisher<sensor_msgs::msg::PointCloud2>("DetectedPC", 10);
             // _index_pub = 
-            //     _nh.advertise<sensor_msgs::PointCloud2>("IndexPC", 10);
+            //     this->create_publisher<sensor_msgs::msg::PointCloud2>("IndexPC", 10);
 			_payload_pub = 
-                _nh.advertise<sensor_msgs::PointCloud2>("Associated_pattern_3d", 10);
+                this->create_publisher<sensor_msgs::msg::PointCloud2>("Associated_pattern_3d", 10);
             _payload3d_pub =
-                _nh.advertise<sensor_msgs::PointCloud2>("Template_points_3d", 10);    
+                this->create_publisher<sensor_msgs::msg::PointCloud2>("Template_points_3d", 10);    
             _tag_pub = 
-                _nh.advertise<sensor_msgs::PointCloud2>("Template_points", 10);
+                this->create_publisher<sensor_msgs::msg::PointCloud2>("Template_points", 10);
             _ini_tag_pub = 
-                _nh.advertise<sensor_msgs::PointCloud2>("Initial_Template_points", 10);
+                this->create_publisher<sensor_msgs::msg::PointCloud2>("Initial_Template_points", 10);
             _boundary_marker_pub = 
-                _nh.advertise<visualization_msgs::MarkerArray>(
+                this->create_publisher<visualization_msgs::msg::MarkerArray>(
                         "BoundaryMarker", 10);
             _id_marker_pub = 
-                _nh.advertise<visualization_msgs::MarkerArray>(
+                this->create_publisher<visualization_msgs::msg::MarkerArray>(
                         "IDMarkers", 10);            
 			_cluster_marker_pub = 
-                _nh.advertise<visualization_msgs::MarkerArray>(
+                this->create_publisher<visualization_msgs::msg::MarkerArray>(
                         "ClusterMarker", 10);
 			_payload_marker_pub = 
-                _nh.advertise<visualization_msgs::MarkerArray>(
+                this->create_publisher<visualization_msgs::msg::MarkerArray>(
                         "PayloadEdges", 10);
 			_payload_grid_pub = 
-                _nh.advertise<visualization_msgs::MarkerArray>("Grid", 10);
+                this->create_publisher<visualization_msgs::msg::MarkerArray>("Grid", 10);
 			_payload_grid_line_pub = 
-                _nh.advertise<visualization_msgs::Marker>("GridLine", 10);
+                this->create_publisher<visualization_msgs::msg::Marker>("GridLine", 10);
             _ideal_frame_pub = 
-                _nh.advertise<visualization_msgs::MarkerArray>("IdealFrame", 10);
+                this->create_publisher<visualization_msgs::msg::MarkerArray>("IdealFrame", 10);
             _tag_frame_pub = 
-                _nh.advertise<visualization_msgs::Marker>("TagFrame", 10);
+                this->create_publisher<visualization_msgs::msg::Marker>("TagFrame", 10);
             _edge_vector_pub = 
-                _nh.advertise<visualization_msgs::MarkerArray>(
+                this->create_publisher<visualization_msgs::msg::MarkerArray>(
                         "EdgeVector", 10);
             _lidartag_pose_pub = 
-                _nh.advertise<lidartag_msgs::LiDARTagDetectionArray>(
+                this->create_publisher<lidartag_msgs::msg::LidarTagDetectionArray>(
                         "LiDARTagPose", 1);
             _clustered_points_pub = 
-                _nh.advertise<sensor_msgs::PointCloud2>("ClusterEdgePC", 5);
+                this->create_publisher<sensor_msgs::msg::PointCloud2>("ClusterEdgePC", 5);
             _detectionArray_pub = 
-                _nh.advertise<lidartag_msgs::LiDARTagDetectionArray>(
+                this->create_publisher<lidartag_msgs::msg::LidarTagDetectionArray>(
                         lidartag_detection_topic,10);
 
             // put ros spin into a background thread
@@ -223,11 +227,11 @@ namespace BipedLab {
             // exit(0);
 
 
-            ROS_INFO("Waiting for pointcloud data");
+            RCLCPP_INFO(get_logger(), "Waiting for pointcloud data");
             LiDARTag::_waitForPC();
 
             // Exam the minimum distance of each point in a ring
-            ROS_INFO("Analyzing system");
+            RCLCPP_INFO(get_logger(), "Analyzing system");
             LiDARTag::_analyzeLiDARDevice();
             boost::thread ExtractionSpin(&LiDARTag::_mainLoop, this);
             ExtractionSpin.join();
@@ -238,10 +242,10 @@ namespace BipedLab {
      * Main loop
      */
     void LiDARTag::_mainLoop(){
-        ROS_INFO("Start points of interest extraction");
-        // ROS_INFO_STREAM("Tag_size:" << _payload_size);
+        RCLCPP_INFO(get_logger(), "Start points of interest extraction");
+        // RCLCPP_INFO_STREAM(get_logger(), "Tag_size:" << _payload_size);
         //ros::Rate r(10); // 10 hz
-        ros::Duration duration(_sleep_time_for_vis);
+        //rclcpp::Duration duration(_sleep_time_for_vis); deprecates (the use)
         clock_t StartAve = clock();
         pcl::PointCloud<PointXYZRI>::Ptr clusterpc(
                 new pcl::PointCloud<PointXYZRI>);
@@ -287,13 +291,13 @@ namespace BipedLab {
         //_thread_vec = std::make_shared<ThreadPool>(_num_threads);
          tbb::task_scheduler_init tbb_init(_num_threads);
         // _thread_vec(_num_threads);
-        // ROS_INFO_STREAM("")
+        // RCLCPP_INFO_STREAM(get_logger(), "")
 
         int curr_frame = 0;
         int frame_of_interest = 9;
         int accumulated_scan = 1;
         std::vector<std::vector<LiDARPoints_t>> ordered_buff(_beam_num);
-        while (ros::ok()) {
+        while (rclcpp::ok()) {
             _lidartag_pose_array.detections.clear();
             detectionsToPub.detections.clear();
             if (_debug_time) {
@@ -381,7 +385,7 @@ namespace BipedLab {
             //publish detectionArray 
             // LiDARTag::_detectionArrayPublisher(clusterbuff);
             // Prepare results for rviz
-            visualization_msgs::MarkerArray cluster_markers;
+            visualization_msgs::msg::MarkerArray cluster_markers;
             LiDARTag::_clusterToPclVectorAndMarkerPublisher(
                     clusterbuff, clusterpc, clusteredgepc, payloadpc, payload3dpc,
                     tagpc, ini_tagpc, edge_group1, edge_group2, edge_group3,
@@ -390,7 +394,7 @@ namespace BipedLab {
             // LiDARTag::_saveTemporalCluster(clusterbuff, matData); 
 
             // publish lidartag poses
-            _lidartag_pose_pub.publish(_lidartag_pose_array);
+            _lidartag_pose_pub->publish(_lidartag_pose_array);
 
             // publish results for rviz
             LiDARTag::_plotIdealFrame();
@@ -439,14 +443,16 @@ namespace BipedLab {
                         ini_tagpc, _pub_frame, string("InitialTarget"));
             }
             //exit(0);
-            if (_sleep_to_display) duration.sleep(); 
+            if (_sleep_to_display) rclcpp::sleep_for(std::chrono::milliseconds(int(1000*_sleep_time_for_vis)));
+
+
             if (_debug_time) {
                 _timing.total_time = 
                     utils::spendElapsedTimeMilli(
                             std::chrono::steady_clock::now(), 
                             _timing.start_total_time);
             }
-            // ROS_INFO_STREAM("Hz (total): " << 1e3/_timing.total_time);
+            // RCLCPP_INFO_STREAM(get_logger(), "Hz (total): " << 1e3/_timing.total_time);
             // cout << "\033[1;31m====================================== \033[0m\n";
             if (_valgrind_check){
                 valgrind_check++;
@@ -464,126 +470,194 @@ namespace BipedLab {
      * if not get all parameters then it will use hard-coded parameters
      */
     void LiDARTag::_getParameters(){
+        
+        this->declare_parameter<double>("distance_threshold");
+        this->declare_parameter<std::string>("lidartag_detection_topic");
+        this->declare_parameter<int>("sleep_to_display");
+        this->declare_parameter<double>("sleep_time_for_visulization");
+        this->declare_parameter<int>("valgrind_check");
+        this->declare_parameter<int>("fake_data");
+        this->declare_parameter<bool>("write_csv");
+        this->declare_parameter<bool>("mark_cluster_validity");
+        this->declare_parameter<bool>("plane_fitting");
+        this->declare_parameter<bool>("optimize_pose");
+        this->declare_parameter<bool>("decode_id");
+        this->declare_parameter<std::string>("assign_id");
+        this->declare_parameter<bool>("has_ring");
+        this->declare_parameter<bool>("estimate_ring");
+        this->declare_parameter<int>("adaptive_thresholding");
+        this->declare_parameter<int>("collect_data");
+        this->declare_parameter<std::string>("pointcloud_topic");
+        this->declare_parameter<int>("beam_number");
+        this->declare_parameter<int>("tag_family");
+        this->declare_parameter<int>("tag_hamming_distance");
+        this->declare_parameter<int>("max_decode_hamming");
+        this->declare_parameter<int>("black_border");
+        this->declare_parameter<double>("distance_bound");
+        this->declare_parameter<double>("intensity_bound");
+        this->declare_parameter<double>("depth_bound");
+        this->declare_parameter<int>("fine_cluster_threshold");
+        this->declare_parameter<double>("vertical_fov");
+        this->declare_parameter<int>("fill_in_gap_threshold");
+        this->declare_parameter<double>("points_threshold_factor");
+        this->declare_parameter<double>("line_intensity_bound");
+        this->declare_parameter<double>("payload_intensity_threshold");
+        this->declare_parameter<std::string>("latest_model");
+        this->declare_parameter<std::string>("weight_path");
+        this->declare_parameter<int>("max_points_on_payload");
+        this->declare_parameter<int>("xyzri");
+        this->declare_parameter<int>("min_retrun_per_grid");
+        this->declare_parameter<int>("optimization_solver");
+        this->declare_parameter<int>("decode_method");
+        this->declare_parameter<int>("decode_mode");
+        this->declare_parameter<int>("grid_viz");
+        this->declare_parameter<std::string>("outputs_path");
+        this->declare_parameter<std::string>("library_path");
+        this->declare_parameter<int>("num_codes");
+        this->declare_parameter<double>("distance_to_plane_threshold");
+        this->declare_parameter<double>("max_outlier_ratio");
+        this->declare_parameter<int>("num_points_for_plane_feature");
+        this->declare_parameter<double>("nearby_factor");
+        this->declare_parameter<int>("number_points_ring");
+        this->declare_parameter<double>("linkage_tunable");   
+        this->declare_parameter<std::vector<double_t>>("tag_size_list");
+        this->declare_parameter<bool>("euler_derivative");
+        this->declare_parameter<int>("num_threads");
+        this->declare_parameter<bool>("print_info");
+        this->declare_parameter<bool>("debug_info");
+        this->declare_parameter<bool>("debug_time");
+        this->declare_parameter<bool>("debug_decoding_time");
+        this->declare_parameter<bool>("log_data");
+        this->declare_parameter<double>("optimize_percentage");
+        this->declare_parameter<bool>("calibration");
+        this->declare_parameter<int>("minimum_ring_boundary_points");
+        this->declare_parameter<double>("optimize_up_bound");
+        this->declare_parameter<double>("optimize_low_bound");
+        this->declare_parameter<int>("num_accumulation");
+        this->declare_parameter<double>("coa_tunable");
+        this->declare_parameter<double>("tagsize_tunable");
+
         bool GotThreshold = 
-            ros::param::get("distance_threshold", _distance_threshold);
+            this->get_parameter("distance_threshold", _distance_threshold);
         bool GotPublishTopic = 
-            ros::param::get("lidartag_detection_topic",lidartag_detection_topic);
+            this->get_parameter("lidartag_detection_topic",lidartag_detection_topic);
         bool GotSleepToDisplay = 
-            ros::param::get("sleep_to_display", _sleep_to_display);
+            this->get_parameter("sleep_to_display", _sleep_to_display);
         bool GotSleepTimeForVis = 
-            ros::param::get("sleep_time_for_visulization", _sleep_time_for_vis);
+            this->get_parameter("sleep_time_for_visulization", _sleep_time_for_vis);
         bool GotValgrindCheck = 
-            ros::param::get("valgrind_check", _valgrind_check);
-        bool GotFakeTag = ros::param::get("fake_data", _fake_tag);
-        bool GotCSV = ros::param::get("write_csv", _write_CSV);
-        bool GotMarkValidity = ros::param::get("mark_cluster_validity", _mark_cluster_validity);
-        bool GotPlaneFitting = ros::param::get("plane_fitting", _plane_fitting);
-        bool GotOptPose = ros::param::get("optimize_pose", _pose_optimization);
-        bool GotDecodeId = ros::param::get("decode_id", _id_decoding);
-        bool GotAssignId = ros::param::get("assign_id", _assign_id);
-        bool GotRingState = ros::param::get("has_ring", _has_ring);
-        bool GotRingEstimation = ros::param::get("estimate_ring", _ring_estimation);
+            this->get_parameter("valgrind_check", _valgrind_check);
+        bool GotFakeTag = this->get_parameter("fake_data", _fake_tag);
+        bool GotCSV = this->get_parameter("write_csv", _write_CSV);
+        bool GotMarkValidity = this->get_parameter("mark_cluster_validity", _mark_cluster_validity);
+        bool GotPlaneFitting = this->get_parameter("plane_fitting", _plane_fitting);
+        bool GotOptPose = this->get_parameter("optimize_pose", _pose_optimization);
+        bool GotDecodeId = this->get_parameter("decode_id", _id_decoding);
+        bool GotAssignId = this->get_parameter("assign_id", _assign_id);
+        bool GotRingState = this->get_parameter("has_ring", _has_ring);
+        bool GotRingEstimation = this->get_parameter("estimate_ring", _ring_estimation);
         bool GotAdaptiveThresholding = 
-            ros::param::get("adaptive_thresholding", _adaptive_thresholding);
+            this->get_parameter("adaptive_thresholding", _adaptive_thresholding);
         bool GotCollectData = 
-            ros::param::get("collect_data", _collect_dataset);
+            this->get_parameter("collect_data", _collect_dataset);
 
         bool GotLidarTopic = 
-            ros::param::get("pointcloud_topic", _pointcloud_topic);
-        bool GotBeamNum = ros::param::get("beam_number", _beam_num);
-        //bool GotSize = ros::param::get("tag_size", _payload_size);
+            this->get_parameter("pointcloud_topic", _pointcloud_topic);
+        bool GotBeamNum = this->get_parameter("beam_number", _beam_num);
+        //bool GotSize = this->get_parameter("tag_size", _payload_size);
 
-        bool GotTagFamily = ros::param::get("tag_family", _tag_family);
+        bool GotTagFamily = this->get_parameter("tag_family", _tag_family);
         bool GotTagHamming = 
-            ros::param::get("tag_hamming_distance", _tag_hamming_distance);
+            this->get_parameter("tag_hamming_distance", _tag_hamming_distance);
         bool GotMaxDecodeHamming = 
-            ros::param::get("max_decode_hamming", _max_decode_hamming);
-        bool GotBlackBorder = ros::param::get("black_border", _black_border);
+            this->get_parameter("max_decode_hamming", _max_decode_hamming);
+        bool GotBlackBorder = this->get_parameter("black_border", _black_border);
 
         bool GotDistanceBound = 
-            ros::param::get("distance_bound", _distance_bound);
+            this->get_parameter("distance_bound", _distance_bound);
         bool GotIntensityBound = 
-            ros::param::get("intensity_bound", _intensity_threshold);
-        bool GotDepthBound = ros::param::get("depth_bound", _depth_threshold);
+            this->get_parameter("intensity_bound", _intensity_threshold);
+        bool GotDepthBound = this->get_parameter("depth_bound", _depth_threshold);
         bool GotFineClusterThreshold = 
-            ros::param::get("fine_cluster_threshold", _fine_cluster_threshold);
-        bool GotVerticalFOV = ros::param::get("vertical_fov", _vertical_fov);
+            this->get_parameter("fine_cluster_threshold", _fine_cluster_threshold);
+        bool GotVerticalFOV = this->get_parameter("vertical_fov", _vertical_fov);
         bool GotFillInGapThreshold = 
-            ros::param::get("fill_in_gap_threshold", _filling_gap_max_index);
+            this->get_parameter("fill_in_gap_threshold", _filling_gap_max_index);
         // bool GotFillInMaxPointsThreshold = 
-        //     ros::param::get(
+        //     this->get_parameter(
         //             "fill_in_max_points_threshold", 
         //             fill_in_max_points_threshold);
         bool GotPointsThresholdFactor = 
-            ros::param::get(
+            this->get_parameter(
                     "points_threshold_factor", _points_threshold_factor);
         bool GotLineIntensityBound = 
-            ros::param::get("line_intensity_bound", _line_intensity_bound);
+            this->get_parameter("line_intensity_bound", _line_intensity_bound);
         bool GotPayloadIntensityThreshold = 
-            ros::param::get(
+            this->get_parameter(
                     "payload_intensity_threshold", 
                     _payload_intensity_threshold);
 
-        bool GotLatestModel = ros::param::get("latest_model", _latest_model);
-        bool GotWeightPath = ros::param::get("weight_path", _weight_path);
+        bool GotLatestModel = this->get_parameter("latest_model", _latest_model);
+        bool GotWeightPath = this->get_parameter("weight_path", _weight_path);
 
         bool GotMaxPointsOnPayload = 
-            ros::param::get("max_points_on_payload", _max_point_on_payload);
-        bool GotXYZRI = ros::param::get("xyzri", _XYZRI);
+            this->get_parameter("max_points_on_payload", _max_point_on_payload);
+        bool GotXYZRI = this->get_parameter("xyzri", _XYZRI);
         bool GotMinPerGrid = 
-            ros::param::get("min_retrun_per_grid", _min_returns_per_grid);
+            this->get_parameter("min_retrun_per_grid", _min_returns_per_grid);
         bool GotOptimizationMethod = 
-            ros::param::get("optimization_solver", _optimization_solver);
+            this->get_parameter("optimization_solver", _optimization_solver);
         bool GotDecodeMethod = 
-            ros::param::get("decode_method", _decode_method);
+            this->get_parameter("decode_method", _decode_method);
         bool GotDecodeMode = 
-            ros::param::get("decode_mode", _decode_mode);
-        bool GotGridViz = ros::param::get("grid_viz", _grid_viz);
+            this->get_parameter("decode_mode", _decode_mode);
+        bool GotGridViz = this->get_parameter("grid_viz", _grid_viz);
 
         // bool GotStatsFilePath = 
-        //     ros::param::get("stats_file_path", _stats_file_path);
+        //     this->get_parameter("stats_file_path", _stats_file_path);
         // bool GotClusterFilePath = 
-        //     ros::param::get("cluster_file_path", _cluster_file_path);
+        //     this->get_parameter("cluster_file_path", _cluster_file_path);
         // bool GotPoseFilePath = 
-        //     ros::param::get("pose_file_path", _pose_file_path);
-        bool GotOutPutPath = ros::param::get("outputs_path", _outputs_path);
-        bool GotLibraryPath = ros::param::get("library_path", _library_path);
-        bool GotNumCodes = ros::param::get("num_codes", _num_codes);
+        //     this->get_parameter("pose_file_path", _pose_file_path);
+        bool GotOutPutPath = this->get_parameter("outputs_path", _outputs_path);
+        bool GotLibraryPath = this->get_parameter("library_path", _library_path);
+        bool GotNumCodes = this->get_parameter("num_codes", _num_codes);
 
         bool GotDistanceToPlaneThreshold = 
-            ros::param::get(
+            this->get_parameter(
                     "distance_to_plane_threshold", 
                     _distance_to_plane_threshold);
         bool GotMaxOutlierRatio = 
-            ros::param::get("max_outlier_ratio", _max_outlier_ratio);
+            this->get_parameter("max_outlier_ratio", _max_outlier_ratio);
         bool GotNumPoints = 
-            ros::param::get("num_points_for_plane_feature", 
+            this->get_parameter("num_points_for_plane_feature", 
                     _num_points_for_plane_feature);
-        bool GotNearBound = ros::param::get("nearby_factor", _nearby_factor);
+        bool GotNearBound = this->get_parameter("nearby_factor", _nearby_factor);
         bool GotNumPointsRing = 
-            ros::param::get("number_points_ring", _np_ring);
+            this->get_parameter("number_points_ring", _np_ring);
         bool GotCoefficient = 
-            ros::param::get("linkage_tunable", _linkage_tunable);   
-        bool GotTagSizeList = ros::param::get("tag_size_list", _tag_size_list);
-        bool GotDerivativeMethod = ros::param::get("euler_derivative", _derivative_method);
-        bool GotNumThreads = ros::param::get("num_threads", _num_threads);
-        bool GotPrintInfo = ros::param::get("print_info", _print_ros_info);
-        bool GotDebuginfo = ros::param::get("debug_info", _debug_info);
-        bool GotDebugtime = ros::param::get("debug_time", _debug_time);
+            this->get_parameter("linkage_tunable", _linkage_tunable);   
+        bool GotTagSizeList = this->get_parameter("tag_size_list", _tag_size_list);
+        bool GotDerivativeMethod = this->get_parameter("euler_derivative", _derivative_method);
+        bool GotNumThreads = this->get_parameter("num_threads", _num_threads);
+        bool GotPrintInfo = this->get_parameter("print_info", _print_ros_info);
+        bool GotDebuginfo = this->get_parameter("debug_info", _debug_info);
+        bool GotDebugtime = this->get_parameter("debug_time", _debug_time);
         bool GotDebugDecodingtime = 
-            ros::param::get("debug_decoding_time", _debug_decoding_time);
-        bool GotLogData = ros::param::get("log_data", _log_data);
+            this->get_parameter("debug_decoding_time", _debug_decoding_time);
+        bool GotLogData = this->get_parameter("log_data", _log_data);
         bool GotOptimizePercent = 
-            ros::param::get("optimize_percentage", _optimization_percent);
-        bool GotCalibration = ros::param::get("calibration", _calibration);
+            this->get_parameter("optimize_percentage", _optimization_percent);
+        bool GotCalibration = this->get_parameter("calibration", _calibration);
         bool GotMinimumRingPoints = 
-            ros::param::get("minimum_ring_boundary_points", _minimum_ring_boundary_points);
-        bool GotUpbound = ros::param::get("optimize_up_bound", _opt_ub);
-        bool GotLowbound = ros::param::get("optimize_low_bound", _opt_lb);
+            this->get_parameter("minimum_ring_boundary_points", _minimum_ring_boundary_points);
+        bool GotUpbound = this->get_parameter("optimize_up_bound", _opt_ub);
+        bool GotLowbound = this->get_parameter("optimize_low_bound", _opt_lb);
         bool GotNumAccumulation = 
-            ros::param::get("num_accumulation", _num_accumulation);
-        bool GotCoaTunable = ros::param::get("coa_tunable", _coa_tunable);
-        bool GotTagsizeTunable = ros::param::get("tagsize_tunable", _tagsize_tunable);
+            this->get_parameter("num_accumulation", _num_accumulation);
+        bool GotCoaTunable = this->get_parameter("coa_tunable", _coa_tunable);
+        bool GotTagsizeTunable = this->get_parameter("tagsize_tunable", _tagsize_tunable);
+
         bool Pass = utils::checkParameters(64, 
                 GotFakeTag, GotLidarTopic, GotBeamNum, 
                 GotOptPose, GotDecodeId, GotPlaneFitting,
@@ -618,7 +692,7 @@ namespace BipedLab {
             _distance_threshold = 10;
             _pointcloud_topic = "/velodyne_points";
             lidartag_detection_topic = 
-                "/LiDARTag/lidar_tag/LiDARTagDetectionArray";
+                "/LiDARTag/lidar_tag/LidarTagDetectionArray";
             _beam_num = 32;
             _distance_bound = 7; // for edge gradient
             _intensity_threshold = 2; // for edge gradient
@@ -710,24 +784,24 @@ namespace BipedLab {
         // exit(0);
         _RANSAC_threshold = _payload_size/10;
 
-        ROS_INFO("Subscribe to %s\n", _pointcloud_topic.c_str());
-        ROS_INFO("Use %i-beam LiDAR\n", _beam_num);
-        ROS_INFO("Use %i threads\n", _num_threads);
-        ROS_INFO("_intensity_threshold: %f \n", _intensity_threshold);
-        ROS_INFO("_depth_threshold: %f \n", _depth_threshold);
-        ROS_INFO("_payload_size: %f \n", _payload_size);
-        ROS_INFO("_vertical_fov: %f \n", _vertical_fov);
-        ROS_INFO("_fine_cluster_threshold: %i \n", _fine_cluster_threshold);
-        ROS_INFO("_filling_gap_max_index: %i \n", _filling_gap_max_index);
-        // ROS_INFO("_filling_max_points_threshold: %i \n", 
+        RCLCPP_INFO(get_logger(), "Subscribe to %s\n", _pointcloud_topic.c_str());
+        RCLCPP_INFO(get_logger(), "Use %i-beam LiDAR\n", _beam_num);
+        RCLCPP_INFO(get_logger(), "Use %i threads\n", _num_threads);
+        RCLCPP_INFO(get_logger(), "_intensity_threshold: %f \n", _intensity_threshold);
+        RCLCPP_INFO(get_logger(), "_depth_threshold: %f \n", _depth_threshold);
+        RCLCPP_INFO(get_logger(), "_payload_size: %f \n", _payload_size);
+        RCLCPP_INFO(get_logger(), "_vertical_fov: %f \n", _vertical_fov);
+        RCLCPP_INFO(get_logger(), "_fine_cluster_threshold: %i \n", _fine_cluster_threshold);
+        RCLCPP_INFO(get_logger(), "_filling_gap_max_index: %i \n", _filling_gap_max_index);
+        // RCLCPP_INFO(get_logger(), "_filling_max_points_threshold: %i \n", 
         //         _filling_max_points_threshold);
-        ROS_INFO("_points_threshold_factor: %f \n", _points_threshold_factor);
-        ROS_INFO("_adaptive_thresholding: %i \n", _adaptive_thresholding);
-        ROS_INFO("_collect_dataset: %i \n", _collect_dataset);
-        ROS_INFO("_decode_method: %i \n", _decode_method);
-        ROS_INFO("linkage_hreshold_: %f \n", _linkage_threshold);
-        ROS_INFO("_RANSAC_threshold: %f \n", _RANSAC_threshold);
-        ROS_INFO("_num_accumulation: %i \n", _num_accumulation);
+        RCLCPP_INFO(get_logger(), "_points_threshold_factor: %f \n", _points_threshold_factor);
+        RCLCPP_INFO(get_logger(), "_adaptive_thresholding: %i \n", _adaptive_thresholding);
+        RCLCPP_INFO(get_logger(), "_collect_dataset: %i \n", _collect_dataset);
+        RCLCPP_INFO(get_logger(), "_decode_method: %i \n", _decode_method);
+        RCLCPP_INFO(get_logger(), "linkage_hreshold_: %f \n", _linkage_threshold);
+        RCLCPP_INFO(get_logger(), "_RANSAC_threshold: %f \n", _RANSAC_threshold);
+        RCLCPP_INFO(get_logger(), "_num_accumulation: %i \n", _num_accumulation);
 
         usleep(2e6);
     } 
@@ -749,9 +823,9 @@ namespace BipedLab {
             vector<vector<LiDARPoints_t>> empty;
             return empty;
         }
-        // ROS_INFO_STREAM("Queue size: " << _point_cloud1_queue.size());
+        // RCLCPP_INFO_STREAM(get_logger(), "Queue size: " << _point_cloud1_queue.size());
 
-        sensor_msgs::PointCloud2ConstPtr msg = _point_cloud1_queue.front();
+        sensor_msgs::msg::PointCloud2::SharedPtr msg = _point_cloud1_queue.front();
         _point_cloud1_queue.pop();
         _point_cloud1_queue_lock.unlock();
         _current_scan_time = msg->header.stamp;
@@ -856,7 +930,7 @@ namespace BipedLab {
         clock_t begin = clock();
         int accumulated_scan = 1;
         std::vector<std::vector<LiDARPoints_t>> ordered_buff(_beam_num);
-        while (ros::ok()) {
+        while (rclcpp::ok()) {
 
             if (_num_accumulation == 1) {
                  ordered_buff = LiDARTag::_getOrderBuff();
@@ -1020,43 +1094,43 @@ namespace BipedLab {
 	void LiDARTag::_publishPC(const pcl::PointCloud<PointXYZRI>::Ptr &source_pc, 
                               const std::string &frame, string which_publisher){
         utils::tranferToLowercase(which_publisher); // check letter cases
-		sensor_msgs::PointCloud2 pcs_waited_to_pub;      
+		sensor_msgs::msg::PointCloud2 pcs_waited_to_pub;      
 		pcl::toROSMsg(*source_pc, pcs_waited_to_pub);
 		pcs_waited_to_pub.header.frame_id = frame;	
 
         try { 
             if (which_publisher=="wholeedge") 
-                _edge_pub.publish(pcs_waited_to_pub);
+                _edge_pub->publish(pcs_waited_to_pub);
             else if (which_publisher=="original") 
-                _original_pc_pub.publish(pcs_waited_to_pub);
+                _original_pc_pub->publish(pcs_waited_to_pub);
             else if (which_publisher=="cluster") 
-                _cluster_pub.publish(pcs_waited_to_pub);
+                _cluster_pub->publish(pcs_waited_to_pub);
             // else if (which_publisher=="indexcolumn") 
             //     _index_pub.publish(pcs_waited_to_pub);
             else if (which_publisher=="payload") 
-                _payload_pub.publish(pcs_waited_to_pub);
+                _payload_pub->publish(pcs_waited_to_pub);
             else if (which_publisher=="payload3d") 
-                _payload3d_pub.publish(pcs_waited_to_pub);
+                _payload3d_pub->publish(pcs_waited_to_pub);
             else if (which_publisher=="target")
-                _tag_pub.publish(pcs_waited_to_pub);
+                _tag_pub->publish(pcs_waited_to_pub);
             else if (which_publisher=="edgegroup1")
-                _edge1_pub.publish(pcs_waited_to_pub);
+                _edge1_pub->publish(pcs_waited_to_pub);
             else if (which_publisher=="edgegroup2")
-                _edge2_pub.publish(pcs_waited_to_pub);
+                _edge2_pub->publish(pcs_waited_to_pub);
             else if (which_publisher=="edgegroup3")
-                _edge3_pub.publish(pcs_waited_to_pub);
+                _edge3_pub->publish(pcs_waited_to_pub);
             else if (which_publisher=="edgegroup4")
-                _edge4_pub.publish(pcs_waited_to_pub);
+                _edge4_pub->publish(pcs_waited_to_pub);
             else if (which_publisher=="boundarypc")
-                _boundary_pub.publish(pcs_waited_to_pub);
+                _boundary_pub->publish(pcs_waited_to_pub);
             else if (which_publisher=="initialtarget")
-                _ini_tag_pub.publish(pcs_waited_to_pub);
+                _ini_tag_pub->publish(pcs_waited_to_pub);
             else if (which_publisher=="clusteredgepc") 
-                _clustered_points_pub.publish(pcs_waited_to_pub);
+                _clustered_points_pub->publish(pcs_waited_to_pub);
             else if (which_publisher=="transpts") 
-                _transformed_points_pub.publish(pcs_waited_to_pub);
+                _transformed_points_pub->publish(pcs_waited_to_pub);
             else if (which_publisher=="transptstag")
-                _transformed_points_tag_pub.publish(pcs_waited_to_pub);
+                _transformed_points_tag_pub->publish(pcs_waited_to_pub);
             else {
                 throw "No such Publisher exists";
             }
@@ -1074,7 +1148,7 @@ namespace BipedLab {
      * A function to push the received pointcloud into a queue in the class
      */
     void LiDARTag::_pointCloudCallback(
-            const sensor_msgs::PointCloud2ConstPtr &pc){
+            const sensor_msgs::msg::PointCloud2::SharedPtr pc){
         // flag to make sure it receives a pointcloud 
         // at the very begining of the program
         _point_cloud_received = 1; 
@@ -1093,12 +1167,13 @@ namespace BipedLab {
      */
     inline 
     void LiDARTag::_waitForPC(){
-        while (ros::ok()){
+        while (rclcpp::ok()){
             if (_point_cloud_received) {
-                ROS_INFO("Got pointcloud data");
+                RCLCPP_INFO(get_logger(), "Got pointcloud data");
                 return;
             }
-            ros::spinOnce();
+
+            rclcpp::spin_some(this->get_node_base_interface());
         }
     }
 
@@ -1115,9 +1190,9 @@ namespace BipedLab {
             std::string ring_list;
             for (auto &&it : _LiDAR_system.angle_list)
                 ring_list += (std::to_string(it) + " ");
-            ROS_INFO_STREAM_ONCE(
+            RCLCPP_INFO_STREAM_ONCE(get_logger(),
                     "Estimate Ring List Size: " << _LiDAR_system.angle_list.size());
-            ROS_INFO_STREAM_ONCE("Estimate Ring List: " << ring_list);
+            RCLCPP_INFO_STREAM_ONCE(get_logger(),"Estimate Ring List: " << ring_list);
             assert(("Ring List Error", 
                     _LiDAR_system.angle_list.size() <= _beam_num));
         }
@@ -1207,9 +1282,9 @@ namespace BipedLab {
             std::vector<ClusterFamily_t> &cluster_buff){
         
         if (_debug_info || _debug_time )
-            ROS_INFO_STREAM("--------------- Begining ---------------");
+            RCLCPP_INFO_STREAM(get_logger(), "--------------- Begining ---------------");
         else
-            ROS_DEBUG_STREAM("--------------- Begining ---------------");
+            RCLCPP_DEBUG_STREAM(get_logger(), "--------------- Begining ---------------");
 
 		pcl::PointCloud<PointXYZRI>::Ptr out(new pcl::PointCloud<PointXYZRI>);
 		out->reserve(_point_cloud_size);
@@ -1257,83 +1332,83 @@ namespace BipedLab {
 
         // _timing.duration = duration.count();
         if (_print_ros_info || _debug_info) {
-            ROS_INFO_STREAM("-- Remaining Cluster: " << 
+            RCLCPP_INFO_STREAM(get_logger(), "-- Remaining Cluster: " << 
                     _result_statistics.remaining_cluster_size);
-            ROS_INFO_STREAM("-- Computation: " << 
+            RCLCPP_INFO_STREAM(get_logger(), "-- Computation: " << 
                             1e3 / _timing.total_duration << " [Hz]");
         }
         
         if (_debug_info){
-            ROS_DEBUG_STREAM("--------------- summary ---------------");
-            ROS_DEBUG_STREAM("-- Original cloud size: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "--------------- summary ---------------");
+            RCLCPP_DEBUG_STREAM(get_logger(), "-- Original cloud size: " << 
                     _result_statistics.point_cloud_size);
-            ROS_DEBUG_STREAM("-- Edge cloud size: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "-- Edge cloud size: " << 
                     _result_statistics.edge_cloud_size);
-            ROS_DEBUG_STREAM("-- Original cluster: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "-- Original cluster: " << 
                     _result_statistics.original_cluster_size);
-            ROS_DEBUG_STREAM("-- Removed by minimum returns: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "-- Removed by minimum returns: " << 
                     _result_statistics.cluster_removal.minimum_return);
-            ROS_DEBUG_STREAM("-- Removed by maximum returns: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "-- Removed by maximum returns: " << 
                     _result_statistics.cluster_removal.maximum_return);
-            ROS_DEBUG_STREAM("-- Removed by plane fitting failure: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "-- Removed by plane fitting failure: " << 
                     _result_statistics.cluster_removal.plane_fitting);
-            ROS_DEBUG_STREAM("-- Removed by plane fitting ourliers: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "-- Removed by plane fitting ourliers: " << 
                     _result_statistics.cluster_removal.plane_outliers);
-            ROS_DEBUG_STREAM("-- Removed by payload boundary point: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "-- Removed by payload boundary point: " << 
                     _result_statistics.cluster_removal.boundary_point_check);
-            ROS_DEBUG_STREAM("-- Removed by payload ring points: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "-- Removed by payload ring points: " << 
                     _result_statistics.cluster_removal.minimum_ring_points);
-            ROS_DEBUG_STREAM("-- Removed by edge points: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "-- Removed by edge points: " << 
                     _result_statistics.cluster_removal.no_edge_check);
-            ROS_DEBUG_STREAM("-- Removed by line fitting: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "-- Removed by line fitting: " << 
                     _result_statistics.cluster_removal.line_fitting);
-            ROS_DEBUG_STREAM("-- Removed by pose optimization: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "-- Removed by pose optimization: " << 
                     _result_statistics.cluster_removal.pose_optimization);
-            ROS_DEBUG_STREAM("-- Removed by decoding: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "-- Removed by decoding: " << 
                     _result_statistics.cluster_removal.decoding_failure);
-            ROS_DEBUG_STREAM("-- Remaining Cluster: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "-- Remaining Cluster: " << 
                     _result_statistics.remaining_cluster_size);
-            ROS_DEBUG_STREAM("---------------------------------------");
+            RCLCPP_DEBUG_STREAM(get_logger(), "---------------------------------------");
         }
         if (_debug_time) {
-            ROS_DEBUG_STREAM("--------------- Timing ---------------");
-            ROS_DEBUG_STREAM("computation_time: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "--------------- Timing ---------------");
+            RCLCPP_DEBUG_STREAM(get_logger(), "computation_time: " << 
                     1e3 / _timing.total_duration << " [Hz]");
-            ROS_DEBUG_STREAM("edging_and_clustering_time: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "edging_and_clustering_time: " << 
                     _timing.edging_and_clustering_time);
 
-            ROS_DEBUG_STREAM("to_pcl_vector_time: " << _timing.to_pcl_vector_time);
+            RCLCPP_DEBUG_STREAM(get_logger(), "to_pcl_vector_time: " << _timing.to_pcl_vector_time);
 
-            ROS_DEBUG_STREAM("fill_in_time: " << _timing.fill_in_time);
+            RCLCPP_DEBUG_STREAM(get_logger(), "fill_in_time: " << _timing.fill_in_time);
 
-            ROS_DEBUG_STREAM("point_check_time: " << _timing.point_check_time);
+            RCLCPP_DEBUG_STREAM(get_logger(), "point_check_time: " << _timing.point_check_time);
 
-            ROS_DEBUG_STREAM("line_fitting_time: " << _timing.line_fitting_time);
+            RCLCPP_DEBUG_STREAM(get_logger(), "line_fitting_time: " << _timing.line_fitting_time);
 
-            ROS_DEBUG_STREAM("organize_points_time: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "organize_points_time: " << 
                     _timing.organize_points_time);
 
-            ROS_DEBUG_STREAM("pca_time: " << _timing.pca_time);
+            RCLCPP_DEBUG_STREAM(get_logger(), "pca_time: " << _timing.pca_time);
 
-            ROS_DEBUG_STREAM("split_edge_time: " << _timing.split_edge_time);
+            RCLCPP_DEBUG_STREAM(get_logger(), "split_edge_time: " << _timing.split_edge_time);
 
-            ROS_DEBUG_STREAM("pose_optimization_time: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "pose_optimization_time: " << 
                     _timing.pose_optimization_time);
 
-            ROS_DEBUG_STREAM("store_template_time: " << _timing.store_template_time);
+            RCLCPP_DEBUG_STREAM(get_logger(), "store_template_time: " << _timing.store_template_time);
 
-            ROS_DEBUG_STREAM("payload_decoding_time: " << 
+            RCLCPP_DEBUG_STREAM(get_logger(), "payload_decoding_time: " << 
                     _timing.payload_decoding_time);
-            ROS_DEBUG_STREAM("computation_time: " << _timing.total_duration);
-            ROS_DEBUG_STREAM("---------------------------------------");
+            RCLCPP_DEBUG_STREAM(get_logger(), "computation_time: " << _timing.total_duration);
+            RCLCPP_DEBUG_STREAM(get_logger(), "---------------------------------------");
             // cout << "payload_decoding_time: " << _timing.payload_decoding_time << endl; 
-            // ROS_DEBUG_STREAM("PointCheck: " << _timing.point_check_time);
-            // ROS_DEBUG_STREAM("LineFitting: " << _timing.line_fitting_time);
-            // //ROS_DEBUG_STREAM("ExtractPayload: " << _timing.payload_extraction_time);
-            // ROS_DEBUG_STREAM("NormalVector: " << _timing.normal_vector_time);
-            // ROS_DEBUG_STREAM("PayloadDecoder: " << 
+            // RCLCPP_DEBUG_STREAM(get_logger(), "PointCheck: " << _timing.point_check_time);
+            // RCLCPP_DEBUG_STREAM(get_logger(), "LineFitting: " << _timing.line_fitting_time);
+            // //RCLCPP_DEBUG_STREAM(get_logger(), "ExtractPayload: " << _timing.payload_extraction_time);
+            // RCLCPP_DEBUG_STREAM(get_logger(), "NormalVector: " << _timing.normal_vector_time);
+            // RCLCPP_DEBUG_STREAM(get_logger(), "PayloadDecoder: " << 
             //         _timing.payload_decoding_time);
-            // ROS_DEBUG_STREAM("_tagToRobot: " << _timing.tag_to_robot_time);
+            // RCLCPP_DEBUG_STREAM(get_logger(), "_tagToRobot: " << _timing.tag_to_robot_time);
         }
 
 		return out;
@@ -1655,19 +1730,19 @@ namespace BipedLab {
                 cluster_buff[i].percentages_inliers = percentage_inliers;
 
                 if (_debug_info) {
-                    ROS_DEBUG_STREAM("==== _planeOutliers ====");
+                    RCLCPP_DEBUG_STREAM(get_logger(), "==== _planeOutliers ====");
                     float distance =
                         std::sqrt(pow(cluster_buff[i].average.x, 2) +
                                   pow(cluster_buff[i].average.y, 2) +
                                   pow(cluster_buff[i].average.z, 2));
-                    ROS_DEBUG_STREAM("Distance : " << distance);
-                    ROS_DEBUG_STREAM("Actual Points: " << cluster_buff[i].data.size() 
+                    RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance);
+                    RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: " << cluster_buff[i].data.size() 
                             + cluster_buff[i].edge_points.size());
                 }
 
                 if (percentage_inliers < (1.0 - _max_outlier_ratio)) {
                     if (_debug_info)
-                        ROS_DEBUG_STREAM("Status: " << false);
+                        RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << false);
                     //tbb::task::self().cancel_group_execution();
                     _result_statistics.cluster_removal.plane_outliers++;
                     _result_statistics.remaining_cluster_size--;
@@ -1677,7 +1752,7 @@ namespace BipedLab {
                     }
                 }
                 if (_debug_info)
-                    ROS_DEBUG_STREAM("Status: " << true);
+                    RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << true);
 
                 // Remove all outliers from cluster
                 auto outliers_indices = 
@@ -1734,9 +1809,9 @@ namespace BipedLab {
                 // i--;
             } else {
                 if (_print_ros_info || _debug_info) {
-                    ROS_INFO_STREAM("--ID: " << 
+                    RCLCPP_INFO_STREAM(get_logger(), "--ID: " << 
                             cluster_buff[i].cluster_id);
-                    ROS_INFO_STREAM("---rotation: " << 
+                    RCLCPP_INFO_STREAM(get_logger(), "---rotation: " << 
                             cluster_buff[i].rkhs_decoding.rotation_angle);
                 }
             }
@@ -1927,7 +2002,7 @@ namespace BipedLab {
                     //         cluster.pose, 
                     //         cluster.rkhs_decoding.rotation_angle);
                     // return true;
-                // ROS_ERROR_STREAM("Decoding ID is not supported yet. Please change decode_id in the launch file to false. Currently is " << _id_decoding);
+                // RCLCPP_ERROR_STREAM(get_logger(), "Decoding ID is not supported yet. Please change decode_id in the launch file to false. Currently is " << _id_decoding);
 
                 // // under developement
                 // if (_debug_time) {
@@ -2114,7 +2189,7 @@ namespace BipedLab {
             const int &cluster_id, 
             const Eigen::Vector3f &normal_vec, 
             Homogeneous_t &pose, 
-            tf::Transform &transform, const PointXYZRI &ave){
+            tf2::Transform &transform, const PointXYZRI &ave){
         Eigen::Vector3f x(1, 0, 0);
         Eigen::Vector3f y(0, 1, 0);
         Eigen::Vector3f z(0, 0, 1);
@@ -2129,8 +2204,8 @@ namespace BipedLab {
         pose.homogeneous.topRightCorner(3,1) = pose.translation;
         pose.homogeneous.row(3) << 0,0,0,1;
 
-        static tf::TransformBroadcaster broadcaster_;
-        transform.setOrigin(tf::Vector3(ave.x, ave.y, ave.z));
+
+        transform.setOrigin(tf2::Vector3(ave.x, ave.y, ave.z));
 
         // rotate to fit iamge frame
         Eigen::Vector3f qr(0, std::sqrt(2)/2, 0);
@@ -2158,29 +2233,33 @@ namespace BipedLab {
                     std::pow(q_w, 2));
         q_i = (q_i/norm).eval();
         q_w = q_w/norm;
-        tf::Quaternion q(q_i(0), q_i(1), q_i(2), q_w);
+        tf2::Quaternion q(q_i(0), q_i(1), q_i(2), q_w);
         transform.setRotation(q);
-        broadcaster_.sendTransform(
-                tf::StampedTransform(transform, 
-                    _point_cloud_header.stamp, 
-                    _pub_frame, 
-                    to_string(cluster_id)+"_rotated"));
+
+        geometry_msgs::msg::TransformStamped transform_msg;
+        transform_msg.header.stamp = _point_cloud_header.stamp;
+        transform_msg.header.frame_id = _pub_frame;
+        transform_msg.child_frame_id = to_string(cluster_id)+"_rotated";
+        transform_msg.transform = tf2::toMsg(transform);
+
+        broadcaster_.sendTransform(transform_msg);
 
 
-        tf::Quaternion q2(normal_vec(0), normal_vec(1), normal_vec(2), 0);
+        tf2::Quaternion q2(normal_vec(0), normal_vec(1), normal_vec(2), 0);
         transform.setRotation(q2);
-        broadcaster_.sendTransform(
-                tf::StampedTransform(
-                    transform, 
-                    _point_cloud_header.stamp, 
-                    _pub_frame, 
-                    "LiDARTag-ID" + to_string(cluster_id)));
+
+        transform_msg.header.stamp = _point_cloud_header.stamp;
+        transform_msg.header.frame_id = _pub_frame;
+        transform_msg.child_frame_id = "LiDARTag-ID" + to_string(cluster_id);
+        transform_msg.transform = tf2::toMsg(transform);
+
+        broadcaster_.sendTransform(transform_msg);
 
         // publish lidar tag pose
-        lidartag_msgs::LiDARTagDetection lidartag_msg; //single message
+        lidartag_msgs::msg::LidarTagDetection lidartag_msg; //single message
         lidartag_msg.id = cluster_id;
         lidartag_msg.size = _payload_size;
-        geometry_msgs::Quaternion geo_q;
+        geometry_msgs::msg::Quaternion geo_q;
         geo_q.x = q_i(0);
         geo_q.y = q_i(1);
         geo_q.z = q_i(2);
@@ -2198,9 +2277,9 @@ namespace BipedLab {
         lidartag_msg.header = _point_cloud_header;
         lidartag_msg.header.frame_id = 
             std::string("lidartag_") + to_string(cluster_id);
-        lidartag_msg.frame_index = _point_cloud_header.seq;
+        lidartag_msg.frame_index = 0/* _point_cloud_header.seq  deprecated */;
         _lidartag_pose_array.header = _point_cloud_header;
-        _lidartag_pose_array.frame_index = _point_cloud_header.seq;
+        _lidartag_pose_array.frame_index = 0/* _point_cloud_header.seq deprecated */;
         _lidartag_pose_array.detections.push_back(lidartag_msg);
         // cout << "R.T*NV: " << endl << pose.rotation.transpose()*normal_vec << endl;
         // cout << "H: " << endl << pose.homogeneous << endl;
@@ -2241,12 +2320,12 @@ namespace BipedLab {
         double norm = std::sqrt(std::pow(q_i(0), 2) + std::pow(q_i(1), 2) + std::pow(q_i(2), 2) + std::pow(q_w, 2));
         q_i = (q_i/norm).eval();
         q_w = q_w/norm;
-        tf::Quaternion q(q_i(0), q_i(1), q_i(2), q_w);
+        tf2::Quaternion q(q_i(0), q_i(1), q_i(2), q_w);
         transform.setRotation(q);
         broadcaster_.sendTransform(tf::StampedTransform(transform, _point_cloud_header.stamp, 
                                                         _pub_frame, to_string(cluster_id)));
         // publish lidar tag pose
-        lidartag_msgs::LiDARTagDetection lidartag_msg; //single message
+        lidartag_msgs::msg::LidarTagDetection lidartag_msg; //single message
         lidartag_msg.id = cluster_id;
         lidartag_msg.size = _payload_size;
         geometry_msgs::Quaternion geo_q;
@@ -2639,17 +2718,17 @@ namespace BipedLab {
         }
 
         if (_debug_info) {
-            ROS_DEBUG_STREAM("==== _detectPayloadBoundries ====");
+            RCLCPP_DEBUG_STREAM(get_logger(), "==== _detectPayloadBoundries ====");
             float distance =
                 std::sqrt(pow(cluster.average.x, 2) +
                           pow(cluster.average.y, 2) +
                           pow(cluster.average.z, 2));
-            ROS_DEBUG_STREAM("Distance : " << distance);
-            ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() + cluster.edge_points.size());
-            ROS_DEBUG_STREAM("Boundary threshold : " << detection_threshold);
-            ROS_DEBUG_STREAM("Boundary_piont_count : " << boundary_piont_count);
-            ROS_DEBUG_STREAM("Num_valid_rings: " << num_valid_rings);
-            ROS_DEBUG_STREAM("Status: " << boundary_flag && ring_point_flag);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
+            RCLCPP_DEBUG_STREAM(get_logger(), "Boundary threshold : " << detection_threshold);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Boundary_piont_count : " << boundary_piont_count);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Num_valid_rings: " << num_valid_rings);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << boundary_flag && ring_point_flag);
         }
 
 
@@ -2714,13 +2793,13 @@ namespace BipedLab {
 
     Eigen::Vector3f LiDARTag::_estimateEdgeVector(ClusterFamily_t &cluster){
         if (_debug_info) {
-            ROS_DEBUG_STREAM("==== _estimateEdgeVector ====");
+            RCLCPP_DEBUG_STREAM(get_logger(), "==== _estimateEdgeVector ====");
             float distance =
                 std::sqrt(pow(cluster.average.x, 2) +
                           pow(cluster.average.y, 2) +
                           pow(cluster.average.z, 2));
-            ROS_DEBUG_STREAM("Distance : " << distance);
-            ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() + cluster.edge_points.size());
+            RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
         }
         
         pcl::PointCloud<pcl::PointXYZ>::Ptr  cloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -2731,7 +2810,7 @@ namespace BipedLab {
             cloud->points.push_back(p);
         }
         if (_debug_info) {
-            ROS_DEBUG_STREAM("Cloud points: " << cloud->points.size());
+            RCLCPP_DEBUG_STREAM(get_logger(), "Cloud points: " << cloud->points.size());
         }
         
         pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
@@ -2746,13 +2825,13 @@ namespace BipedLab {
         seg.setInputCloud(cloud);
         seg.segment(*inliers, *coefficients);
         if (_debug_info) {
-            ROS_DEBUG_STREAM("Inliers size " << inliers->indices.size ());
+            RCLCPP_DEBUG_STREAM(get_logger(), "Inliers size " << inliers->indices.size ());
         }
         
         if (inliers->indices.size () == 0)
         {
             if (_debug_info) {
-                ROS_WARN_STREAM("Could not estimate a LINE model for the given dataset.");
+                RCLCPP_WARN_STREAM(get_logger(), "Could not estimate a LINE model for the given dataset.");
             }
         }
 
@@ -2760,7 +2839,7 @@ namespace BipedLab {
         edge_vector.normalize();
         if(edge_vector(2) < 0) edge_vector = -edge_vector;
         if (_debug_info) {
-            ROS_DEBUG_STREAM("Edge vector: " << edge_vector.transpose());
+            RCLCPP_DEBUG_STREAM(get_logger(), "Edge vector: " << edge_vector.transpose());
         }
         
         _visualizeVector(edge_vector, cluster.average, 0);
@@ -2834,13 +2913,13 @@ namespace BipedLab {
             }
         }
         if (_debug_info) {
-            ROS_DEBUG_STREAM("==== _transformSplitEdges ====");
+            RCLCPP_DEBUG_STREAM(get_logger(), "==== _transformSplitEdges ====");
             float distance =
                 std::sqrt(pow(cluster.average.x, 2) +
                           pow(cluster.average.y, 2) +
                           pow(cluster.average.z, 2));
-            ROS_DEBUG_STREAM("Distance : " << distance);
-            ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() + cluster.edge_points.size());
+            RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
         }
 
         int num_edge_points = 3;
@@ -2849,7 +2928,7 @@ namespace BipedLab {
             cloud3->size() < num_edge_points ||
             cloud4->size() < num_edge_points) {
             if (_debug_info)
-                ROS_DEBUG_STREAM("Status: " << false);
+                RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << false);
             return false;
         }
 
@@ -2864,25 +2943,25 @@ namespace BipedLab {
         Eigen::Vector4f line4;
         if (!LiDARTag::_getLines(cloud1, line1)) {
             if (_debug_info)
-                ROS_DEBUG_STREAM("Status: " << false);
+                RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << false);
 
             return false;
         }
         if (!LiDARTag::_getLines(cloud2, line2)) {
             if (_debug_info)
-                ROS_DEBUG_STREAM("Status: " << false);
+                RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << false);
 
             return false;
         }
         if (!LiDARTag::_getLines(cloud3, line3)) {
             if (_debug_info)
-                ROS_DEBUG_STREAM("Status: " << false);
+                RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << false);
 
             return false;
         }
         if (!LiDARTag::_getLines(cloud4, line4)) {
             if (_debug_info)
-                ROS_DEBUG_STREAM("Status: " << false);
+                RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << false);
             
             return false;
         }
@@ -2951,8 +3030,8 @@ namespace BipedLab {
         cluster.initial_pose.homogeneous.topRightCorner(3,1) = cluster.initial_pose.translation;
         cluster.initial_pose.homogeneous.row(3) << 0,0,0,1;
         if (_debug_info) {
-            ROS_DEBUG_STREAM("Initial rotation matrix: \n" << R);
-            ROS_DEBUG_STREAM("Status: " << true);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Initial rotation matrix: \n" << R);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << true);
         }
         
         return true;
@@ -2976,11 +3055,11 @@ namespace BipedLab {
         seg.setInputCloud(cloud);
         seg.segment(*inliers, *coefficients);
         if (_debug_info) {
-            ROS_DEBUG_STREAM("Inliers size: " << inliers->indices.size());
+            RCLCPP_DEBUG_STREAM(get_logger(), "Inliers size: " << inliers->indices.size());
         }
         if (inliers->indices.size () == 0){
             if (_debug_info) {
-                ROS_WARN_STREAM("PCL: Could not estimate a LINE model for this cluster");
+                RCLCPP_WARN_STREAM(get_logger(), "PCL: Could not estimate a LINE model for this cluster");
                 PCL_ERROR ("Could not estimate a LINE model for the given dataset.");
             }
             return false;
@@ -3070,25 +3149,25 @@ namespace BipedLab {
 
         // TODO: set a threshold to invalid the tagsize
         if (_debug_info) {
-            ROS_DEBUG_STREAM("==== _estimateTargetSize ====");
+            RCLCPP_DEBUG_STREAM(get_logger(), "==== _estimateTargetSize ====");
             float distance =
                 std::sqrt(pow(cluster.average.x, 2) +
                         pow(cluster.average.y, 2) +
                         pow(cluster.average.z, 2));
-            ROS_DEBUG_STREAM("Distance : " << distance);
-            ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() 
+            RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: " << cluster.data.size() 
                     + cluster.edge_points.size());
-            ROS_DEBUG_STREAM("Estimated side1 legth: " << distance1);
-            ROS_DEBUG_STREAM("Estimated side2 legth: " << distance2);
-            ROS_DEBUG_STREAM("Estimated side3 legth: " << distance3);
-            ROS_DEBUG_STREAM("Estimated side4 legth: " << distance4);
-            ROS_DEBUG_STREAM("Estimated size: " << mean_distance);
-            ROS_DEBUG_STREAM("Chosen size: " << tagsize);
-            ROS_DEBUG_STREAM("Gap : " << gap);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Estimated side1 legth: " << distance1);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Estimated side2 legth: " << distance2);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Estimated side3 legth: " << distance3);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Estimated side4 legth: " << distance4);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Estimated size: " << mean_distance);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Chosen size: " << tagsize);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Gap : " << gap);
             if (gap > _tagsize_tunable * tagsize) 
-                ROS_DEBUG_STREAM("Status: " << status);
+                RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << status);
             else
-                ROS_DEBUG_STREAM("Status: " << status);
+                RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << status);
         }
 
         return status;
@@ -3170,20 +3249,20 @@ namespace BipedLab {
         // m1.row(3) -= 4*Eigen::MatrixXf::Ones(1, 4);
         // cout << "m1: \n" << m1 << endl;
 
-        // ROS_INFO_STREAM("principal_axes: " << svd.matrixU());
-        // ROS_INFO_STREAM("inner_01: " << svd.matrixU().col(0).adjoint()*svd.matrixU().col(1));
-        // ROS_INFO_STREAM("inner_02: " << svd.matrixU().col(0).adjoint()*svd.matrixU().col(2));
-        // ROS_INFO_STREAM("inner_12: " << svd.matrixU().col(1).adjoint()*svd.matrixU().col(2));
+        // RCLCPP_INFO_STREAM(get_logger(), "principal_axes: " << svd.matrixU());
+        // RCLCPP_INFO_STREAM(get_logger(), "inner_01: " << svd.matrixU().col(0).adjoint()*svd.matrixU().col(1));
+        // RCLCPP_INFO_STREAM(get_logger(), "inner_02: " << svd.matrixU().col(0).adjoint()*svd.matrixU().col(2));
+        // RCLCPP_INFO_STREAM(get_logger(), "inner_12: " << svd.matrixU().col(1).adjoint()*svd.matrixU().col(2));
         if (_debug_info) {
-            ROS_DEBUG_STREAM("==== _estimatePrincipleAxis ====");
+            RCLCPP_DEBUG_STREAM(get_logger(), "==== _estimatePrincipleAxis ====");
             float distance =
                 std::sqrt(pow(cluster.average.x, 2) +
                           pow(cluster.average.y, 2) +
                           pow(cluster.average.z, 2));
-            ROS_DEBUG_STREAM("Distance : " << distance);
-            ROS_DEBUG_STREAM("Actual Points: " << cluster.data.size() + cluster.edge_points.size());
+            RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
             Eigen::VectorXf sv = svd.singularValues();
-            ROS_DEBUG_STREAM("Singular values: " << sv[0] << ", " << sv[1] << ", " << sv[2]);
+            RCLCPP_DEBUG_STREAM(get_logger(), "Singular values: " << sv[0] << ", " << sv[1] << ", " << sv[2]);
         }
         
 
@@ -3264,8 +3343,8 @@ namespace BipedLab {
      * reason: in order to put it into background as well as able to run other tasks
      */
     void LiDARTag::_rosSpin(){
-        while (ros::ok() && !_stop){
-            ros::spinOnce();
+        while (rclcpp::ok() && !_stop){
+            rclcpp::spin_some(this->get_node_base_interface()) /*ros::spinOnce()  migration*/;
         }
     }
 
@@ -3289,7 +3368,7 @@ namespace BipedLab {
     /*
      * A function to draw a line between two points
      */
-    void LiDARTag::_assignLine(visualization_msgs::Marker &Marker, visualization_msgs::MarkerArray MarkArray,
+    void LiDARTag::_assignLine(visualization_msgs::msg::Marker &Marker, visualization_msgs::msg::MarkerArray MarkArray,
                              const uint32_t Shape, const string ns,
                              const double r, const double g, const double b,
                              const PointXYZRI point1, const PointXYZRI point2, const int count){
@@ -3300,7 +3379,7 @@ namespace BipedLab {
         Marker.id = count;
         Marker.type = Shape; 
 
-        Marker.action = visualization_msgs::Marker::ADD;
+        Marker.action = visualization_msgs::msg::Marker::ADD;
         Marker.pose.orientation.x = 0.0;
         Marker.pose.orientation.y = 0.0;
         Marker.pose.orientation.z = 0.0;
@@ -3315,7 +3394,7 @@ namespace BipedLab {
         Marker.color.b = b;
         Marker.color.a = 1.0; 
 
-        geometry_msgs::Point p;
+        geometry_msgs::msg::Point p;
         p.x = point1.x;
         p.y = point1.y;
         p.z = point1.z;
@@ -3381,7 +3460,7 @@ namespace BipedLab {
         const std::vector<ClusterFamily_t> &cluster_buff) {
         // XXX: timings are all in milliseconds 
         auto valid_clusters = _getValidClusters(cluster_buff);
-        ROS_INFO_STREAM("[Writing CSV] Remaining Clusters: " 
+        RCLCPP_INFO_STREAM(get_logger(), "[Writing CSV] Remaining Clusters: " 
                 << valid_clusters.size());
 
         std::ofstream fstats;
@@ -3772,9 +3851,9 @@ namespace BipedLab {
     void LiDARTag::_detectionArrayPublisher(const ClusterFamily_t &cluster) {
         // if(cluster.average.x < 0) return;
 
-        lidartag_msgs::LiDARTagDetection detection;
+        lidartag_msgs::msg::LidarTagDetection detection;
         detection.header = _point_cloud_header;
-        detection.frame_index = _point_cloud_header.seq;
+        detection.frame_index = 0 /* _point_cloud_header.seq deprecated */;
                 
         //TODO: here we can only assign the id and tag size according to the distance. 
         // That only applies for certain calibration scene configuration
@@ -3796,11 +3875,11 @@ namespace BipedLab {
         }
         // std::cout << "LiDARTag cluster size" << cluster.data.size() << std::endl;
 
-        sensor_msgs::PointCloud2 pcs_waited_to_pub;      
+        sensor_msgs::msg::PointCloud2 pcs_waited_to_pub;      
         pcl::toROSMsg(*clusterPC, pcs_waited_to_pub);
         detection.points = pcs_waited_to_pub;
         detectionsToPub.detections.push_back(detection);     
         // if (detectionsToPub.detections.size() > 2)
-        // ROS_INFO_STREAM("LiDARTag Got wrong tags");   
+        // RCLCPP_INFO_STREAM(get_logger(), "LiDARTag Got wrong tags");   
     }
 } // namespace BipedLab
