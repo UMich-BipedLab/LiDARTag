@@ -63,6 +63,9 @@
 #include <fstream> // log files
 #include <nlopt.hpp>
 
+#include <thread>
+#include <chrono>
+
 /* CONSTANT */
 #define SQRT2 1.41421356237
 #define MAX_INTENSITY 255
@@ -97,7 +100,7 @@ namespace BipedLab {
             // this->create_subscription<sensor_msgs::msg::PointCloud2>("~/input/pointcloud_map", 1, std::bind(&ExtrinsicMapBasedCalibrator::targetPointcloudCallback, this, std::placeholders::_1), subscription_option);
 
             _lidar1_sub = 
-                this->create_subscription<sensor_msgs::msg::PointCloud2>(_pointcloud_topic, rclcpp::QoS(1).best_effort()/*50*/, 
+                this->create_subscription<sensor_msgs::msg::PointCloud2>(_pointcloud_topic, 50, 
                         std::bind(&LiDARTag::_pointCloudCallback, this,std::placeholders::_1));
 			_edge_pub = 
                 this->create_publisher<sensor_msgs::msg::PointCloud2>("WholeEdgedPC", 10);
@@ -166,9 +169,6 @@ namespace BipedLab {
                 this->create_publisher<lidartag_msgs::msg::LidarTagDetectionArray>(
                         lidartag_detection_topic,10);
 
-            // put ros spin into a background thread
-            boost::thread RosSpin(&LiDARTag::_rosSpin, this);
-
             // Eigen::Matrix3d lie_group;
             // lie_group << 1, 0, 0,
             //             0, 0, -1,
@@ -228,20 +228,22 @@ namespace BipedLab {
 
 
             RCLCPP_INFO(get_logger(), "Waiting for pointcloud data");
-            LiDARTag::_waitForPC();
+    }
 
-            // Exam the minimum distance of each point in a ring
-            RCLCPP_INFO(get_logger(), "Analyzing system");
-            LiDARTag::_analyzeLiDARDevice();
-            boost::thread ExtractionSpin(&LiDARTag::_mainLoop, this);
-            ExtractionSpin.join();
-            RosSpin.join();
+    LiDARTag::~LiDARTag()
+    {
+        _extraction_thread->join();
     }
 
     /*
      * Main loop
      */
     void LiDARTag::_mainLoop(){
+
+        // Exam the minimum distance of each point in a ring
+        RCLCPP_INFO(get_logger(), "Analyzing LiDAR Device");
+        LiDARTag::_analyzeLiDARDevice();
+
         RCLCPP_INFO(get_logger(), "Start points of interest extraction");
         // RCLCPP_INFO_STREAM(get_logger(), "Tag_size:" << _payload_size);
         //ros::Rate r(10); // 10 hz
@@ -470,6 +472,8 @@ namespace BipedLab {
      * if not get all parameters then it will use hard-coded parameters
      */
     void LiDARTag::_getParameters(){
+
+        std::string tag_size_string;
         
         this->declare_parameter<double>("distance_threshold");
         this->declare_parameter<std::string>("lidartag_detection_topic");
@@ -520,7 +524,7 @@ namespace BipedLab {
         this->declare_parameter<double>("nearby_factor");
         this->declare_parameter<int>("number_points_ring");
         this->declare_parameter<double>("linkage_tunable");   
-        this->declare_parameter<std::vector<double_t>>("tag_size_list");
+        this->declare_parameter<std::string>("tag_size_list");
         this->declare_parameter<bool>("euler_derivative");
         this->declare_parameter<int>("num_threads");
         this->declare_parameter<bool>("print_info");
@@ -564,7 +568,7 @@ namespace BipedLab {
         bool GotLidarTopic = 
             this->get_parameter("pointcloud_topic", _pointcloud_topic);
         bool GotBeamNum = this->get_parameter("beam_number", _beam_num);
-        //bool GotSize = this->get_parameter("tag_size", _payload_size);
+        bool GotSize = this->get_parameter("tag_size", _payload_size);
 
         bool GotTagFamily = this->get_parameter("tag_family", _tag_family);
         bool GotTagHamming = 
@@ -637,7 +641,7 @@ namespace BipedLab {
             this->get_parameter("number_points_ring", _np_ring);
         bool GotCoefficient = 
             this->get_parameter("linkage_tunable", _linkage_tunable);   
-        bool GotTagSizeList = this->get_parameter("tag_size_list", _tag_size_list);
+        bool GotTagSizeList = this->get_parameter("tag_size_list", tag_size_string);
         bool GotDerivativeMethod = this->get_parameter("euler_derivative", _derivative_method);
         bool GotNumThreads = this->get_parameter("num_threads", _num_threads);
         bool GotPrintInfo = this->get_parameter("print_info", _print_ros_info);
@@ -658,6 +662,9 @@ namespace BipedLab {
         bool GotCoaTunable = this->get_parameter("coa_tunable", _coa_tunable);
         bool GotTagsizeTunable = this->get_parameter("tagsize_tunable", _tagsize_tunable);
 
+        std::istringstream is(tag_size_string); 
+        _tag_size_list.assign( std::istream_iterator<double>( is ), std::istream_iterator<double>() );
+        
         bool Pass = utils::checkParameters(64, 
                 GotFakeTag, GotLidarTopic, GotBeamNum, 
                 GotOptPose, GotDecodeId, GotPlaneFitting,
@@ -1151,6 +1158,13 @@ namespace BipedLab {
             const sensor_msgs::msg::PointCloud2::SharedPtr pc){
         // flag to make sure it receives a pointcloud 
         // at the very begining of the program
+
+        if (!_point_cloud_received){
+            RCLCPP_INFO(get_logger(), "Got the first pointcloud. Starting LidarTag");
+            _extraction_thread = std::make_unique<boost::thread>(&LiDARTag::_mainLoop, this);
+        }
+
+
         _point_cloud_received = 1; 
         _point_cloud_header = pc->header;
         //boost::mutex::scoped_lock(_point_cloud1_queue_lock);
@@ -1159,24 +1173,6 @@ namespace BipedLab {
         _point_cloud1_queue_lock.unlock();
 
     }
-
-
-    /*
-     * A function to make sure the program has received at least 
-     * one pointcloud at the very start of this program
-     */
-    inline 
-    void LiDARTag::_waitForPC(){
-        while (rclcpp::ok()){
-            if (_point_cloud_received) {
-                RCLCPP_INFO(get_logger(), "Got pointcloud data");
-                return;
-            }
-
-            rclcpp::spin_some(this->get_node_base_interface());
-        }
-    }
-
 
     /* 
      * A function to slice the Veloydyne full points to sliced pointed 

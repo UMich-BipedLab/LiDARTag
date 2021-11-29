@@ -60,12 +60,9 @@ int main(int argc, char **argv){
     rclcpp::NodeOptions node_options;
     rclcpp::executors::MultiThreadedExecutor executor;
     auto node = std::make_shared<BipedLab::LiDARTag>(node_options);
-    executor.add_node(node);
-    executor.spin();
+    
+    rclcpp::spin(node);
     rclcpp::shutdown();
-
-    //ros::init(argc, argv, "lidar_tag_node");
-    //BipedLab::LiDARTag lidar_tag;
 
     cout << "Done!" << endl;
 

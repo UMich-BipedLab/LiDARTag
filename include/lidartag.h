@@ -81,6 +81,7 @@ namespace BipedLab{
     class LiDARTag: public rclcpp::Node{
         public:
             LiDARTag(const rclcpp::NodeOptions & options);
+            ~LiDARTag();
 
         private:
             /*****************************************************
@@ -112,6 +113,8 @@ namespace BipedLab{
             int _num_accumulation; // Accumuate # of scans as a full scan of lidar 
             int _iter; //iterations of frame
             std::string _assign_id; // Directly assign Id, mainly for calibration usage
+
+            std::unique_ptr<boost::thread> _extraction_thread;
 
             // ROS
             //rclcpp::NodeHandle _nh; // TODO KL: Delete after it works
@@ -286,14 +289,6 @@ namespace BipedLab{
              * reason: in order to put it into background as well as able to run other tasks
              */
             inline void _rosSpin();
-
-
-            /* [basic ros]
-             * A function to make sure the program has received at least one pointcloud 
-             * from subscribed channel
-             * at the very start of this program
-             */
-            inline void _waitForPC();
 
 
             /* [basic ros]
