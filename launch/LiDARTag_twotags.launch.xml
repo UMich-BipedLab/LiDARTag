@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+  <include file="$(find-pkg-share lidartag)/launch/LiDARTag_master.launch.xml">
+    <!-- list for marker sizes -->
+    <arg name="tag_size_list" value="0.61 0.8051" />
+    <!--arg name="tag_size_list_dummy" value="11111"/-->
+    
+    <!-- Tunable for PoI clustering -->
+    <arg name="nearby_factor" value="4.0" />
+    <arg name="linkage_tunable" value="0.5" />
+
+    <!-- Tunable for cluster validation -->
+    <arg name="max_outlier_ratio" value="0.35" />
+  </include>
+
+</launch>
+
