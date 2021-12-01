@@ -39,7 +39,6 @@
 #include <string>
 #include <vector>
 
-//#include <dynamic_reconfigure/server.h> // KL: porting to ROS2. delete afterwards.
 //#include <jsk_rviz_plugins/OverlayText.h> // KL: porting to ROS2. delete afterwards.
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/clock.hpp>
@@ -76,7 +75,6 @@
 #include <lidartag_msgs/msg/corners_array.hpp>
 #include <lidartag_msgs/msg/lidar_tag_detection.hpp>
 #include <lidartag_msgs/msg/lidar_tag_detection_array.hpp>
-//#include <lidartag_msgs/msg/lidar_tag_msgs_config.h> KL: deprecated due to the absence of dynamic reconfigure in ros2
 #include "thread_pool.h"
 #include "types.h"
 #include "utils.h"
@@ -98,6 +96,18 @@ private:
   /*****************************************************
    * Variables
    *****************************************************/
+
+  struct LidarTagParams
+  {
+    int cluster_max_index;
+    int cluster_min_index;
+    int cluster_max_points_size;
+    int cluster_min_points_size;
+  } _lidartag_params;
+
+  OnSetParametersCallbackHandle::SharedPtr _set_param_res;
+  rcl_interfaces::msg::SetParametersResult paramCallback(const std::vector<rclcpp::Parameter> &parameters);
+
   bool loop = true;
   int pose_status = 0;
   double inlier_size;
@@ -130,10 +140,6 @@ private:
   bool _pcl_visualize_cluster = false;
   int _num_accumulation; // Accumuate # of scans as a full scan of lidar
   int _iter;             // iterations of frame
-  int _cluster_max_index;
-  int _cluster_min_index;
-  int _cluster_max_points_size;
-  int _cluster_min_points_size;
   double _clearance;
   Eigen::Vector3f _intersection1;
   Eigen::Vector3f _intersection2;
@@ -220,10 +226,6 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _colored_cluster_buff_pub;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _ps_cluster_buff__pub;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _in_cluster_buff__pub;
-
-  //boost::shared_ptr< KL: deprecated since there is no dynamic reconfigure
-  //    dynamic_reconfigure::Server<lidartag_msgs::LiDARTagMsgsConfig>>
-  //    srv_;
 	  
   // Flag
   int _point_cloud_received; // check if a scan of point cloud has received or

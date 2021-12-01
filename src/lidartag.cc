@@ -74,6 +74,23 @@
 using namespace std;
 using namespace std::chrono;
 
+#define UPDATE_LIDARTAG_PARAM(PARAM_STRUCT, NAME) \
+  update_param(parameters, #NAME, PARAM_STRUCT.NAME)
+
+namespace
+{
+template <typename T>
+void update_param(
+  const std::vector<rclcpp::Parameter> & parameters, const std::string & name, T & value)
+{
+  auto it = std::find_if(parameters.cbegin(), parameters.cend(),
+    [&name](const rclcpp::Parameter & parameter) { return parameter.get_name() == name; });
+  if (it != parameters.cend()) {
+    value = it->template get_value<T>();
+  }
+}
+}  // namespace
+
 namespace BipedLab
 {
 LiDARTag::LiDARTag(const rclcpp::NodeOptions & options) :
@@ -109,7 +126,7 @@ LiDARTag::LiDARTag(const rclcpp::NodeOptions & options) :
   RCLCPP_INFO(get_logger(),"ALL INITIALIZED!");
 
   _lidar1_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-    _pointcloud_topic, 50, std::bind(&LiDARTag::_pointCloudCallback, this,std::placeholders::_1));
+    _pointcloud_topic, 50, std::bind(&LiDARTag::_pointCloudCallback, this, std::placeholders::_1));
   _edge_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("WholeEdgedPC", 10);
   _transformed_points_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("TransformedPoints", 10);
   _transformed_points_tag_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("TransformedPointsTag", 10);
@@ -243,11 +260,8 @@ LiDARTag::LiDARTag(const rclcpp::NodeOptions & options) :
 
   RCLCPP_INFO(get_logger(), "Waiting for pointcloud data");
   
-  // KL: reconfigure eas deprecated and we still have not done the new one
-  //srv_ = boost::make_shared<dynamic_reconfigure::Server<lidartag_msgs::LiDARTagMsgsConfig>>(_nh);
-  //dynamic_reconfigure::Server<lidartag_msgs::LiDARTagMsgsConfig>::CallbackType f;
-  //f = boost::bind(&LiDARTag::dynparamCallback, this, _1, _2);
-  //srv_->setCallback(f);
+  // set parameter callback
+  _set_param_res = add_on_set_parameters_callback(std::bind(&LiDARTag::paramCallback, this, std::placeholders::_1));
 }
 
             // Exam the minimum distance of each point in a ring
@@ -256,6 +270,30 @@ LiDARTag::~LiDARTag()
   _extraction_thread->join();
 }
 
+rcl_interfaces::msg::SetParametersResult LiDARTag::paramCallback(const std::vector<rclcpp::Parameter> &parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  result.reason = "success";
+
+  // strong exception safety wrt MPCParam
+  LidarTagParams param = _lidartag_params;
+  
+  try {
+    UPDATE_LIDARTAG_PARAM(param, cluster_max_index);
+    UPDATE_LIDARTAG_PARAM(param, cluster_min_index);
+    UPDATE_LIDARTAG_PARAM(param, cluster_max_points_size);
+    UPDATE_LIDARTAG_PARAM(param, cluster_min_points_size);
+
+    // transaction succeeds, now assign values
+    _lidartag_params = param;
+  } catch (const rclcpp::exceptions::InvalidParameterTypeException & e) {
+    result.successful = false;
+    result.reason = e.what();
+  }
+
+  return result;
+}
 
 /*
  * Main loop
@@ -640,12 +678,12 @@ void LiDARTag::_getParameters() {
   bool GotNumAccumulation = this->get_parameter("num_accumulation", _num_accumulation);
   bool GotCoaTunable = this->get_parameter("coa_tunable", _coa_tunable);
   bool GotTagsizeTunable = this->get_parameter("tagsize_tunable", _tagsize_tunable);
-  bool GotMaxClusterIndex = this->get_parameter("cluster_max_index", _cluster_max_index);
-  bool GotMinClusterIndex = this->get_parameter("cluster_min_index", _cluster_min_index);
+  bool GotMaxClusterIndex = this->get_parameter("cluster_max_index", _lidartag_params.cluster_max_index);
+  bool GotMinClusterIndex = this->get_parameter("cluster_min_index", _lidartag_params.cluster_min_index);
   bool GotMaxClusterPointsSize =
-    this->get_parameter("cluster_max_points_size", _cluster_max_points_size);
+    this->get_parameter("cluster_max_points_size", _lidartag_params.cluster_max_points_size);
   bool GotMinClusterPointsSize =
-    this->get_parameter("cluster_min_points_size", _cluster_min_points_size);
+    this->get_parameter("cluster_min_points_size", _lidartag_params.cluster_min_points_size);
   bool GotVisualizeCluster = this->get_parameter("pcl_visualize_cluster", _pcl_visualize_cluster);
   bool GotClearance = this->get_parameter("clearance", _clearance);
   std::istringstream is(tag_size_string); 
@@ -4121,8 +4159,8 @@ void LiDARTag::publishLidartagCluster(const vector<ClusterFamily_t> & cluster_bu
     int points_size =
       cluster_buff[index_num].data.size() + cluster_buff[index_num].edge_points.size();
     if (
-      points_size < _cluster_min_points_size || points_size > _cluster_max_points_size ||
-      index_num < _cluster_min_index || index_num > _cluster_max_index) {
+      points_size < _lidartag_params.cluster_min_points_size || points_size > _lidartag_params.cluster_max_points_size ||
+      index_num < _lidartag_params.cluster_min_index || index_num > _lidartag_params.cluster_max_index) {
       index_num++;
       continue;
     }

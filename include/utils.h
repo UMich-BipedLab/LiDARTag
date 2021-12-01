@@ -359,7 +359,7 @@ void constructConvexHull(const Eigen::MatrixXf & P, Eigen::MatrixXf & convex_hul
 
 float computePolygonArea(const Eigen::MatrixXf & vertices);
 
-point eigen2Corners(const Eigen::MatrixXf & vector, point & tag_point);
+void eigen2Corners(const Eigen::MatrixXf & vector, point & tag_point);
 
 // float computeMedian(std::vector<float> vec);
 // template <typename T>

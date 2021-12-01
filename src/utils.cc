@@ -986,7 +986,8 @@ void constructConvexHull(const Eigen::MatrixXf & P, Eigen::MatrixXf & convex_hul
 
   // return convex_hull.leftCols(k - 1);
 }
-point eigen2Corners(const Eigen::MatrixXf & vector, point & tag_point)
+
+void eigen2Corners(const Eigen::MatrixXf & vector, point & tag_point)
 {
   tag_point.x = vector(0, 0);
   tag_point.y = vector(1, 0);
