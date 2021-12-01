@@ -54,6 +54,5 @@
   </include>
 
         
-
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find lidartag)/rviz/LiDARTag.rviz" respawn="true" />
+  <node pkg="rviz2" exec="rviz2" name="rviz" output="screen" args="-d $(find-pkg-share lidartag)/rviz/LiDARTag.rviz" respawn="true" />
 </launch>

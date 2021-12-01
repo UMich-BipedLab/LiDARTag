@@ -97,4 +97,5 @@ ament_auto_package(
     launch
     lib
     outputs
+    rviz
 )
