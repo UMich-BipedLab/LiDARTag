@@ -47,7 +47,7 @@ end
 
 opts.verbose.output_level = 1;
 opts.num_tag = 5; % max is 30
-opts.img_path  = "tag16h6/"; % tag_img/
+opts.img_path  = "tag16h5/"; % tag_img/
 opts.img_prefix = "tag16_06_%05d.png";
 
 

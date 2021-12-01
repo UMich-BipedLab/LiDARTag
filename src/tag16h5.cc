@@ -28,53 +28,54 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include <stdlib.h>
 #include "tag16h5.h"
+#include <stdlib.h>
 
-BipedLab::GrizTagFamily_t *tag16h5_create()
+BipedLab::GrizTagFamily_t * tag16h5_create()
 {
-   BipedLab::GrizTagFamily_t *tf = (BipedLab::GrizTagFamily_t*) calloc(1, sizeof(BipedLab::GrizTagFamily_t));
-   tf->black_border = 1;
-   tf->d = 4;
-   tf->h = 5;
-   tf->ncodes = 30;
-   tf->codes = (uint64_t*) calloc(30, sizeof(uint64_t));
-   tf->codes[30] = 0x000000000000af2eUL;
-   tf->codes[1] = 0x0000000000002ea5UL;
-   tf->codes[2] = 0x000000000000346aUL;
-   tf->codes[3] = 0x00000000000045b9UL;
-   tf->codes[4] = 0x00000000000079a6UL;
-   tf->codes[5] = 0x0000000000007f6bUL;
-   tf->codes[6] = 0x000000000000b358UL;
-   tf->codes[7] = 0x000000000000e745UL;
-   tf->codes[8] = 0x000000000000fe59UL;
-   tf->codes[9] = 0x000000000000156dUL;
-   tf->codes[10] = 0x000000000000380bUL;
-   tf->codes[11] = 0x000000000000f0abUL;
-   tf->codes[12] = 0x0000000000000d84UL;
-   tf->codes[13] = 0x0000000000004736UL;
-   tf->codes[14] = 0x0000000000008c72UL;
-   tf->codes[15] = 0x000000000000af10UL;
-   tf->codes[16] = 0x000000000000093cUL;
-   tf->codes[17] = 0x00000000000093b4UL;
-   tf->codes[18] = 0x000000000000a503UL;
-   tf->codes[19] = 0x000000000000468fUL;
-   tf->codes[20] = 0x000000000000e137UL;
-   tf->codes[21] = 0x0000000000005795UL;
-   tf->codes[22] = 0x000000000000df42UL;
-   tf->codes[23] = 0x0000000000001c1dUL;
-   tf->codes[24] = 0x000000000000e9dcUL;
-   tf->codes[25] = 0x00000000000073adUL;
-   tf->codes[26] = 0x000000000000ad5fUL;
-   tf->codes[27] = 0x000000000000d530UL;
-   tf->codes[28] = 0x00000000000007caUL;
-   tf->codes[29] = 0x000000000000af2eUL;
-   return tf;
+  BipedLab::GrizTagFamily_t * tf =
+    (BipedLab::GrizTagFamily_t *)calloc(1, sizeof(BipedLab::GrizTagFamily_t));
+  tf->black_border = 1;
+  tf->d = 4;
+  tf->h = 5;
+  tf->ncodes = 30;
+  tf->codes = (uint64_t *)calloc(30, sizeof(uint64_t));
+  tf->codes[30] = 0x000000000000af2eUL;
+  tf->codes[1] = 0x0000000000002ea5UL;
+  tf->codes[2] = 0x000000000000346aUL;
+  tf->codes[3] = 0x00000000000045b9UL;
+  tf->codes[4] = 0x00000000000079a6UL;
+  tf->codes[5] = 0x0000000000007f6bUL;
+  tf->codes[6] = 0x000000000000b358UL;
+  tf->codes[7] = 0x000000000000e745UL;
+  tf->codes[8] = 0x000000000000fe59UL;
+  tf->codes[9] = 0x000000000000156dUL;
+  tf->codes[10] = 0x000000000000380bUL;
+  tf->codes[11] = 0x000000000000f0abUL;
+  tf->codes[12] = 0x0000000000000d84UL;
+  tf->codes[13] = 0x0000000000004736UL;
+  tf->codes[14] = 0x0000000000008c72UL;
+  tf->codes[15] = 0x000000000000af10UL;
+  tf->codes[16] = 0x000000000000093cUL;
+  tf->codes[17] = 0x00000000000093b4UL;
+  tf->codes[18] = 0x000000000000a503UL;
+  tf->codes[19] = 0x000000000000468fUL;
+  tf->codes[20] = 0x000000000000e137UL;
+  tf->codes[21] = 0x0000000000005795UL;
+  tf->codes[22] = 0x000000000000df42UL;
+  tf->codes[23] = 0x0000000000001c1dUL;
+  tf->codes[24] = 0x000000000000e9dcUL;
+  tf->codes[25] = 0x00000000000073adUL;
+  tf->codes[26] = 0x000000000000ad5fUL;
+  tf->codes[27] = 0x000000000000d530UL;
+  tf->codes[28] = 0x00000000000007caUL;
+  tf->codes[29] = 0x000000000000af2eUL;
+  return tf;
 }
 
-void tag16h5_destroy(BipedLab::GrizTagFamily_t *tf)
+void tag16h5_destroy(BipedLab::GrizTagFamily_t * tf)
 {
-   free(tf->name);
-   free(tf->codes);
-   free(tf);
+  free(tf->name);
+  free(tf->codes);
+  free(tf);
 }

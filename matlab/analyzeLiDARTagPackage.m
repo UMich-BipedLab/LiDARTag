@@ -60,7 +60,7 @@ function out_t = analyzeLiDARTagPackage(input_t, path_folder)
 
     %% Clusters
     % name = "computation_time.txt";
-    name = "stats.txt";
+    name = "stats.csv";
     filename = path_folder + name;
     if ~isfile(filename)
         error("No such file: %s", filename)

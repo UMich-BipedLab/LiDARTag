@@ -15,6 +15,7 @@ find_package(ament_cmake_auto REQUIRED)
 find_package(NLopt REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS atomic filesystem system regex date_time program_options thread)
+find_package(OpenCV REQUIRED)
 
 message(STATUS "=============================================Boost")
 message(STATUS "===============================Boost include_dirs: ${Boost_INCLUDE_DIRS}")
@@ -53,16 +54,13 @@ ament_auto_find_build_dependencies() # This makes the find packages from the xml
 
 ament_export_include_directories(
 #include_directories(
-	include 
-	${catkin_INCLUDE_DIRS} 
-	#${PCL_INCLUDE_DIRS}
+  include 
+  ${catkin_INCLUDE_DIRS} 
   ${Boost_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
   ${TBB_INCLUDE_DIRS}
 )
 
-#link_directories(${PCL_LIBRARY_DIRS})
-#add_definitions(${PCL_DEFINITIONS}) # TODO KL: we may still need this
 
 # COMPILE THE SOURCE
 #========================================================================
@@ -80,7 +78,6 @@ ament_auto_add_executable(lidartag_main
     src/lidartag_prune.cc)
 
 target_link_libraries(lidartag_main 
-    #${catkin_LIBRARIES} 
     ${PCL_LIBRARIES}
     ${NLOPT_LIBRARIES}
     ${TBB_LIBRARIES}

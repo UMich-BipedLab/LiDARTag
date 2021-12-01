@@ -1,6 +1,6 @@
 Panels:
   - Class: rviz/Displays
-    Help Height: 79
+    Help Height: 0
     Name: Displays
     Property Tree Widget:
       Expanded:
@@ -8,8 +8,9 @@ Panels:
         - /Status1
         - /FillInClusterB&W1/Namespaces1
         - /Tamplate1/Namespaces1
-      Splitter Ratio: 0.48235294222831726
-    Tree Height: 755
+        - /PointCloud23
+      Splitter Ratio: 0.6219239234924316
+    Tree Height: 446
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -26,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
   - Class: rviz/Displays
     Help Height: 79
     Name: Displays
@@ -52,7 +53,7 @@ Visualization Manager:
       Cell Size: 2
       Class: rviz/Grid
       Color: 226; 226; 226
-      Enabled: true
+      Enabled: false
       Line Style:
         Line Width: 0.029999999329447746
         Value: Lines
@@ -65,7 +66,7 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 20
       Reference Frame: <Fixed Frame>
-      Value: true
+      Value: false
     - Class: rviz/Image
       Enabled: true
       Image Topic: /camera/color/image_raw
@@ -90,10 +91,10 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 113
+      Max Intensity: 224
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: AllLidarPoints
@@ -107,7 +108,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -123,7 +124,7 @@ Visualization Manager:
       Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 234
+      Max Intensity: 222
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: PoI
@@ -256,12 +257,12 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: -0.9950828552246094
+      Max Intensity: 127.62503814697266
       Min Color: 0; 0; 0
-      Min Intensity: -0.9950828552246094
+      Min Intensity: 127.62503814697266
       Name: EstimatedCorners
       Position Transformer: XYZ
       Queue Size: 10
@@ -273,7 +274,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -286,7 +287,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 50
@@ -303,7 +304,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -339,7 +340,7 @@ Visualization Manager:
       Marker Topic: /LiDARTag/lidartag_main/TagFrame
       Name: TagFrame
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -347,7 +348,7 @@ Visualization Manager:
       Marker Topic: /LiDARTag/lidartag_main/IDMarkers
       Name: ID
       Namespaces:
-        {}
+        Text0: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -392,12 +393,12 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: -999999
+      Max Intensity: 136
       Min Color: 0; 0; 0
-      Min Intensity: 999999
+      Min Intensity: 8
       Name: 3DTransformedPoints
       Position Transformer: XYZ
       Queue Size: 10
@@ -409,7 +410,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -448,6 +449,266 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /LiDARTag/lidartag_main/detail_valid_marker
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Align Bottom: false
+      Background Alpha: 0.800000011920929
+      Background Color: 0; 0; 0
+      Class: jsk_rviz_plugin/OverlayText
+      Enabled: true
+      Foreground Alpha: 0.800000011920929
+      Foreground Color: 25; 255; 240
+      Invert Shadow: false
+      Name: OverlayText
+      Overtake BG Color Properties: false
+      Overtake FG Color Properties: true
+      Overtake Position Properties: false
+      Topic: /LiDARTag/lidartag_main/detail_valid_text
+      Value: true
+      font: DejaVu Sans Mono
+      height: 128
+      left: 0
+      line width: 10
+      text size: 12
+      top: 0
+      width: 128
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.009999999776482582
+      Style: Flat Squares
+      Topic: /LiDARTag/lidartag_main/transformed_edge_pc
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /LiDARTag/lidartag_main/intesection_markers
+      Name: MarkerArray
+      Namespaces:
+        intersection_marker: true
+      Queue Size: 100
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 23
+      Min Color: 0; 0; 0
+      Min Intensity: 15
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.009999999776482582
+      Style: Flat Squares
+      Topic: /LiDARTag/lidartag_main/lidartag_cluster_points
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 224
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.05000000074505806
+      Style: Flat Squares
+      Topic: /LiDARTag/lidartag_main/lidartag_cluster_edge_points
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
+    - Class: rviz/Image
+      Enabled: false
+      Image Topic: /tag_detections_image
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /LiDARTag/lidartag_main/cluster_buff_index_number_markers
+      Name: cluster_index
+      Namespaces:
+        in_marker_0: true
+        in_marker_1: true
+        in_marker_10: true
+        in_marker_108: true
+        in_marker_11: true
+        in_marker_110: true
+        in_marker_112: true
+        in_marker_114: true
+        in_marker_115: true
+        in_marker_116: true
+        in_marker_117: true
+        in_marker_118: true
+        in_marker_119: true
+        in_marker_12: true
+        in_marker_120: true
+        in_marker_121: true
+        in_marker_122: true
+        in_marker_123: true
+        in_marker_124: true
+        in_marker_125: true
+        in_marker_126: true
+        in_marker_127: true
+        in_marker_13: true
+        in_marker_130: true
+        in_marker_2: true
+        in_marker_21: true
+        in_marker_27: true
+        in_marker_28: true
+        in_marker_29: true
+        in_marker_3: true
+        in_marker_30: true
+        in_marker_31: true
+        in_marker_32: true
+        in_marker_33: true
+        in_marker_34: true
+        in_marker_35: true
+        in_marker_36: true
+        in_marker_37: true
+        in_marker_38: true
+        in_marker_39: true
+        in_marker_4: true
+        in_marker_41: true
+        in_marker_42: true
+        in_marker_43: true
+        in_marker_44: true
+        in_marker_5: true
+        in_marker_51: true
+        in_marker_53: true
+        in_marker_55: true
+        in_marker_56: true
+        in_marker_57: true
+        in_marker_58: true
+        in_marker_59: true
+        in_marker_6: true
+        in_marker_60: true
+        in_marker_61: true
+        in_marker_62: true
+        in_marker_63: true
+        in_marker_64: true
+        in_marker_65: true
+        in_marker_66: true
+        in_marker_67: true
+        in_marker_68: true
+        in_marker_69: true
+        in_marker_7: true
+        in_marker_70: true
+        in_marker_71: true
+        in_marker_72: true
+        in_marker_73: true
+        in_marker_74: true
+        in_marker_75: true
+        in_marker_76: true
+        in_marker_77: true
+        in_marker_78: true
+        in_marker_8: true
+        in_marker_9: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: false
+      Marker Topic: /LiDARTag/lidartag_main/cluster_buff_points_size_markers
+      Name: cluster_pc_size
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: RGB8
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: colored_cluster
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.009999999776482582
+      Style: Flat Squares
+      Topic: /LiDARTag/lidartag_main/colored_cluster_buff
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
@@ -476,35 +737,35 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 6.548966884613037
+      Distance: 11.83352279663086
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.623408079147339
-        Y: -0.08055201172828674
-        Z: 0.9260057806968689
+        X: 4.969535827636719
+        Y: 0.5932123064994812
+        Z: -1.4736838340759277
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.12479828298091888
+      Pitch: 0.504797637462616
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.9817159175872803
+      Yaw: 3.016700267791748
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1396
+  Height: 1052
   Hide Left Dock: false
   Hide Right Dock: false
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd000000040000000000000156000004d8fc020000000afc00000040000001710000000000fffffffaffffffff0100000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730000000000ffffffff0000009e00fffffffb0000001200530065006c0065006300740069006f006e0000000000000001560000007500fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c00610079007301000000400000037f000000db00fffffffb0000000a0049006d00610067006501000003c5000001530000001600fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000100044006900730070006c006100790073000000028c00000194000000db00fffffffb0000000a0049006d0061006700650100000257000001f90000000000000000000000010000010f000003fcfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000040000003fc000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000047700000039fc0100000002fb0000000800540069006d00650100000000000004770000029400fffffffb0000000800540069006d006501000000000000045000000000000000000000031b000004d800000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000004000000000000019e00000383fc020000000bfc00000040000001710000000000fffffffaffffffff0100000002fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730000000000ffffffff0000009d00fffffffb0000001200530065006c0065006300740069006f006e0000000000000001560000007400fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000001fb000000c900fffffffb0000000a0049006d006100670065010000023e000001820000001600fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb000000100044006900730070006c006100790073000000028c00000194000000c900fffffffb0000000a0049006d006100670065000000026d000001530000001600fffffffb0000000a0049006d0061006700650100000212000001ae0000000000000000000000010000010f000003fcfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000040000003fc000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000078000000039fc0100000002fb0000000800540069006d0065010000000000000780000002eb00fffffffb0000000800540069006d00650100000000000004500000000000000000000005dc0000038300000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -513,6 +774,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1143
-  X: 859
-  Y: 160
+  Width: 1920
+  X: 0
+  Y: 0
