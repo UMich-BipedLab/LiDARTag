@@ -44,6 +44,12 @@
 
   <!-- Tunable for cluster validation -->
   <arg name="max_outlier_ratio" />
+  
+  <arg name="cluster_min_index" />
+  <arg name="cluster_max_index" />
+  <arg name="cluster_min_points_size" />
+  <arg name="cluster_max_points_size" />
+  <arg name="pcl_visualize_cluster" />
 
   <!-- LidarTag node -->
   <group>
@@ -196,8 +202,13 @@
 
       <!-- Tunable for cluster validation -->
       <param name="max_outlier_ratio" value="$(var max_outlier_ratio)" />
-      <param name="clearance" value="$(var clearance)" />
 
+      <param name="cluster_min_index" value="$(var cluster_min_index)" />
+      <param name="cluster_max_index" value="$(var cluster_max_index)" />
+      <param name="cluster_min_points_size" value="$(var cluster_min_points_size)" />
+      <param name="cluster_max_points_size" value="$(var cluster_max_points_size)" />
+      <param name="pcl_visualize_cluster" value="$(var pcl_visualize_cluster)" />
+      <param name="clearance" value="$(var clearance)" />
 
     </node>
   </group>

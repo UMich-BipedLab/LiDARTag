@@ -87,6 +87,7 @@ void update_param(
     [&name](const rclcpp::Parameter & parameter) { return parameter.get_name() == name; });
   if (it != parameters.cend()) {
     value = it->template get_value<T>();
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("lidartag"), "Setting parameter [" << name << "] to " << value);
   }
 }
 }  // namespace
@@ -589,6 +590,11 @@ void LiDARTag::_getParameters() {
   this->declare_parameter<int>("num_accumulation");
   this->declare_parameter<double>("coa_tunable");
   this->declare_parameter<double>("tagsize_tunable");
+  this->declare_parameter<int>("cluster_max_index");
+  this->declare_parameter<int>("cluster_min_index");
+  this->declare_parameter<int>("cluster_max_points_size");
+  this->declare_parameter<int>("cluster_min_points_size");
+  this->declare_parameter<bool>("pcl_visualize_cluster");
   this->declare_parameter<double>("clearance");
 
   bool GotPubFrame = this->get_parameter("frame_name", _pub_frame);
