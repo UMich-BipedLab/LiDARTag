@@ -53,6 +53,5 @@
     <arg name="cluster_max_points_size" value="10000" />
   </include>
 
-        
   <node pkg="rviz2" exec="rviz2" name="rviz" output="screen" args="-d $(find-pkg-share lidartag)/rviz/LiDARTag.rviz" respawn="true" />
 </launch>
