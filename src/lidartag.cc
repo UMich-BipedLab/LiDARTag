@@ -544,7 +544,7 @@ void LiDARTag::_getParameters() {
   this->declare_parameter<int>("beam_number");
   this->declare_parameter<int>("tag_family");
   this->declare_parameter<int>("tag_hamming_distance");
-  this->declare_parameter<int>("ma  x_decode_hamming");
+  this->declare_parameter<int>("max_decode_hamming");
   this->declare_parameter<int>("black_border");
   this->declare_parameter<double>("distance_bound");
   this->declare_parameter<double>("intensity_bound");
@@ -589,6 +589,7 @@ void LiDARTag::_getParameters() {
   this->declare_parameter<int>("num_accumulation");
   this->declare_parameter<double>("coa_tunable");
   this->declare_parameter<double>("tagsize_tunable");
+  this->declare_parameter<double>("clearance");
 
   bool GotPubFrame = this->get_parameter("frame_name", _pub_frame);
   bool GotThreshold = this->get_parameter("distance_threshold", _distance_threshold);
@@ -661,7 +662,7 @@ void LiDARTag::_getParameters() {
   bool GotNearBound = this->get_parameter("nearby_factor", _nearby_factor);
   bool GotNumPointsRing = this->get_parameter("number_points_ring", _np_ring);
   bool GotCoefficient = this->get_parameter("linkage_tunable", _linkage_tunable);
-  bool GotTagSizeList = this->get_parameter("tag_size_list", _tag_size_list);
+  bool GotTagSizeList = this->get_parameter("tag_size_list", tag_size_string);
   bool GotDerivativeMethod = this->get_parameter("euler_derivative", _derivative_method);
   bool GotNumThreads = this->get_parameter("num_threads", _num_threads);
   bool GotPrintInfo = this->get_parameter("print_info", _print_ros_info);
@@ -686,11 +687,12 @@ void LiDARTag::_getParameters() {
     this->get_parameter("cluster_min_points_size", _lidartag_params.cluster_min_points_size);
   bool GotVisualizeCluster = this->get_parameter("pcl_visualize_cluster", _pcl_visualize_cluster);
   bool GotClearance = this->get_parameter("clearance", _clearance);
+  
   std::istringstream is(tag_size_string); 
   _tag_size_list.assign( std::istream_iterator<double>( is ), std::istream_iterator<double>() );
 
   bool Pass = utils::checkParameters(
-    64, GotFakeTag, GotLidarTopic, GotBeamNum, GotOptPose, GotDecodeId, GotPlaneFitting,
+    65, GotFakeTag, GotLidarTopic, GotBeamNum, GotOptPose, GotDecodeId, GotPlaneFitting,
     GotAssignId, GotCSV, GotOutPutPath, GotDistanceBound, GotIntensityBound, GotDepthBound,
     GotTagFamily, GotTagHamming, GotMaxDecodeHamming, GotFineClusterThreshold, GotVerticalFOV,
     GotFillInGapThreshold, GotMaxOutlierRatio, GotPointsThresholdFactor, GotLineIntensityBound,
@@ -1590,7 +1592,6 @@ void LiDARTag::_fillInCluster(
       exit(0);
     }
   }
-
   // _debug_cluster.boundary_point.clear();
   _result_statistics.original_cluster_size = cluster_buff.size();
   _result_statistics.remaining_cluster_size = cluster_buff.size();

@@ -58,7 +58,6 @@ int main(int argc, char **argv){
 
     rclcpp::init(argc, argv);
     rclcpp::NodeOptions node_options;
-    rclcpp::executors::MultiThreadedExecutor executor;
     auto node = std::make_shared<BipedLab::LiDARTag>(node_options);
     
     rclcpp::spin(node);

@@ -35,6 +35,9 @@
   <!-- Common parameters to be set externally -->
   <arg name="tag_size_list" />
 
+  <!-- Default value corresponds to sqrt(2)/4 -> Geometrical meaning. Added as a debug variable -->>
+  <arg name="clearance" default="0.35355339059" /> 
+
   <!-- Tunable for PoI clustering -->
   <arg name="nearby_factor" />
   <arg name="linkage_tunable" />
@@ -50,7 +53,7 @@
 
       <!-- ========= General Parameters ========= -->
       <!-- Path for Analysis Files -->
-      <param name="library_path" value="$(find-pkg-share lidartag)/lib/" />
+      <param name="library_path" value="$(find-pkg-share lidartag)/lib/origin/" />
       <param name="outputs_path" value="$(find-pkg-share lidartag)/outputs/" />
 
 
@@ -193,6 +196,7 @@
 
       <!-- Tunable for cluster validation -->
       <param name="max_outlier_ratio" value="$(var max_outlier_ratio)" />
+      <param name="clearance" value="$(var clearance)" />
 
 
     </node>
