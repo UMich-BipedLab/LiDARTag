@@ -524,7 +524,8 @@ void LiDARTag::_mainLoop()
 void LiDARTag::_getParameters() {
 
   std::string tag_size_string;
-        
+
+  this->declare_parameter<std::string>("frame_name");      
   this->declare_parameter<double>("distance_threshold");
   this->declare_parameter<std::string>("lidartag_detection_topic");
   this->declare_parameter<int>("sleep_to_display");
@@ -698,7 +699,7 @@ void LiDARTag::_getParameters() {
   _tag_size_list.assign( std::istream_iterator<double>( is ), std::istream_iterator<double>() );
 
   bool Pass = utils::checkParameters(
-    65, GotFakeTag, GotLidarTopic, GotBeamNum, GotOptPose, GotDecodeId, GotPlaneFitting,
+    67, GotPubFrame, GotFakeTag, GotLidarTopic, GotBeamNum, GotOptPose, GotDecodeId, GotPlaneFitting,
     GotAssignId, GotCSV, GotOutPutPath, GotDistanceBound, GotIntensityBound, GotDepthBound,
     GotTagFamily, GotTagHamming, GotMaxDecodeHamming, GotFineClusterThreshold, GotVerticalFOV,
     GotFillInGapThreshold, GotMaxOutlierRatio, GotPointsThresholdFactor, GotLineIntensityBound,
@@ -710,7 +711,7 @@ void LiDARTag::_getParameters() {
     GotOptimizePercent, GotDebuginfo, GotDebugtime, GotLogData, GotDebugDecodingtime,
     GotLibraryPath, GotNumCodes, GotCalibration, GotMinimumRingPoints, GotRingState,
     GotRingEstimation, GotNumAccumulation, GotDerivativeMethod, GotUpbound, GotLowbound,
-    GotCoaTunable, GotTagsizeTunable, GotClearance);
+    GotCoaTunable, GotTagsizeTunable, GotVisualizeCluster, GotClearance);
 
   if (!Pass) {
     // TODO: check compleness

@@ -28,7 +28,7 @@
  * 
  * AUTHOR: Bruce JK Huang (bjhuang[at]umich.edu)
  * WEBSITE: https://www.brucerobot.com/
- -->
+-->
 
 <launch>
 
@@ -36,9 +36,6 @@
     <arg name="mark_cluster_validity" value="true" />
     <!-- list for marker sizes -->
     <arg name="tag_size_list" value="0.61 0.8051" />
-    <!--arg name="tag_size_list_dummy" value="11111"/-->
-    
-    <arg name="pcl_visualize_cluster" value="false" />
 
     <!-- Tunable for PoI clustering -->
     <arg name="nearby_factor" value="4.0" />
@@ -51,6 +48,7 @@
     <arg name="cluster_max_index" value="1000" />
     <arg name="cluster_min_points_size" value="0" />
     <arg name="cluster_max_points_size" value="10000" />
+    <arg name="pcl_visualize_cluster" value="false" />
   </include>
 
   <node pkg="rviz2" exec="rviz2" name="rviz" output="screen" args="-d $(find-pkg-share lidartag)/rviz/LiDARTag.rviz" respawn="true" />

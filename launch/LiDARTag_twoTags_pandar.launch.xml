@@ -32,12 +32,12 @@
 
 <launch>
     
-  <include file="$(find-pkg-share lidartag)/launch/LiDARTag_master_pandar.launch.xml" output="screen" >
+  <include file="$(find-pkg-share lidartag)/launch/LiDARTag_master_pandar.launch.xml" >
 
     <arg name="use_sim_time" value="false" />
     <arg name="mark_cluster_validity" value="true" />
     <!-- list for marker sizes -->
-    <arg param="tag_size_list" value="0.8, 1.03" />
+    <arg name="tag_size_list" value="0.8, 1.03" />
 
     <!-- Tunable for PoI clustering -->
     <arg name="nearby_factor" value="4.0" />
@@ -48,12 +48,12 @@
     <!-- Tunable for cluster validation -->
     <arg name="max_outlier_ratio" value="0.15" />
 
-    <arg name="pcl_visualize_cluster" value="false" />
-
     <arg name="cluster_min_index" value="15" />
     <arg name="cluster_max_index" value="20" />
     <arg name="cluster_min_points_size" value="2800" />
     <arg name="cluster_max_points_size" value="2900" />
+    <arg name="pcl_visualize_cluster" value="false" />
+    
   </include>
 
   <node pkg="rviz2" exec="rviz2" name="rviz" args="-d $(find-pkg-share lidartag)/rviz/tag_calib.rviz" respawn="true" />
