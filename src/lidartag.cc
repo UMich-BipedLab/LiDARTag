@@ -126,8 +126,16 @@ LiDARTag::LiDARTag(const rclcpp::NodeOptions & options) :
 
   RCLCPP_INFO(get_logger(),"ALL INITIALIZED!");
 
-  _lidar1_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+  if (_sensor_qos) {
+    _lidar1_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+    _pointcloud_topic, rclcpp::SensorDataQoS(), std::bind(&LiDARTag::_pointCloudCallback, this, std::placeholders::_1));
+
+  }
+  else {
+    _lidar1_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
     _pointcloud_topic, 50, std::bind(&LiDARTag::_pointCloudCallback, this, std::placeholders::_1));
+  }
+  
   _edge_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("WholeEdgedPC", 10);
   _transformed_points_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("TransformedPoints", 10);
   _transformed_points_tag_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("TransformedPointsTag", 10);
@@ -162,9 +170,9 @@ LiDARTag::LiDARTag(const rclcpp::NodeOptions & options) :
   _lidartag_cluster_transformed_edge_points_pub =
     this->create_publisher<sensor_msgs::msg::PointCloud2>("lidartag_cluster_trasformed_edge_points", 10);
   //_marker_pub = this->create_publisher<visualization_msgs::msg::Marker>("intersection_marker", 10); // KL: seemes unused
-  detail_valid_marker_array_pub =
+  _detail_valid_marker_array_pub =
     this->create_publisher<visualization_msgs::msg::MarkerArray>("detail_valid_marker", 10);
-  //detail_valid_text_pub = this->create_publisher<jsk_rviz_plugins::OverlayText>("detail_valid_text", 10);
+  _detail_valid_text_pub = this->create_publisher<jsk_msgs::msg::OverlayText>("detail_valid_text", 10);
   _intersection_marker_array_pub =
     this->create_publisher<visualization_msgs::msg::MarkerArray>("intesection_markers", 10);
   _line_cloud1_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("line_cloud1", 10);
@@ -281,10 +289,28 @@ rcl_interfaces::msg::SetParametersResult LiDARTag::paramCallback(const std::vect
   LidarTagParams param = _lidartag_params;
   
   try {
+    UPDATE_LIDARTAG_PARAM(param, linkage_threshold);
+    UPDATE_LIDARTAG_PARAM(param, ransac_threshold);
+    UPDATE_LIDARTAG_PARAM(param, fine_cluster_threshold);       // TODO: REPLACE WITH TAG PARAMETERS
+    UPDATE_LIDARTAG_PARAM(param, filling_gap_max_index);        // TODO: CHECK
+    UPDATE_LIDARTAG_PARAM(param, filling_max_points_threshold); // TODO: REMOVE
+    UPDATE_LIDARTAG_PARAM(param, points_threshold_factor);   // TODO: CHECK
+    UPDATE_LIDARTAG_PARAM(param, distance_to_plane_threshold);
+    UPDATE_LIDARTAG_PARAM(param, max_outlier_ratio);
+    UPDATE_LIDARTAG_PARAM(param, num_points_for_plane_feature);
+    UPDATE_LIDARTAG_PARAM(param, nearby_factor);
+    UPDATE_LIDARTAG_PARAM(param, minimum_ring_boundary_points);
+    UPDATE_LIDARTAG_PARAM(param, np_ring);
+    UPDATE_LIDARTAG_PARAM(param, linkage_tunable);
     UPDATE_LIDARTAG_PARAM(param, cluster_max_index);
     UPDATE_LIDARTAG_PARAM(param, cluster_min_index);
     UPDATE_LIDARTAG_PARAM(param, cluster_max_points_size);
     UPDATE_LIDARTAG_PARAM(param, cluster_min_points_size);
+    UPDATE_LIDARTAG_PARAM(param, debug_single_pointcloud);
+    UPDATE_LIDARTAG_PARAM(param, debug_point_x);
+    UPDATE_LIDARTAG_PARAM(param, debug_point_y);
+    UPDATE_LIDARTAG_PARAM(param, debug_point_z);
+    UPDATE_LIDARTAG_PARAM(param, debug_cluster_id);
 
     // transaction succeeds, now assign values
     _lidartag_params = param;
@@ -525,6 +551,7 @@ void LiDARTag::_getParameters() {
 
   std::string tag_size_string;
 
+  this->declare_parameter<bool>("sensor_qos");
   this->declare_parameter<std::string>("frame_name");      
   this->declare_parameter<double>("distance_threshold");
   this->declare_parameter<std::string>("lidartag_detection_topic");
@@ -595,9 +622,15 @@ void LiDARTag::_getParameters() {
   this->declare_parameter<int>("cluster_min_index");
   this->declare_parameter<int>("cluster_max_points_size");
   this->declare_parameter<int>("cluster_min_points_size");
+  this->declare_parameter<bool>("debug_single_pointcloud");
+  this->declare_parameter<double>("debug_point_x");
+  this->declare_parameter<double>("debug_point_y");
+  this->declare_parameter<double>("debug_point_z");
+  this->declare_parameter<int>("debug_cluster_id");
   this->declare_parameter<bool>("pcl_visualize_cluster");
   this->declare_parameter<double>("clearance");
 
+  bool GotSensorQOS = this->get_parameter("sensor_qos", _sensor_qos);
   bool GotPubFrame = this->get_parameter("frame_name", _pub_frame);
   bool GotThreshold = this->get_parameter("distance_threshold", _distance_threshold);
   bool GotPublishTopic = this->get_parameter("lidartag_detection_topic", _lidartag_detection_topic);
@@ -627,15 +660,15 @@ void LiDARTag::_getParameters() {
   bool GotDistanceBound = this->get_parameter("distance_bound", _distance_bound);
   bool GotIntensityBound = this->get_parameter("intensity_bound", _intensity_threshold);
   bool GotDepthBound = this->get_parameter("depth_bound", _depth_threshold);
-  bool GotFineClusterThreshold = this->get_parameter("fine_cluster_threshold", _fine_cluster_threshold);
+  bool GotFineClusterThreshold = this->get_parameter("fine_cluster_threshold", _lidartag_params.fine_cluster_threshold);
   bool GotVerticalFOV = this->get_parameter("vertical_fov", _vertical_fov);
-  bool GotFillInGapThreshold = this->get_parameter("fill_in_gap_threshold", _filling_gap_max_index);
+  bool GotFillInGapThreshold = this->get_parameter("fill_in_gap_threshold", _lidartag_params.filling_gap_max_index);
   // bool GotFillInMaxPointsThreshold =
   //     this->get_parameter(
   //             "fill_in_max_points_threshold",
   //             fill_in_max_points_threshold);
   bool GotPointsThresholdFactor =
-    this->get_parameter("points_threshold_factor", _points_threshold_factor);
+    this->get_parameter("points_threshold_factor", _lidartag_params.points_threshold_factor);
   bool GotLineIntensityBound = this->get_parameter("line_intensity_bound", _line_intensity_bound);
   bool GotPayloadIntensityThreshold =
     this->get_parameter("payload_intensity_threshold", _payload_intensity_threshold);
@@ -662,13 +695,13 @@ void LiDARTag::_getParameters() {
   bool GotNumCodes = this->get_parameter("num_codes", _num_codes);
 
   bool GotDistanceToPlaneThreshold =
-    this->get_parameter("distance_to_plane_threshold", _distance_to_plane_threshold);
-  bool GotMaxOutlierRatio = this->get_parameter("max_outlier_ratio", _max_outlier_ratio);
+    this->get_parameter("distance_to_plane_threshold", _lidartag_params.distance_to_plane_threshold);
+  bool GotMaxOutlierRatio = this->get_parameter("max_outlier_ratio", _lidartag_params.max_outlier_ratio);
   bool GotNumPoints =
-    this->get_parameter("num_points_for_plane_feature", _num_points_for_plane_feature);
-  bool GotNearBound = this->get_parameter("nearby_factor", _nearby_factor);
-  bool GotNumPointsRing = this->get_parameter("number_points_ring", _np_ring);
-  bool GotCoefficient = this->get_parameter("linkage_tunable", _linkage_tunable);
+    this->get_parameter("num_points_for_plane_feature", _lidartag_params.num_points_for_plane_feature);
+  bool GotNearBound = this->get_parameter("nearby_factor", _lidartag_params.nearby_factor);
+  bool GotNumPointsRing = this->get_parameter("number_points_ring", _lidartag_params.np_ring);
+  bool GotCoefficient = this->get_parameter("linkage_tunable", _lidartag_params.linkage_tunable);
   bool GotTagSizeList = this->get_parameter("tag_size_list", tag_size_string);
   bool GotDerivativeMethod = this->get_parameter("euler_derivative", _derivative_method);
   bool GotNumThreads = this->get_parameter("num_threads", _num_threads);
@@ -680,7 +713,7 @@ void LiDARTag::_getParameters() {
   bool GotOptimizePercent = this->get_parameter("optimize_percentage", _optimization_percent);
   bool GotCalibration = this->get_parameter("calibration", _calibration);
   bool GotMinimumRingPoints =
-    this->get_parameter("minimum_ring_boundary_points", _minimum_ring_boundary_points);
+    this->get_parameter("minimum_ring_boundary_points", _lidartag_params.minimum_ring_boundary_points);
   bool GotUpbound = this->get_parameter("optimize_up_bound", _opt_ub);
   bool GotLowbound = this->get_parameter("optimize_low_bound", _opt_lb);
   bool GotNumAccumulation = this->get_parameter("num_accumulation", _num_accumulation);
@@ -692,6 +725,16 @@ void LiDARTag::_getParameters() {
     this->get_parameter("cluster_max_points_size", _lidartag_params.cluster_max_points_size);
   bool GotMinClusterPointsSize =
     this->get_parameter("cluster_min_points_size", _lidartag_params.cluster_min_points_size);
+  bool GotDebugSinglePointcloud =
+    this->get_parameter("debug_single_pointcloud", _lidartag_params.debug_single_pointcloud);
+  bool GotDebugPointX =
+    this->get_parameter("debug_point_x", _lidartag_params.debug_point_x);
+  bool GotDebugPointY =
+    this->get_parameter("debug_point_y", _lidartag_params.debug_point_y);
+  bool GotDebugPointZ =
+    this->get_parameter("debug_point_z", _lidartag_params.debug_point_z);
+  bool GotDebugClusterId =
+    this->get_parameter("debug_cluster_id", _lidartag_params.debug_cluster_id);
   bool GotVisualizeCluster = this->get_parameter("pcl_visualize_cluster", _pcl_visualize_cluster);
   bool GotClearance = this->get_parameter("clearance", _clearance);
   
@@ -699,19 +742,21 @@ void LiDARTag::_getParameters() {
   _tag_size_list.assign( std::istream_iterator<double>( is ), std::istream_iterator<double>() );
 
   bool Pass = utils::checkParameters(
-    67, GotPubFrame, GotFakeTag, GotLidarTopic, GotBeamNum, GotOptPose, GotDecodeId, GotPlaneFitting,
-    GotAssignId, GotCSV, GotOutPutPath, GotDistanceBound, GotIntensityBound, GotDepthBound,
-    GotTagFamily, GotTagHamming, GotMaxDecodeHamming, GotFineClusterThreshold, GotVerticalFOV,
-    GotFillInGapThreshold, GotMaxOutlierRatio, GotPointsThresholdFactor, GotLineIntensityBound,
-    GotDistanceToPlaneThreshold, GotAdaptiveThresholding, GotCollectData, GotSleepToDisplay,
-    GotSleepTimeForVis, GotValgrindCheck, GotPayloadIntensityThreshold, GotLatestModel,
-    GotWeightPath, GotBlackBorder, GotMaxPointsOnPayload, GotXYZRI, GotMinPerGrid, GotDecodeMethod,
-    GotDecodeMode, GotOptimizationMethod, GotGridViz, GotPublishTopic, GotThreshold, GotNumPoints,
-    GotNearBound, GotNumPointsRing, GotCoefficient, GotTagSizeList, GotNumThreads, GotPrintInfo,
-    GotOptimizePercent, GotDebuginfo, GotDebugtime, GotLogData, GotDebugDecodingtime,
+    78, GotSensorQOS, GotPubFrame, GotFakeTag, GotLidarTopic, GotBeamNum, GotOptPose, GotDecodeId, 
+    GotPlaneFitting, GotAssignId, GotCSV, GotOutPutPath, GotDistanceBound, GotIntensityBound, 
+    GotDepthBound, GotTagFamily, GotTagHamming, GotMaxDecodeHamming, GotFineClusterThreshold, 
+    GotVerticalFOV, GotFillInGapThreshold, GotMaxOutlierRatio, GotPointsThresholdFactor, 
+    GotLineIntensityBound, GotDistanceToPlaneThreshold, GotAdaptiveThresholding, GotCollectData, 
+    GotSleepToDisplay, GotSleepTimeForVis, GotValgrindCheck, GotPayloadIntensityThreshold, 
+    GotLatestModel, GotWeightPath, GotBlackBorder, GotMaxPointsOnPayload, GotXYZRI, GotMinPerGrid, 
+    GotDecodeMethod, GotDecodeMode, GotOptimizationMethod, GotGridViz, GotPublishTopic, GotThreshold, 
+    GotNumPoints, GotNearBound, GotNumPointsRing, GotCoefficient, GotTagSizeList, GotNumThreads, 
+    GotPrintInfo, GotOptimizePercent, GotDebuginfo, GotDebugtime, GotLogData, GotDebugDecodingtime,
     GotLibraryPath, GotNumCodes, GotCalibration, GotMinimumRingPoints, GotRingState,
     GotRingEstimation, GotNumAccumulation, GotDerivativeMethod, GotUpbound, GotLowbound,
-    GotCoaTunable, GotTagsizeTunable, GotVisualizeCluster, GotClearance);
+    GotCoaTunable, GotTagsizeTunable, GotMaxClusterIndex, GotMinClusterIndex, 
+    GotMaxClusterPointsSize, GotMinClusterPointsSize, GotDebugSinglePointcloud, GotDebugPointX,
+    GotDebugPointY, GotDebugPointZ, GotDebugClusterId, GotVisualizeCluster, GotClearance);
 
   if (!Pass) {
     // TODO: check compleness
@@ -735,20 +780,20 @@ void LiDARTag::_getParameters() {
     _max_decode_hamming = 2;
 
     // if the points in a cluster is small than this, it'd get dropped
-    _fine_cluster_threshold = 20;
+    _lidartag_params.fine_cluster_threshold = 20;
     _vertical_fov = 40;
 
     // When fill in the cluster,
     // if it the index is too far away then drop it
     // TODO:Need a beteer way of doing it!
-    _filling_gap_max_index = 200;
-    _filling_max_points_threshold = 4500;
+    _lidartag_params.filling_gap_max_index = 200;
+    _lidartag_params.filling_max_points_threshold = 4500;
 
     _line_intensity_bound = 1000;  // To determine the payload edge
 
     // if the points on a "valid" tag is less than this factor,
     // then remove it  (the higher, the looser)
-    _points_threshold_factor = 1.3;
+    _lidartag_params.points_threshold_factor = 1.3;
     _adaptive_thresholding = 0;
     _collect_dataset = 1;
 
@@ -766,11 +811,11 @@ void LiDARTag::_getParameters() {
     _decode_method = 2;
     _grid_viz = 1;
 
-    _distance_to_plane_threshold = 0.1;
-    _max_outlier_ratio = 0.1;
-    _num_points_for_plane_feature = 3;
-    _np_ring = 10;
-    _linkage_tunable = 1.0;
+    _lidartag_params.distance_to_plane_threshold = 0.1;
+    _lidartag_params.max_outlier_ratio = 0.1;
+    _lidartag_params.num_points_for_plane_feature = 3;
+    _lidartag_params.np_ring = 10;
+    _lidartag_params.linkage_tunable = 1.0;
     _optimization_percent = 0.1;
     _tag_size_list = {0.7};
     _debug_info = false;
@@ -799,7 +844,7 @@ void LiDARTag::_getParameters() {
 
   // point association threshold (which cluster the point belongs to?)
   // cout << "_linkage_tunable: " << _linkage_tunable << endl;
-  _linkage_threshold = _linkage_tunable * _payload_size * _clearance;
+  _lidartag_params.linkage_threshold = _lidartag_params.linkage_tunable * _payload_size * _clearance;
   if (_has_ring) {
     _use_ring = true;
   } else {
@@ -811,7 +856,7 @@ void LiDARTag::_getParameters() {
   }
   // cout << "link threshold: " << _linkage_threshold << endl;
   // exit(0);
-  _RANSAC_threshold = _payload_size / 10;
+  _lidartag_params.ransac_threshold = _payload_size / 10;
 
   RCLCPP_INFO(get_logger(), "Subscribe to %s\n", _pointcloud_topic.c_str());
   RCLCPP_INFO(get_logger(), "Use %i-beam LiDAR\n", _beam_num);
@@ -820,16 +865,16 @@ void LiDARTag::_getParameters() {
   RCLCPP_INFO(get_logger(), "_depth_threshold: %f \n", _depth_threshold);
   RCLCPP_INFO(get_logger(), "_payload_size: %f \n", _payload_size);
   RCLCPP_INFO(get_logger(), "_vertical_fov: %f \n", _vertical_fov);
-  RCLCPP_INFO(get_logger(), "_fine_cluster_threshold: %i \n", _fine_cluster_threshold);
-  RCLCPP_INFO(get_logger(), "_filling_gap_max_index: %i \n", _filling_gap_max_index);
+  RCLCPP_INFO(get_logger(), "_fine_cluster_threshold: %i \n", _lidartag_params.fine_cluster_threshold);
+  RCLCPP_INFO(get_logger(), "_filling_gap_max_index: %i \n", _lidartag_params.filling_gap_max_index);
   // RCLCPP_INFO(get_logger(), "_filling_max_points_threshold: %i \n", 
   // _filling_max_points_threshold);
-  RCLCPP_INFO(get_logger(), "_points_threshold_factor: %f \n", _points_threshold_factor);
+  RCLCPP_INFO(get_logger(), "_points_threshold_factor: %f \n", _lidartag_params.points_threshold_factor);
   RCLCPP_INFO(get_logger(), "_adaptive_thresholding: %i \n", _adaptive_thresholding);
   RCLCPP_INFO(get_logger(), "_collect_dataset: %i \n", _collect_dataset);
   RCLCPP_INFO(get_logger(), "_decode_method: %i \n", _decode_method);
-  RCLCPP_INFO(get_logger(), "linkage_hreshold_: %f \n", _linkage_threshold);
-  RCLCPP_INFO(get_logger(), "_RANSAC_threshold: %f \n", _RANSAC_threshold);
+  RCLCPP_INFO(get_logger(), "linkage_hreshold_: %f \n", _lidartag_params.linkage_threshold);
+  RCLCPP_INFO(get_logger(), "_RANSAC_threshold: %f \n", _lidartag_params.ransac_threshold);
   RCLCPP_INFO(get_logger(), "_num_accumulation: %i \n", _num_accumulation);
 
   usleep(2e6);
@@ -1172,12 +1217,32 @@ void LiDARTag::_pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPt
     _extraction_thread = std::make_unique<boost::thread>(&LiDARTag::_mainLoop, this);
   }
 
+  // to debug the lidartag we can lach the same cloud over and over
+  if (_lidartag_params.debug_single_pointcloud && _debug_pc == nullptr) {
+    _point_cloud1_queue_lock.lock();
+    std::queue<sensor_msgs::msg::PointCloud2::SharedPtr> empty;
+    std::swap(_point_cloud1_queue, empty );
+    _debug_pc = pc;
+    _point_cloud1_queue_lock.unlock();
+  }
+  else if (!_lidartag_params.debug_single_pointcloud && _debug_pc != nullptr)
+  {
+    _debug_pc.reset();
+  }
+  
 
   _point_cloud_received = 1;
   _point_cloud_header = pc->header;
   // boost::mutex::scoped_lock(_point_cloud1_queue_lock);
   _point_cloud1_queue_lock.lock();
-  _point_cloud1_queue.push(pc);
+
+  if (_lidartag_params.debug_single_pointcloud) {
+    _point_cloud1_queue.push(_debug_pc);  
+  }
+  else {
+    _point_cloud1_queue.push(pc);
+  }
+  
   _point_cloud1_queue_lock.unlock();
 }
 
@@ -1415,7 +1480,7 @@ void LiDARTag::_gradientAndGroupEdges(
   const std::vector<std::vector<LiDARPoints_t>> & ordered_buff,
   std::vector<std::vector<LiDARPoints_t>> & edge_buff, std::vector<ClusterFamily_t> & cluster_buff)
 {
-  int n = _num_points_for_plane_feature;
+  int n = _lidartag_params.num_points_for_plane_feature;
   // clock_t start = clock();
   // TODO: if suddently partial excluded, it will cause errors
   for (int i = _beam_num - 1; i >= 0; --i) {
@@ -1541,7 +1606,7 @@ int LiDARTag::_getEdgePoints(
 
   double point_resolution = 2 * M_PI / _LiDAR_system.ring_average_table[i].average;
   double near_bound =
-    std::max(0.1, _nearby_factor * point.getVector3fMap().norm() * std::sin(point_resolution));
+    std::max(0.1, _lidartag_params.nearby_factor * point.getVector3fMap().norm() * std::sin(point_resolution));
   // cout << "near bound: " << near_bound << endl;
   // double near_bound =  _nearby_factor;
   for (int k = 0; k < n - 1; k++) {
@@ -1721,7 +1786,7 @@ void LiDARTag::_fillInCluster(
           "Actual Points: " << cluster_buff[i].data.size() + cluster_buff[i].edge_points.size());
       }
 
-      if (percentage_inliers < (1.0 - _max_outlier_ratio)) {
+      if (percentage_inliers < (1.0 - _lidartag_params.max_outlier_ratio)) {
         if (_debug_info)
           RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << false);
         // tbb::task::self().cancel_group_execution();
@@ -2687,7 +2752,7 @@ bool LiDARTag::_detectPayloadBoundries(ClusterFamily_t & cluster)
     _result_statistics.remaining_cluster_size--;
     boundary_flag = false;
     cluster.detail_valid = 5;
-  } else if (num_valid_rings < std::min(int(sqrt(_tag_family)), _minimum_ring_boundary_points)) {
+  } else if (num_valid_rings < std::min(int(sqrt(_tag_family)), _lidartag_params.minimum_ring_boundary_points)) {
     _result_statistics.cluster_removal.minimum_ring_points++;
     _result_statistics.remaining_cluster_size--;
     ring_point_flag = false;
@@ -4219,7 +4284,7 @@ void LiDARTag::publishLidartagCluster(const vector<ClusterFamily_t> & cluster_bu
     _lidartag_cluster_edge_points_pub->publish(output_ep_msg);
     _lidartag_cluster_transformed_edge_points_pub->publish(output_tr_ep_msg);
     _average_point_pub->publish(point);
-    //publishClusterInfo(cluster_buff[index_num]); KL: jsk has not been ported yet
+    publishClusterInfo(cluster_buff[index_num]);
     index_num++;
   }
   cluster_pc->clear();

@@ -39,7 +39,6 @@
 #include <string>
 #include <vector>
 
-//#include <jsk_rviz_plugins/OverlayText.h> // KL: porting to ROS2. delete afterwards.
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/clock.hpp>
 #include <tf2_ros/transform_broadcaster.h>
@@ -50,6 +49,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
+#include <jsk_msgs/msg/overlay_text.hpp>
 
 // threadings
 #include <boost/thread.hpp>
@@ -86,7 +86,7 @@
 // #include "tensorflow_ros_test/lib.h"
 
 namespace BipedLab {
-class LiDARTag: public rclcpp::Node{
+class LiDARTag: public rclcpp::Node {
 public:
   LiDARTag(const rclcpp::NodeOptions & options);
   ~LiDARTag();
@@ -99,10 +99,28 @@ private:
 
   struct LidarTagParams
   {
+    double linkage_threshold;
+    double ransac_threshold;
+    int fine_cluster_threshold;       // TODO: REPLACE WITH TAG PARAMETERS
+    int filling_gap_max_index;        // TODO: CHECK
+    int filling_max_points_threshold; // TODO: REMOVE
+    double points_threshold_factor;   // TODO: CHECK
+    double distance_to_plane_threshold;
+    double max_outlier_ratio;
+    int num_points_for_plane_feature;
+    double nearby_factor;
+    int minimum_ring_boundary_points;
+    int np_ring;
+    double linkage_tunable;
     int cluster_max_index;
     int cluster_min_index;
     int cluster_max_points_size;
     int cluster_min_points_size;
+    bool debug_single_pointcloud;
+    double debug_point_x;
+    double debug_point_y;
+    double debug_point_z;
+    int debug_cluster_id;
   } _lidartag_params;
 
   OnSetParametersCallbackHandle::SharedPtr _set_param_res;
@@ -198,8 +216,8 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _lidartag_cluster_pub;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _lidartag_cluster_edge_points_pub;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _lidartag_cluster_transformed_edge_points_pub;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr detail_valid_marker_array_pub;
-  //rclcpp::Publisher<jsk_rviz_plugins::OverlayText> detail_valid_text_pub; // KL: JSK packages are still in ros1
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _detail_valid_marker_array_pub;
+  rclcpp::Publisher<jsk_msgs::msg::OverlayText>::SharedPtr _detail_valid_text_pub;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _intersection_marker_array_pub;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _line_cloud1_pub;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _line_cloud2_pub;
@@ -244,6 +262,7 @@ private:
   std::queue<sensor_msgs::msg::PointCloud2::SharedPtr> _point_cloud1_queue;
 
   // LiDAR parameters
+  bool _sensor_qos;
   rclcpp::Time _current_scan_time; // store current time of the lidar scan
   std::string _pointcloud_topic; // subscribe channel
   std::string _pub_frame;        // publish under what frame?
@@ -280,19 +299,6 @@ private:
   std::vector<std::vector<std::string>> _rkhs_function_name_list;
 
   // Cluster parameters
-  double _linkage_threshold;
-  double _RANSAC_threshold;
-  int _fine_cluster_threshold;       // TODO: REPLACE WITH TAG PARAMETERS
-  int _filling_gap_max_index;        // TODO: CHECK
-  int _filling_max_points_threshold; // TODO: REMOVE
-  double _points_threshold_factor;   // TODO: CHECK
-  double _distance_to_plane_threshold;
-  double _max_outlier_ratio;
-  int _num_points_for_plane_feature;
-  double _nearby_factor;
-  int _minimum_ring_boundary_points;
-  int _np_ring;
-  double _linkage_tunable;
   std::vector<double> _tag_size_list;
   double _optimization_percent;
 
@@ -339,6 +345,8 @@ private:
   Debug_t _debug_cluster;
   Timing_t _timing;
   TimeDecoding_t _time_decoding;
+  sensor_msgs::msg::PointCloud2::SharedPtr _debug_pc;
+
 
   // Statistics
   Statistics_t _result_statistics;
@@ -873,7 +881,7 @@ private:
   void writeClusterBuff(std::vector<ClusterFamily_t> &cluster_buff,
                         std::ofstream &fbuff);
   void publishLidartagCluster(const std::vector<ClusterFamily_t> &cluster_buff);
-  //void publishClusterInfo(const ClusterFamily_t cluster); // KL: jsk has not been ported to ros2 yet
+  void publishClusterInfo(const ClusterFamily_t cluster);
   void
   publishIntersections(const std::vector<Eigen::VectorXf> intersection_list);
   void printClusterResult(const std::vector<ClusterFamily_t> &cluster_buff);

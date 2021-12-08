@@ -26,6 +26,7 @@
   <depend>message_filters</depend>
   <depend>apriltag_msgs</depend>
   <depend>lidartag_msgs</depend>
+  <depend>jsk_msgs</depend>
   
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

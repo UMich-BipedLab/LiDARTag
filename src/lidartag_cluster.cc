@@ -52,20 +52,20 @@ void LiDARTag::_clusterClassifier(
     int bottom_ring = point.point.ring;
     int top_ring = point.point.ring;
     PointXYZRI top_most_point = point.point;
-    top_most_point.z = top_most_point.z + _linkage_threshold;
+    top_most_point.z = top_most_point.z + _lidartag_params.linkage_threshold;
     PointXYZRI bottom_most_point = point.point;
-    bottom_most_point.z -= _linkage_threshold;
+    bottom_most_point.z -= _lidartag_params.linkage_threshold;
 
     PointXYZRI front_most_point = point.point;
-    front_most_point.x += _linkage_threshold;
+    front_most_point.x += _lidartag_params.linkage_threshold;
 
     PointXYZRI back_most_point = point.point;
-    back_most_point.x -= _linkage_threshold;
+    back_most_point.x -= _lidartag_params.linkage_threshold;
 
     PointXYZRI right_most_point = point.point;
-    right_most_point.y -= _linkage_threshold;
+    right_most_point.y -= _lidartag_params.linkage_threshold;
     PointXYZRI left_most_point = point.point;
-    left_most_point.y += _linkage_threshold;
+    left_most_point.y += _lidartag_params.linkage_threshold;
     //cout << "_linkage_threshold:" << _linkage_threshold << endl;
     //
     //cout << "\033[1;31m============== \033[0m\n";
@@ -129,19 +129,19 @@ void LiDARTag::_clusterClassifier(
       int bottom_ring = point.point.ring;
 
       PointXYZRI top_most_point = point.point;
-      top_most_point.z += _linkage_threshold;
+      top_most_point.z += _lidartag_params.linkage_threshold;
       PointXYZRI bottom_most_point = point.point;
-      bottom_most_point.z -= _linkage_threshold;
+      bottom_most_point.z -= _lidartag_params.linkage_threshold;
 
       PointXYZRI front_most_point = point.point;
-      front_most_point.x += _linkage_threshold;
+      front_most_point.x += _lidartag_params.linkage_threshold;
       PointXYZRI back_most_point = point.point;
-      back_most_point.x -= _linkage_threshold;
+      back_most_point.x -= _lidartag_params.linkage_threshold;
 
       PointXYZRI right_most_point = point.point;
-      right_most_point.y -= _linkage_threshold;
+      right_most_point.y -= _lidartag_params.linkage_threshold;
       PointXYZRI left_most_point = point.point;
-      left_most_point.y += _linkage_threshold;
+      left_most_point.y += _lidartag_params.linkage_threshold;
 
       //cout << "TopMost: " << top_most_point.x << ", " << top_most_point.y << ", " << top_most_point.z << endl;
       //cout << "bottom_most_point: " << bottom_most_point.x << ", " << bottom_most_point.y << ", " << bottom_most_point.z << endl;
@@ -258,31 +258,31 @@ void LiDARTag::_updateCluster(
     if (point.point.ring > old_cluster.top_ring) {
       old_cluster.top_ring = point.point.ring;
     }
-    if (point.point.x + _linkage_threshold > old_cluster.front_most_point.x) {
+    if (point.point.x + _lidartag_params.linkage_threshold > old_cluster.front_most_point.x) {
       old_cluster.front_most_point = point.point;
-      old_cluster.front_most_point.x += _linkage_threshold;
+      old_cluster.front_most_point.x += _lidartag_params.linkage_threshold;
     }
-    if (point.point.x - _linkage_threshold < old_cluster.back_most_point.x) {
+    if (point.point.x - _lidartag_params.linkage_threshold < old_cluster.back_most_point.x) {
       old_cluster.back_most_point = point.point;
-      old_cluster.back_most_point.x -= _linkage_threshold;
+      old_cluster.back_most_point.x -= _lidartag_params.linkage_threshold;
     }
 
-    if (point.point.y + _linkage_threshold > old_cluster.left_most_point.y) {
+    if (point.point.y + _lidartag_params.linkage_threshold > old_cluster.left_most_point.y) {
       old_cluster.left_most_point = point.point;
-      old_cluster.left_most_point.y += _linkage_threshold;
+      old_cluster.left_most_point.y += _lidartag_params.linkage_threshold;
     }
-    if (point.point.y - _linkage_threshold < old_cluster.right_most_point.y) {
+    if (point.point.y - _lidartag_params.linkage_threshold < old_cluster.right_most_point.y) {
       old_cluster.right_most_point = point.point;
-      old_cluster.right_most_point.y -= _linkage_threshold;
+      old_cluster.right_most_point.y -= _lidartag_params.linkage_threshold;
     }
 
-    if (point.point.z + _linkage_threshold > old_cluster.top_most_point.z) {
+    if (point.point.z + _lidartag_params.linkage_threshold > old_cluster.top_most_point.z) {
       old_cluster.top_most_point = point.point;
-      old_cluster.top_most_point.z += _linkage_threshold;
+      old_cluster.top_most_point.z += _lidartag_params.linkage_threshold;
     }
-    if (point.point.z - _linkage_threshold < old_cluster.bottom_most_point.z) {
+    if (point.point.z - _lidartag_params.linkage_threshold < old_cluster.bottom_most_point.z) {
       old_cluster.bottom_most_point = point.point;
-      old_cluster.bottom_most_point.z -= _linkage_threshold;
+      old_cluster.bottom_most_point.z -= _lidartag_params.linkage_threshold;
     }
 
     // update the average // spend around 5-6 HZ
@@ -372,7 +372,7 @@ bool LiDARTag::_isWithinCluster(const LiDARPoints_t & point, ClusterFamily_t & c
 
   return (point.point.ring == cluster.bottom_ring ||
           point.point.ring == (cluster.bottom_ring - 1)) &&
-         _isWithinClusterHorizon(point, cluster, _linkage_threshold);
+         _isWithinClusterHorizon(point, cluster, _lidartag_params.linkage_threshold);
 }
 
 bool LiDARTag::_isWithinClusterHorizon(
@@ -381,7 +381,7 @@ bool LiDARTag::_isWithinClusterHorizon(
   return (point.point.x < cluster.front_most_point.x + threshold) &&
          (cluster.back_most_point.x - threshold < point.point.x) &&
          (point.point.y < cluster.left_most_point.y + threshold) &&
-         (cluster.right_most_point.y - _linkage_threshold < point.point.y);
+         (cluster.right_most_point.y - _lidartag_params.linkage_threshold < point.point.y);
 }
 
 }  // namespace BipedLab

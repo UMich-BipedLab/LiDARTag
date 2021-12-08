@@ -35,6 +35,7 @@
   <include file="$(find-pkg-share lidartag)/launch/LiDARTag_master.launch.xml">
     <arg name="mark_cluster_validity" value="true" />
     <!-- list for marker sizes -->
+    <arg name="sensor_qos" value="false"/>
     <arg name="tag_size_list" value="0.61 0.8051" />
 
     <!-- Tunable for PoI clustering -->
@@ -51,5 +52,5 @@
     <arg name="pcl_visualize_cluster" value="false" />
   </include>
 
-  <node pkg="rviz2" exec="rviz2" name="rviz" output="screen" args="-d $(find-pkg-share lidartag)/rviz/LiDARTag.rviz" respawn="true" />
+  <!--node pkg="rviz2" exec="rviz2" name="rviz" output="screen" args="-d $(find-pkg-share lidartag)/rviz/LiDARTag.rviz" respawn="true" /-->
 </launch>

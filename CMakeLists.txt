@@ -1,11 +1,12 @@
-cmake_minimum_required (VERSION 3.5)
-project (lidartag)
+cmake_minimum_required(VERSION 3.5)
+project(lidartag)
 
 # CMAKE TWEAKS
 #========================================================================
 set(CMAKE_CXX_STANDARD 17)
 #set( CMAKE_VERBOSE_MAKEFILE on )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3 -DEIGEN_NO_DEBUG -march=native -Wl,--no-as-needed")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -DEIGEN_NO_DEBUG -Wl,--no-as-needed")
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 message(STATUS "=============================================CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
@@ -15,7 +16,6 @@ find_package(ament_cmake_auto REQUIRED)
 find_package(NLopt REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS atomic filesystem system regex date_time program_options thread)
-find_package(OpenCV REQUIRED)
 
 message(STATUS "=============================================Boost")
 message(STATUS "===============================Boost include_dirs: ${Boost_INCLUDE_DIRS}")
@@ -55,7 +55,6 @@ ament_auto_find_build_dependencies() # This makes the find packages from the xml
 ament_export_include_directories(
 #include_directories(
   include 
-  ${catkin_INCLUDE_DIRS} 
   ${Boost_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
   ${TBB_INCLUDE_DIRS}

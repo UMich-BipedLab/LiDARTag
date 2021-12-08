@@ -985,10 +985,9 @@ void LiDARTag::_clusterToPclVectorAndMarkerPublisher(
   LiDARTag::publishLidartagCluster(Cluster);
 }
 
-/* KL: JSK packages are still in ROS1
 void LiDARTag::publishClusterInfo(const ClusterFamily_t cluster)
 {
-  jsk_rviz_plugins::OverlayText detail_valid_text;
+  jsk_msgs::msg::OverlayText detail_valid_text;
   std::string output_str;
   Eigen::IOFormat mat_format(Eigen::StreamPrecision, 0, ", ", ";\n", "", "", "[", "]");
   Eigen::Matrix3f M;
@@ -1026,7 +1025,7 @@ void LiDARTag::publishClusterInfo(const ClusterFamily_t cluster)
   input_ss << input_mat.format(mat_format);
   pa_ss << cluster.principal_axes.format(mat_format);
 
-  detail_valid_text.action = jsk_rviz_plugins::OverlayText::ADD;
+  detail_valid_text.action = jsk_msgs::msg::OverlayText::ADD;
   detail_valid_text.left = 200;
   detail_valid_text.top = 200;
   detail_valid_text.width = 800;
@@ -1085,8 +1084,8 @@ void LiDARTag::publishClusterInfo(const ClusterFamily_t cluster)
   //   to_string(cluster.special_case) + "\n";
 
   detail_valid_text.text = output_str;
-  detail_valid_text_pub->publish(detail_valid_text);
-} */
+  _detail_valid_text_pub->publish(detail_valid_text);
+} 
 
 void LiDARTag::getBoundaryCorners(
   ClusterFamily_t cluster, pcl::PointCloud<PointXYZRI>::Ptr boundaryPts)
@@ -1385,7 +1384,7 @@ void LiDARTag::displayClusterPointSize(const std::vector<ClusterFamily_t> & clus
   int points_size = 0;
   for (std::size_t i = 0; i < cluster_buff.size(); ++i) {
     points_size = cluster_buff[i].data.size() + cluster_buff[i].edge_points.size();
-    if (points_size > 500) {
+    if (points_size > 50) {
       marker.header.stamp = _clock->now();
       marker.id = cluster_buff[i].cluster_id;
       marker.text = to_string(points_size);
@@ -1423,10 +1422,10 @@ void LiDARTag::displayClusterIndexNumber(const std::vector<ClusterFamily_t> & cl
   int points_size = 0;
   for (std::size_t i = 0; i < cluster_buff.size(); ++i) {
     points_size = cluster_buff[i].data.size() + cluster_buff[i].edge_points.size();
-    if (points_size > 500) {
+    if (points_size > 50) {
       marker.header.stamp = _clock->now();
       marker.id = cluster_buff[i].cluster_id;
-      marker.text = to_string(i);
+      marker.text = to_string(i) + "/" + to_string(cluster_buff[i].detail_valid);
       marker.ns = "in_marker_" + to_string(cluster_buff[i].cluster_id);
       marker.pose.position.x = cluster_buff[i].average.x;
       marker.pose.position.y = cluster_buff[i].average.y;

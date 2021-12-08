@@ -219,7 +219,7 @@ bool LiDARTag::_rejectWithPlanarCheck(
   // Mandatory
   seg.setModelType(pcl::SACMODEL_PLANE);
   seg.setMethodType(pcl::SAC_RANSAC);
-  seg.setDistanceThreshold(_distance_to_plane_threshold);
+  seg.setDistanceThreshold(_lidartag_params.distance_to_plane_threshold);
 
   seg.setInputCloud(cloud);
   seg.segment(*inliers, *coefficients);
