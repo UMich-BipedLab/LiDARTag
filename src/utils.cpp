@@ -184,7 +184,7 @@ void COUT(const velodyne_pointcloud::PointXYZIR & t_p)
             << ", intensity: " << t_p.intensity << std::endl;
 }
 
-bool compareIndex(LiDARPoints_t * A, LiDARPoints_t * B) { return A->index < B->index; }
+bool compareIndex(LidarPoints_t * A, LidarPoints_t * B) { return A->index < B->index; }
 
 uint64_t bitShift(std::string const & t_value)
 {
@@ -201,7 +201,7 @@ uint64_t bitShift(std::string const & t_value)
 
 void normalize(
   std::vector<float> & x, std::vector<float> & y, std::vector<float> & z, std::vector<float> & I,
-  const pcl::PointCloud<LiDARPoints_t *> t_payload)
+  const pcl::PointCloud<LidarPoints_t *> t_payload)
 {
   // normlize the y,z so the top left is (0,0) and bottom right is (1,1)
   // as well as x axis
@@ -247,7 +247,7 @@ void normalize(
 
 void normalizeByAve(
   std::vector<float> & x, std::vector<float> & y, std::vector<float> & z, std::vector<float> & I,
-  const pcl::PointCloud<LiDARPoints_t *> t_payload)
+  const pcl::PointCloud<LidarPoints_t *> t_payload)
 {
   float ave_x = 0;
   float ave_y = 0;
@@ -667,7 +667,7 @@ Eigen::Matrix3d qToR(const Eigen::Vector3f &t_pose){
 Eigen::Matrix3d qMultiplication(
   const double & q1_w, const Eigen::Vector3f & q1, const double & q2_w, const Eigen::Vector3f & q2)
 {
-  return Eigen::Matrix3d::Identity();            
+  return Eigen::Matrix3d::Identity();
 }
 
 /*

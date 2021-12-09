@@ -1,9 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
  * Copyright (C) 2013-2025, The Regents of The University of Michigan.
  * All rights reserved.
- * This software was developed in the Biped Lab (https://www.biped.solutions/) 
- * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may 
+ * This software was developed in the Biped Lab (https://www.biped.solutions/)
+ * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may
  * be available under alternative licensing terms; contact the address above.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,39 +24,26 @@
  * The views and conclusions contained in the software and documentation are those
  * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the Regents of The University of Michigan.
- * 
+ *
  * AUTHOR: Bruce JK Huang (bjhuang[at]umich.edu)
  * WEBSITE: https://www.brucerobot.com/
 -->
 
 <launch>
-    
-  <include file="$(find-pkg-share lidartag)/launch/LiDARTag_master_pandar.launch.xml" >
+            <include file="$(find lidartag)/launch/lidartag_master.launch" />
 
-    <arg name="use_sim_time" value="false" />
-    <arg name="mark_cluster_validity" value="true" />
-    <!-- list for marker sizes -->
-    <arg name="tag_size_list" value="0.8 1.03" />
+            <group ns="lidartag">
 
-    <!-- Tunable for PoI clustering -->
-    <arg name="nearby_factor" value="4.0" />
-    <arg name="linkage_tunable" value="0.5" />
-    <!-- SQRT2 / 4 ==  0.35355339059-->
-    <arg name="clearance" value="0.35355339059" />
+            <!-- Tunable for PoI clustering -->
+            <param name="nearby_factor" type="double" value="4" />
 
-    <!-- Tunable for cluster validation -->
-    <arg name="max_outlier_ratio" value="0.25" />
+            <!-- 1 for outdoor, 0.5 for indoor -->
+            <param name="linkage_tunable" type="double" value="0.5" />
 
-    <arg name="cluster_min_index" value="0" />
-    <arg name="cluster_max_index" value="10000" />
-    <arg name="cluster_min_points_size" value="0" />
-    <arg name="cluster_max_points_size" value="10000" />
-    <arg name="pcl_visualize_cluster" value="false" />
-    
-  </include>
+            <!-- Tunable for cluster validation -->
+            <!-- 0.35 for outdoor, 0.05 for indoor -->
+            <param name="max_outlier_ratio" type="double" value="0.05" />
 
-  <include file="$(find-pkg-share pandar_pointcloud)/launch/pandar_cloud.launch.xml" >
-  </include>
-
-  <!--node pkg="rviz2" exec="rviz2" name="rviz" args="-d $(find-pkg-share lidartag)/rviz/tag_calib.rviz" respawn="true" /-->
+            <rosparam param="tag_size_list"> [0.8051, 0.61]</rosparam>
+            </group>
 </launch>

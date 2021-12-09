@@ -1,7 +1,7 @@
 /* Copyright (C) 2013-2020, The Regents of The University of Michigan.
  * All rights reserved.
- * This software was developed in the Biped Lab (https://www.biped.solutions/) 
- * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may 
+ * This software was developed in the Biped Lab (https://www.biped.solutions/)
+ * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may
  * be available under alternative licensing terms; contact the address above.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -23,7 +23,7 @@
  * The views and conclusions contained in the software and documentation are those
  * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the Regents of The University of Michigan.
- * 
+ *
  * AUTHOR: Bruce JK Huang (bjhuang@umich.edu)
  * WEBSITE: https://www.brucerobot.com/
  */
@@ -124,15 +124,15 @@ Eigen::Vector3f rotationMatrixToEulerAngles(Eigen::Matrix3f & t_R);
 
 bool checkParameters(int t_n, ...);
 void COUT(const velodyne_pointcloud::PointXYZIR & t_p);
-bool compareIndex(LiDARPoints_t * A, LiDARPoints_t * B);
+bool compareIndex(LidarPoints_t * A, LidarPoints_t * B);
 uint64_t bitShift(std::string const & t_value);
 
 void normalizeByAve(
   std::vector<float> & t_x, std::vector<float> & t_y, std::vector<float> & t_z,
-  std::vector<float> & t_I, const pcl::PointCloud<LiDARPoints_t *> payload);
+  std::vector<float> & t_I, const pcl::PointCloud<LidarPoints_t *> payload);
 void normalize(
   std::vector<float> & t_x, std::vector<float> & t_y, std::vector<float> & t_z,
-  std::vector<float> & t_I, const pcl::PointCloud<LiDARPoints_t *> t_payload);
+  std::vector<float> & t_I, const pcl::PointCloud<LidarPoints_t *> t_payload);
 
 velodyne_pointcloud::PointXYZIR pointsAddDivide(
   const velodyne_pointcloud::PointXYZIR & t_p1, const velodyne_pointcloud::PointXYZIR & t_p2,
@@ -270,7 +270,7 @@ float dot_product(Eigen::Vector3f v1, Eigen::Vector3f v2);
 
 Eigen::Vector3f cross_product(Eigen::Vector3f v1, Eigen::Vector3f v2);
 
-/* A function to read data in a csv file 
+/* A function to read data in a csv file
  * and load the data to an eigen matrix
  */
 template <typename M>

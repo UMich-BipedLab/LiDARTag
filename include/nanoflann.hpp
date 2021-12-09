@@ -1933,7 +1933,7 @@ public:
 };
 
 /** An L2-metric KD-tree adaptor for working with data directly stored in an
- * Eigen Matrix, without duplicating the data storage. You can select whether a 
+ * Eigen Matrix, without duplicating the data storage. You can select whether a
  * row or column in the matrix represents a point in the state space.
  *
  *  Example of usage:
@@ -1948,7 +1948,7 @@ public:
  *  \tparam DIM If set to >0, it specifies a compile-time fixed dimensionality
  * for the points in the data set, allowing more compiler optimizations. \tparam
  * Distance The distance metric to use: nanoflann::metric_L1,
- * nanoflann::metric_L2, nanoflann::metric_L2_Simple, etc. \tparam row_major 
+ * nanoflann::metric_L2, nanoflann::metric_L2_Simple, etc. \tparam row_major
  * If set to true the rows of the matrix are used as the points, if set to false
  * the columns of the matrix are used as the points.
  */

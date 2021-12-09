@@ -122,31 +122,31 @@ typedef struct LiDARPoints {
   double
       box_width; // Also account for direction by knowing tag is white to black
   double threshold_intensity;
-} LiDARPoints_t;
+} LidarPoints_t;
 
 typedef struct TagLines {
   int upper_ring;
   int lower_ring;
-  std::vector<LiDARPoints_t *> upper_line; // basically just a specific ring,
+  std::vector<LidarPoints_t *> upper_line; // basically just a specific ring,
                                            // just point to it should be fine
-  std::vector<LiDARPoints_t *> lower_line; // same above
-  std::vector<LiDARPoints_t *> left_line;  // same
-  std::vector<LiDARPoints_t *> right_line; // same above
+  std::vector<LidarPoints_t *> lower_line; // same above
+  std::vector<LidarPoints_t *> left_line;  // same
+  std::vector<LidarPoints_t *> right_line; // same above
 
-  std::vector<LiDARPoints_t *> bottom_left;  // basically just a specific ring,
+  std::vector<LidarPoints_t *> bottom_left;  // basically just a specific ring,
                                              // just point to it should be fine
-  std::vector<LiDARPoints_t *> bottom_right; // same above
-  std::vector<LiDARPoints_t *> top_left;     // same
-  std::vector<LiDARPoints_t *> top_right;    // same above
+  std::vector<LidarPoints_t *> bottom_right; // same above
+  std::vector<LidarPoints_t *> top_left;     // same
+  std::vector<LidarPoints_t *> top_right;    // same above
 } TagLines_t;
 
 typedef struct TagBoundaries {
   int status;                            // 0 is up right, 1 is tilted
-  std::vector<LiDARPoints_t *> line_one; // basically just a specific ring, just
+  std::vector<LidarPoints_t *> line_one; // basically just a specific ring, just
                                          // point to it should be fine
-  std::vector<LiDARPoints_t *> line_two; // same above
-  std::vector<LiDARPoints_t *> line_three; // same
-  std::vector<LiDARPoints_t *> line_four;  // same above
+  std::vector<LidarPoints_t *> line_two; // same above
+  std::vector<LidarPoints_t *> line_three; // same
+  std::vector<LidarPoints_t *> line_four;  // same above
 } TagBoundaries_t;
 
 typedef struct Homogeneous {
@@ -200,9 +200,9 @@ typedef struct ClusterFamily {
   PointXYZRI average;                  // Average point
   PointXYZRI max_intensity;            // Maximux intensity point
   PointXYZRI min_intensity;            // Minimum intensity point
-  pcl::PointCloud<LiDARPoints_t> data; // data doesn't have edge points
-  pcl::PointCloud<LiDARPoints_t> edge_points;
-  pcl::PointCloud<LiDARPoints_t> transformed_edge_points;
+  pcl::PointCloud<LidarPoints_t> data; // data doesn't have edge points
+  pcl::PointCloud<LidarPoints_t> edge_points;
+  pcl::PointCloud<LidarPoints_t> transformed_edge_points;
 
   // If the first point of the ring is the cluster.
   // If so, the the indices fo the two sides will be far away
@@ -213,7 +213,7 @@ typedef struct ClusterFamily {
   std::vector<MaxMin_t>
       max_min_index_of_each_ring; // to fill in points between end points in
                                   // this cluster
-  std::vector<std::vector<LiDARPoints_t *>>
+  std::vector<std::vector<LidarPoints_t *>>
       ordered_points_ptr; // of the cluster (to find black margin of the tag)
   std::vector<double>
       accumulate_intensity_of_each_ring; // to find the upper/lower lines of the
@@ -221,13 +221,13 @@ typedef struct ClusterFamily {
   TagLines_t tag_edges;                  // store line segment from points
   TagBoundaries_t tag_boundaries;
 
-  std::vector<LiDARPoints_t *>
+  std::vector<LidarPoints_t *>
       payload_right_boundary_ptr; // of the cluster (to find black margin of the
                                   // tag)
-  std::vector<LiDARPoints_t *>
+  std::vector<LidarPoints_t *>
       payload_left_boundary_ptr; // of the cluster (to find black margin of the
                                  // tag)
-  std::vector<LiDARPoints_t *>
+  std::vector<LidarPoints_t *>
       payload_boundary_ptr; // of the cluster (to find black margin of the tag)
   int data_inliers;
   int edge_inliers;
@@ -235,16 +235,16 @@ typedef struct ClusterFamily {
   double percentages_inliers;
   int boundary_pts;
   int boundary_rings;
-  pcl::PointCloud<LiDARPoints_t *> payload; // payload points with boundary
-  pcl::PointCloud<LiDARPoints_t *> RLHS_decoding; // payload points transformed
+  pcl::PointCloud<LidarPoints_t *> payload; // payload points with boundary
+  pcl::PointCloud<LidarPoints_t *> RLHS_decoding; // payload points transformed
   int payload_without_boundary; // size of payload points withpout boundary
   double tag_size;
   double box_width;
 
-  pcl::PointCloud<LiDARPoints_t> edge_group1;
-  pcl::PointCloud<LiDARPoints_t> edge_group2;
-  pcl::PointCloud<LiDARPoints_t> edge_group3;
-  pcl::PointCloud<LiDARPoints_t> edge_group4;
+  pcl::PointCloud<LidarPoints_t> edge_group1;
+  pcl::PointCloud<LidarPoints_t> edge_group2;
+  pcl::PointCloud<LidarPoints_t> edge_group3;
+  pcl::PointCloud<LidarPoints_t> edge_group4;
 
   // Eigen::Vector3f NormalVector; // Normal vectors of the payload
   Eigen::Matrix<float, 3, 1, Eigen::DontAlign> normal_vector;

@@ -2,8 +2,8 @@
 <!--
  * Copyright (C) 2013-2025, The Regents of The University of Michigan.
  * All rights reserved.
- * This software was developed in the Biped Lab (https://www.biped.solutions/) 
- * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may 
+ * This software was developed in the Biped Lab (https://www.biped.solutions/)
+ * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may
  * be available under alternative licensing terms; contact the address above.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,7 +25,7 @@
  * The views and conclusions contained in the software and documentation are those
  * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the Regents of The University of Michigan.
- * 
+ *
  * AUTHOR: Bruce JK Huang (bjhuang[at]umich.edu)
  * WEBSITE: https://www.brucerobot.com/
 -->
@@ -45,7 +45,7 @@
 
   <!-- Tunable for cluster validation -->
   <arg name="max_outlier_ratio" />
-  
+
   <arg name="cluster_min_index" />
   <arg name="cluster_max_index" />
   <arg name="cluster_min_points_size" />
@@ -54,15 +54,14 @@
 
   <!-- LidarTag node -->
   <group>
-    <push-ros-namespace namespace="LiDARTag" />
+    <push-ros-namespace namespace="lidartag" />
     <!-- valgrind /-/-tool=callgrind /-/-callgrind-out-file='callgrind.lidar_tag.%p'  -->
-    <node pkg="lidartag" exec="lidartag_main" name="lidartag_main" output="screen" >   
+    <node pkg="lidartag" exec="lidartag_main" name="lidartag_main" output="screen" >
 
       <!-- ========= General Parameters ========= -->
       <!-- Path for Analysis Files -->
-      <param name="library_path" value="$(find-pkg-share lidartag)/lib/aip_x2/" />
+      <param name="library_path" value="$(find-pkg-share lidartag)/lib/origin/" />
       <param name="outputs_path" value="$(find-pkg-share lidartag)/outputs/" />
-      <!-- <param name="stats_file_path" value="/home/shigeki/catkin_ws/src/LiDARTag/outputs/stats.csv" /> -->
 
 
       <!--
@@ -86,22 +85,22 @@
       <param name="optimize_pose" value="true" />
       <param name="decode_id" value="true" />
       <param name="collect_data" value="0" />
-      <param name="num_threads" value="12" />
+      <param name="num_threads" value="6" />
       <param name="print_info" value="true" />
 
 
       <!--  Debugging Mode  -->
-      <param name="debug_info" value="true" />
-      <param name="debug_time" value="true" />
+      <param name="debug_info" value="false" />
+      <param name="debug_time" value="false" />
       <param name="debug_decoding_time" value="false" />
-      <param name="log_data" value="true" />
+      <param name="log_data" value="false" />
 
 
       <!--  LiDAR System  -->
-      <param name="frame_name" value="pandar" />
-      <param name="pointcloud_topic" value="/pointcloud_raw" />
-      <param name="lidartag_detection_topic" value="/LidarTag/lidar_tag/LidarTagDetectionArray" />
-      <param name="beam_number" value="40" />
+      <param name="frame_name" value="velodyne" />
+      <param name="pointcloud_topic" value="/velodyne_points" />
+      <param name="lidartag_detection_topic" value="/lidar_tag/lidartag_detection_array" />
+      <param name="beam_number" value="32" />
       <param name="vertical_fov" value="40.0" />
       <param name="num_accumulation" value="1" />
       <param name="has_ring" value="true" />
@@ -127,24 +126,24 @@
 
 
       <!--  visulization  -->
-    <param name="sleep_to_display" value="1" />
-    <param name="sleep_time_for_visulization" value="0.01" />
+      <param name="sleep_to_display" value="0" />
+      <param name="sleep_time_for_visulization" value="0.005"/>
 
       <!-- ========= Tunable (usually don't need to change) ========= -->
       <!-- Tunable for PoI clustering -->
       <param name="distance_bound" value="20.0" />
       <param name="depth_bound" value="0.5" />
-      <param name="num_points_for_plane_feature" value="1" />
+      <param name="num_points_for_plane_feature" value="3" />
 
       <!-- Tunable for cluster validation -->
       <!--  2*16 in this case, stands for expects 2 points for each cell  -->
-      <param name="min_retrun_per_grid" value="0" />
+      <param name="min_retrun_per_grid" value="2" />
       <param name="optimize_percentage" value="10.0" />
       <param name="payload_intensity_threshold" value="1.0" />
       <param name="points_threshold_factor" value="1.5" />
       <param name="distance_to_plane_threshold" value="0.05" />
-      <param name="minimum_ring_boundary_points" value="1" />
-      <param name="tagsize_tunable" value="0.1" />
+      <param name="minimum_ring_boundary_points" value="0" />
+      <param name="tagsize_tunable" value="1.5" />
       <param name="coa_tunable" value="0.75" />
 
 
@@ -189,7 +188,7 @@
       <!-- Common parameters to be set externally -->
       <!--param name="tag_size_list" value="$(var tag_size_list)"/-->
       <param name="sensor_qos" value="$(var sensor_qos)" />
-      <param name="tag_size_list" value="$(var tag_size_list)" />
+      <param name="tag_size_list" value="$(var tag_size_list)"/>
       <!--param name="tag_size_list" value="0.61, 0.8051" value-sep=", "/-->
       <!--param name="tag_size_list" value="false"/-->
 
@@ -209,15 +208,16 @@
       <param name="debug_point_y" value="-5.550406455993652" />
       <param name="debug_point_z" value="0.1580967903137207" />
       <param name="debug_cluster_id" value="79" />
+
       <param name="pcl_visualize_cluster" value="$(var pcl_visualize_cluster)" />
       <param name="clearance" value="$(var clearance)" />
 
-    <!--  ============ back up =========  -->
-    <!-- <param name="pointcloud_topic" value="/rslidar_points" />  -->
-    <!-- <param name="pointcloud_topic" value="/sync_cam_lidar/velodyne_points_sync" />  -->
-    <!-- <param name="camera_topic" value="/sync_cam_lidar/image_sync" />  -->
-    
-    </node>
+      <!--  ============ back up =========  -->
+      <!-- <param name="pointcloud_topic" value="/rslidar_points" />-->
+      <!-- <param name="pointcloud_topic" value="/sync_cam_lidar/velodyne_points_sync" />-->
+      <!-- <param name="camera_topic" value="/sync_cam_lidar/image_sync" />-->
 
+    </node>
   </group>
+
 </launch>

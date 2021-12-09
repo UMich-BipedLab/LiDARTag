@@ -44,7 +44,7 @@ using namespace std;
 
 namespace BipedLab
 {
-void LiDARTag::_getCodeNaive(string & Code, pcl::PointCloud<LiDARPoints_t *> payload)
+void LidarTag::_getCodeNaive(string & Code, pcl::PointCloud<LidarPoints_t *> payload)
 {
   int topring = 0;
   int bottomring = _beam_num;
@@ -76,14 +76,14 @@ void LiDARTag::_getCodeNaive(string & Code, pcl::PointCloud<LiDARPoints_t *> pay
     payload.reserve((_tag_family + 4 * d * _black_border + 4 * (std::pow(_black_border, 2))));
     float j = 0;
     float k = 0;
-    LiDARPoints_t point;
+    LidarPoints_t point;
     for (int i = 0; i < (_tag_family + 4 * d * _black_border + 4 * (std::pow(_black_border, 2)));
          ++i) {
       if (i % (d + 2 * _black_border) == 0 && i != 0) {
         k++;
         j = 0;
       }
-      LiDARPoints_t * point = new LiDARPoints_t{{0, j, k, 0, 0}, 0, 0, 0, 0};
+      LidarPoints_t * point = new LidarPoints_t{{0, j, k, 0, 0}, 0, 0, 0, 0};
       payload.push_back(point);
       // cout << "j,k: " << j << ", " << k << endl;
       j++;
@@ -186,10 +186,10 @@ void LiDARTag::_getCodeNaive(string & Code, pcl::PointCloud<LiDARPoints_t *> pay
  * return -1: not enough return
  * return -2: fail corner detection
  */
-int LiDARTag::_getCodeWeightedGaussian(
+int LidarTag::_getCodeWeightedGaussian(
   string & Code, Homogeneous_t & pose, int & payload_points, const PointXYZRI & average,
-  const pcl::PointCloud<LiDARPoints_t *> & payload,
-  const std::vector<LiDARPoints_t *> & payload_boundary_ptr)
+  const pcl::PointCloud<LidarPoints_t *> & payload,
+  const std::vector<LidarPoints_t *> & payload_boundary_ptr)
 {
   /*          p11
    *          .                   p11. . . . . p41        ^ z
@@ -237,19 +237,19 @@ int LiDARTag::_getCodeWeightedGaussian(
     if (point.y <= p41.y) p41 = point;
   }
   if (_grid_viz) {
-    LiDARTag::_assignMarker(
+    LidarTag::_assignMarker(
       GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("11"), 0, 0, 0, p11, 1, 0.01);
     GridMarkerArray.markers.push_back(GridMarker);
 
-    LiDARTag::_assignMarker(
+    LidarTag::_assignMarker(
       GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("21"), 0, 0, 0, p21, 1, 0.01);
     GridMarkerArray.markers.push_back(GridMarker);
 
-    LiDARTag::_assignMarker(
+    LidarTag::_assignMarker(
       GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("31"), 0, 0, 0, p31, 1, 0.01);
     GridMarkerArray.markers.push_back(GridMarker);
 
-    LiDARTag::_assignMarker(
+    LidarTag::_assignMarker(
       GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("41"), 0, 0, 0, p41, 1, 0.01);
     GridMarkerArray.markers.push_back(GridMarker);
   }
@@ -265,19 +265,19 @@ int LiDARTag::_getCodeWeightedGaussian(
   }
 
   if (_grid_viz) {
-    LiDARTag::_assignMarker(
+    LidarTag::_assignMarker(
       GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("12"), 0, 0, 0, p12, 1, 0.01);
     GridMarkerArray.markers.push_back(GridMarker);
 
-    LiDARTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("22"), 0, 0, 0, p22, 1, 0.01); 
+    LidarTag::_assignMarker(
+      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("22"), 0, 0, 0, p22, 1, 0.01);
     GridMarkerArray.markers.push_back(GridMarker);
 
-    LiDARTag::_assignMarker(
+    LidarTag::_assignMarker(
       GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("32"), 0, 0, 0, p32, 1, 0.01);
     GridMarkerArray.markers.push_back(GridMarker);
 
-    LiDARTag::_assignMarker(
+    LidarTag::_assignMarker(
       GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("42"), 0, 0, 0, p42, 1, 0.01);
     GridMarkerArray.markers.push_back(GridMarker);
   }
@@ -312,19 +312,19 @@ int LiDARTag::_getCodeWeightedGaussian(
   }
 
   if (_grid_viz) {
-    LiDARTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("1"), 1, 1, 1, p1, 1, 0.01); 
+    LidarTag::_assignMarker(
+      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("1"), 1, 1, 1, p1, 1, 0.01);
     GridMarkerArray.markers.push_back(GridMarker);
 
-    LiDARTag::_assignMarker(
+    LidarTag::_assignMarker(
       GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("2"), 1, 1, 1, p2, 1, 0.01);
     GridMarkerArray.markers.push_back(GridMarker);
 
-    LiDARTag::_assignMarker(
+    LidarTag::_assignMarker(
       GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("3"), 1, 1, 1, p3, 1, 0.01);
     GridMarkerArray.markers.push_back(GridMarker);
 
-    LiDARTag::_assignMarker(
+    LidarTag::_assignMarker(
       GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("4"), 1, 1, 1, p4, 1, 0.01);
     GridMarkerArray.markers.push_back(GridMarker);
 
@@ -348,28 +348,28 @@ int LiDARTag::_getCodeWeightedGaussian(
   Eigen::Vector3f Angle = utils::rotationMatrixToEulerAngles(R);
 
   if (_grid_viz) {
-    LiDARTag::_assignMarker(
+    LidarTag::_assignMarker(
       GridMarker, visualization_msgs::msg::Marker::CUBE, "Model_" + string("1"), 0, 1, 0,
       utils::toVelodyne(Vertices.col(1)), 1, 0.01);
-      
+
     GridMarkerArray.markers.push_back(GridMarker);
 
-    LiDARTag::_assignMarker(
+    LidarTag::_assignMarker(
       GridMarker, visualization_msgs::msg::Marker::CUBE, "Model_" + string("2"), 0, 1, 0,
       utils::toVelodyne(Vertices.col(2)), 1, 0.01);
 
     GridMarkerArray.markers.push_back(GridMarker);
 
-    LiDARTag::_assignMarker(
+    LidarTag::_assignMarker(
       GridMarker, visualization_msgs::msg::Marker::CUBE, "Model_" + string("3"), 0, 1, 0,
       utils::toVelodyne(Vertices.col(3)), 1, 0.01);
-      
+
     GridMarkerArray.markers.push_back(GridMarker);
 
-    LiDARTag::_assignMarker(
+    LidarTag::_assignMarker(
       GridMarker, visualization_msgs::msg::Marker::CUBE, "Model_" + string("4"), 0, 1, 0,
       utils::toVelodyne(Vertices.col(4)), 1, 0.01);
-      
+
     GridMarkerArray.markers.push_back(GridMarker);
 
     geometry_msgs::msg::Point p;
@@ -397,7 +397,7 @@ int LiDARTag::_getCodeWeightedGaussian(
 
   // Calcutate Average intensity for thresholding
   float AveIntensity = 0;
-  for (int i = 0; i < payload.size(); ++i) { 
+  for (int i = 0; i < payload.size(); ++i) {
     AveIntensity += payload[i]->point.intensity;
   }
 
@@ -431,7 +431,7 @@ int LiDARTag::_getCodeWeightedGaussian(
     PointXYZRI p;  // for visualization
     utils::assignCellIndex(_payload_size, R, p, average, d + 2 * _black_border, Votes[i]);
     if (_grid_viz) {
-      LiDARTag::_assignMarker(
+      LidarTag::_assignMarker(
         GridMarker, visualization_msgs::msg::Marker::SPHERE, "TransPoints", vR[Votes[i].cell],
         vG[Votes[i].cell], vB[Votes[i].cell], p, i, 0.005);
       GridMarkerArray.markers.push_back(GridMarker);
@@ -469,20 +469,20 @@ int LiDARTag::_getCodeWeightedGaussian(
 
     for (int j = 0; j < Grid[i].size(); ++j) {
       if (_grid_viz) {
-        LiDARTag::_assignMarker(
+        LidarTag::_assignMarker(
           GridMarker, visualization_msgs::msg::Marker::SPHERE, "Point" + to_string(i), r, g, b,
           *(Grid[i][j]->p), j, 0.005);
         GridMarkerArray.markers.push_back(GridMarker);
-        
-        LiDARTag::_assignMarker(
+
+        LidarTag::_assignMarker(
           GridMarker, visualization_msgs::msg::Marker::SPHERE, "Center" + to_string(i), 1, 1, 1,
           Grid[i][j]->centroid, j, 0.005);
         GridMarkerArray.markers.push_back(GridMarker);
-        
-        LiDARTag::_assignMarker(
+
+        LidarTag::_assignMarker(
           GridMarker, visualization_msgs::msg::Marker::TEXT_VIEW_FACING, "Prob" + to_string(i), 1, 1, 1,
           *(Grid[i][j]->p), j, 0.003, to_string((Grid[i][j]->p->intensity)));
-          
+
         GridMarkerArray.markers.push_back(GridMarker);
       }
       WeightedProb += Grid[i][j]->weight * Grid[i][j]->p->intensity;
@@ -501,13 +501,13 @@ int LiDARTag::_getCodeWeightedGaussian(
   Code += "UL";
 
   if (_grid_viz) {
-    _payload_grid_pub->publish(GridMarkerArray); 
-    _payload_grid_line_pub->publish(LineStrip); 
+    _payload_grid_pub->publish(GridMarkerArray);
+    _payload_grid_line_pub->publish(LineStrip);
   }
   return 0;
 }
 
-Eigen::MatrixXf LiDARTag::_construct3DShapeMarker(
+Eigen::MatrixXf LidarTag::_construct3DShapeMarker(
   RKHSDecoding_t & rkhs_decoding, const double & ell)
 {
   Eigen::VectorXf offset_intensity =
@@ -557,7 +557,7 @@ Eigen::MatrixXf LiDARTag::_construct3DShapeMarker(
   return template_points_3D;
 }
 
-void LiDARTag::singleTask(
+void LidarTag::singleTask(
   const Eigen::ArrayXf & x_ary, const Eigen::ArrayXf & y_ary, const Eigen::ArrayXf & z_ary,
   const Eigen::ArrayXf & i_ary, const Eigen::MatrixXf & pc1_j, const float & geo_sig,
   const float & feature_ell, const float & geo_ell, float & score)
@@ -577,7 +577,7 @@ void LiDARTag::singleTask(
   score += geo_kernel.dot(feat_kernel);
 }
 
-void LiDARTag::singleTaskFixedSize(
+void LidarTag::singleTaskFixedSize(
   const Eigen::ArrayXf & x_ary, const Eigen::ArrayXf & y_ary, const Eigen::ArrayXf & z_ary,
   const Eigen::ArrayXf & i_ary, const Eigen::MatrixXf & pc1_j, const float & geo_sig,
   const float & feature_ell, const float & geo_ell, float & score)
@@ -598,7 +598,7 @@ void LiDARTag::singleTaskFixedSize(
   score += geo_kernel.dot(feat_kernel);
 }
 
-void LiDARTag::multipleTasks(
+void LidarTag::multipleTasks(
   const Eigen::ArrayXf & x_ary, const Eigen::ArrayXf & y_ary, const Eigen::ArrayXf & z_ary,
   const Eigen::ArrayXf & i_ary, const Eigen::MatrixXf & pc1_j, const float & geo_sig,
   const float & feature_ell, const float & geo_ell, float & score)
@@ -638,7 +638,7 @@ void LiDARTag::multipleTasks(
 // causes segfault This does not happen if create large fixed-size eigen
 // objects. However, due to the fixed-size, it often needs to be large and
 // the results are not correct.
-void LiDARTag::test(
+void LidarTag::test(
   const Eigen::ArrayXf & x_ary, const Eigen::ArrayXf & y_ary, const Eigen::ArrayXf & z_ary,
   const Eigen::ArrayXf & i_ary, const Eigen::MatrixXf & pc1_j, const float & geo_sig,
   const float & feature_ell, const float & geo_ell, float & score)
@@ -738,7 +738,7 @@ void LiDARTag::test(
   // // cout << "test" << endl;
 }
 
-void LiDARTag::computeFunctionVectorInnerProductThreading(
+void LidarTag::computeFunctionVectorInnerProductThreading(
   const Eigen::MatrixXf & pc1, const int & num_pc1, const Eigen::MatrixXf & pc2,
   const int & num_pc2, const float & geo_sig, const float & feature_ell, const float & geo_ell,
   float & score)
@@ -776,13 +776,13 @@ void LiDARTag::computeFunctionVectorInnerProductThreading(
     std::vector<int> indices(num_tasks);
     std::iota(indices.begin(), indices.end(), start_task);
     Eigen::MatrixXf test_mat = pc1(Eigen::all, indices);
-    // _thread_vec->enqueueTask(std::bind(&LiDARTag::test, this, pc1));
+    // _thread_vec->enqueueTask(std::bind(&LidarTag::test, this, pc1));
 
     _thread_vec->enqueueTask(std::bind(
-      &LiDARTag::multipleTasks, this, x_ary, y_ary, z_ary, i_ary, test_mat, geo_sig, feature_ell,
+      &LidarTag::multipleTasks, this, x_ary, y_ary, z_ary, i_ary, test_mat, geo_sig, feature_ell,
       geo_ell, std::ref(score_vec[i])));
 
-    //_thread_vec->enqueueTask(std::bind(&LiDARTag::multipleTasks, this,
+    //_thread_vec->enqueueTask(std::bind(&LidarTag::multipleTasks, this,
     //            x_ary, y_ary, z_ary, i_ary,
     //            test_mat,
     //            geo_sig, feature_ell, geo_ell, std::ref(score_vec[i])));
@@ -796,7 +796,7 @@ void LiDARTag::computeFunctionVectorInnerProductThreading(
   // for (int i = 0; i < num_pc1; ++i) {
   //     _thread_vec->enqueueTask(
   //             std::bind(
-  //                &LiDARTag::singleTask, this,
+  //                &LidarTag::singleTask, this,
   //                x_ary, y_ary, z_ary,
   //                i_ary, pc1.col(i),
   //                geo_sig, feature_ell, geo_ell,
@@ -809,7 +809,7 @@ void LiDARTag::computeFunctionVectorInnerProductThreading(
   // _thread_vec->reset_counter();
   // Eigen::VectorXf score_vec = Eigen::VectorXf::Zero(num_pc1);
   // for (int i = 0; i < num_pc1; ++i) {
-  //     _thread_vec->enqueueTask(std::bind(&LiDARTag::multipleTasks, this,
+  //     _thread_vec->enqueueTask(std::bind(&LidarTag::multipleTasks, this,
   //                 x_ary, y_ary, z_ary, i_ary, pc1.block(0, i, 4, 1),
   //                 geo_sig, feature_ell, geo_ell, std::ref(score_vec[i])));
   // }
@@ -820,7 +820,7 @@ void LiDARTag::computeFunctionVectorInnerProductThreading(
   // _thread_vec->reset_counter();
   // Eigen::VectorXf score_vec = Eigen::VectorXf::Zero(num_pc1);
   // for (int i = 0; i < num_pc1; ++i) {
-  //     _thread_vec->enqueueTask(std::bind(&LiDARTag::test, this));
+  //     _thread_vec->enqueueTask(std::bind(&LidarTag::test, this));
   // }
   // _thread_vec->wait_until_finished(num_pc1);
   // score = score_vec.sum()/num_pc1/num_pc2;
@@ -844,7 +844,7 @@ void LiDARTag::computeFunctionVectorInnerProductThreading(
   //     // multipleTasks(x_ary, y_ary, z_ary, i_ary,
   //     //         pc1.block(0, start_task, 4, num_tasks),
   //     //         geo_sig, feature_ell, geo_ell, std::ref(score_vec[i]));
-  //     // _thread_vec->enqueueTask(std::bind(&LiDARTag::test, this));
+  //     // _thread_vec->enqueueTask(std::bind(&LidarTag::test, this));
   //     num_tasks_tot += num_tasks;
   //     // constexpr int tmp = num_tasks;
   //     Eigen::MatrixXf test_mat = pc1.block(0, start_task, 4, num_tasks);
@@ -859,7 +859,7 @@ void LiDARTag::computeFunctionVectorInnerProductThreading(
   //     endl;
   //     // cout << "pc1: " << pc1.rows() << "," << pc1.cols() << endl;
   //     // cout << "start_task, num tasks: " << start_task << "," << num_tasks
-  //     << endl; _thread_vec->enqueueTask(std::bind(&LiDARTag::multipleTasks,
+  //     << endl; _thread_vec->enqueueTask(std::bind(&LidarTag::multipleTasks,
   //     this,
   //                 x_ary, y_ary, z_ary, i_ary,
   //                 // std::cref(pc1.block(0, start_task, 4, num_tasks)),
@@ -883,7 +883,7 @@ void LiDARTag::computeFunctionVectorInnerProductThreading(
   // Eigen::VectorXf score_vec = Eigen::VectorXf::Zero(num_tasks);
   // for (int task = 0; task < num_tasks; ++task) {
   //     int start_task = task * points_per_task;
-  //     _thread_vec->enqueueTask(std::bind(&LiDARTag::multipleTasks, this,
+  //     _thread_vec->enqueueTask(std::bind(&LidarTag::multipleTasks, this,
   //                 x_ary, y_ary, z_ary, i_ary,
   //                 pc1.block<4, points_per_task>(0, start_task),
   //                 geo_sig, feature_ell, geo_ell, std::ref(score_vec[task])));
@@ -892,7 +892,7 @@ void LiDARTag::computeFunctionVectorInnerProductThreading(
   // score = score_vec.sum()/num_pc1/num_pc2;
 }
 
-void LiDARTag::computeFunctionOriginalInnerProductTBB(
+void LidarTag::computeFunctionOriginalInnerProductTBB(
   const Eigen::MatrixXf & pc1, const float & num_pc1, const Eigen::MatrixXf & pc2,
   const float & num_pc2, const float & geo_sig, const float & feature_ell, const float & geo_ell,
   float & score)
@@ -920,7 +920,7 @@ void LiDARTag::computeFunctionOriginalInnerProductTBB(
   score = inner_prod.sum() / num_pc1 / num_pc2;
 }
 
-void LiDARTag::computeFunctionVectorInnerProductTBBThreadingManualScheduling(
+void LidarTag::computeFunctionVectorInnerProductTBBThreadingManualScheduling(
   const Eigen::MatrixXf & pc1, const int & num_pc1, const Eigen::MatrixXf & pc2,
   const int & num_pc2, const float & geo_sig, const float & feature_ell, const float & geo_ell,
   float & score)
@@ -959,7 +959,7 @@ void LiDARTag::computeFunctionVectorInnerProductTBBThreadingManualScheduling(
   score = score_vec.sum() / num_pc1 / num_pc2;
 }
 
-void LiDARTag::computeFunctionVectorInnerProductTBBThreadingNoScheduling(
+void LidarTag::computeFunctionVectorInnerProductTBBThreadingNoScheduling(
   const Eigen::MatrixXf & pc1, const int & num_pc1, const Eigen::MatrixXf & pc2,
   const int & num_pc2, const float & geo_sig, const float & feature_ell, const float & geo_ell,
   float & score)
@@ -988,7 +988,7 @@ void LiDARTag::computeFunctionVectorInnerProductTBBThreadingNoScheduling(
   score = score_vec.sum() / num_pc1 / num_pc2;
 }
 
-void LiDARTag::computeFunctionVectorInnerProductTBBThreadingTBBScheduling(
+void LidarTag::computeFunctionVectorInnerProductTBBThreadingTBBScheduling(
   const Eigen::MatrixXf & pc1, const int & num_pc1, const Eigen::MatrixXf & pc2,
   const int & num_pc2, const float & geo_sig, const float & feature_ell, const float & geo_ell,
   float & score)
@@ -1026,7 +1026,7 @@ void LiDARTag::computeFunctionVectorInnerProductTBBThreadingTBBScheduling(
   score = score_vec.sum() / num_pc1 / num_pc2;
 }
 
-void LiDARTag::computeFunctionVectorInnerProduct(
+void LidarTag::computeFunctionVectorInnerProduct(
   const Eigen::MatrixXf & pc1, const float & num_pc1, const Eigen::MatrixXf & pc2,
   const float & num_pc2, const float & geo_sig, const float & feature_ell, const float & geo_ell,
   float & score)
@@ -1059,7 +1059,7 @@ void LiDARTag::computeFunctionVectorInnerProduct(
   score = inner_prod_sum / num_pc1 / num_pc2;
 }
 
-void LiDARTag::computeFunctionMatrixInnerProduct(
+void LidarTag::computeFunctionMatrixInnerProduct(
   const Eigen::MatrixXf & pc1, const float & num_pc1, const Eigen::MatrixXf & pc2,
   const float & num_pc2, const float & geo_sig, const float & feature_ell, const float & geo_ell,
   float & score)
@@ -1087,7 +1087,7 @@ void LiDARTag::computeFunctionMatrixInnerProduct(
   score = inner_prod.sum() / num_pc1 / num_pc2;
 }
 
-void LiDARTag::computeFunctionOriginalInnerProduct(
+void LidarTag::computeFunctionOriginalInnerProduct(
   const Eigen::MatrixXf & pc1, const float & num_pc1, const Eigen::MatrixXf & pc2,
   const float & num_pc2, const float & geo_sig, const float & feature_ell, const float & geo_ell,
   float & score)
@@ -1112,7 +1112,7 @@ void LiDARTag::computeFunctionOriginalInnerProduct(
   // score = score_tmp;
 }
 
-void LiDARTag::computeFunctionOriginalInnerProductKDTree(
+void LidarTag::computeFunctionOriginalInnerProductKDTree(
   const Eigen::MatrixXf & pc1, const int & num_pc1, const Eigen::MatrixXf & pc2,
   const int & num_pc2, const float & geo_sig, const float & feature_ell, const float & geo_ell,
   float & score)
@@ -1172,7 +1172,7 @@ void LiDARTag::computeFunctionOriginalInnerProductKDTree(
   //     score += score_vec[i];
   // }
 }
-void LiDARTag::computeFunctionInnerProductModes(
+void LidarTag::computeFunctionInnerProductModes(
   const int mode, const Eigen::MatrixXf & pc1, const float & num_pc1, const Eigen::MatrixXf & pc2,
   const float & num_pc2, const float & geo_sig, const float & feature_ell, const float & geo_ell,
   float & score)
@@ -1245,7 +1245,7 @@ void LiDARTag::computeFunctionInnerProductModes(
   }
 }
 
-float LiDARTag::computeFunctionInnerProduct(
+float LidarTag::computeFunctionInnerProduct(
   const Eigen::MatrixXf & pc1, const Eigen::MatrixXf & pc2, const float & geo_ell)
 {
   float feature_ell = 10;
@@ -1579,7 +1579,7 @@ float LiDARTag::computeFunctionInnerProduct(
 }
 
 // return 0 if sucessfully or -1 if score is too low
-int LiDARTag::_getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_size)
+int LidarTag::_getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_size)
 {
   int status;
   int size_num = rkhs_decoding.size_num;
@@ -1662,15 +1662,15 @@ int LiDARTag::_getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_si
  * 3: Deep learning
  * 4: ?!
  */
-bool LiDARTag::_decodePayload(ClusterFamily_t & Cluster)
+bool LidarTag::_decodePayload(ClusterFamily_t & Cluster)
 {
   string Code("");
   bool valid_tag = true;
   string Msg;
   if (_decode_method == 0) {  // Naive decoder
-    LiDARTag::_getCodeNaive(Code, Cluster.payload);
+    LidarTag::_getCodeNaive(Code, Cluster.payload);
   } else if (_decode_method == 1) {  // Weighted Gaussian
-    int status = LiDARTag::_getCodeWeightedGaussian(
+    int status = LidarTag::_getCodeWeightedGaussian(
       Code, Cluster.pose_tag_to_lidar,
       Cluster.payload_without_boundary,  // size of actual payload
       Cluster.average, Cluster.payload, Cluster.payload_boundary_ptr);
@@ -1686,7 +1686,7 @@ bool LiDARTag::_decodePayload(ClusterFamily_t & Cluster)
       Msg = "Fail corner detection";
     }
   } else if (_decode_method == 2) {  // RKHS
-    int status = LiDARTag::_getCodeRKHS(Cluster.rkhs_decoding, Cluster.tag_size);
+    int status = LidarTag::_getCodeRKHS(Cluster.rkhs_decoding, Cluster.tag_size);
     if (status == 1) {
       Cluster.cluster_id = Cluster.rkhs_decoding.id;
     } else {
@@ -1723,7 +1723,7 @@ bool LiDARTag::_decodePayload(ClusterFamily_t & Cluster)
 /* [Function Decoder]
  * A function to load continuous functions from a pre-computed point cloud
  */
-void LiDARTag::_initFunctionDecoder()
+void LidarTag::_initFunctionDecoder()
 {
   // prepare to rotate functions
   Eigen::Vector3f trans_v = Eigen::Vector3f::Zero(3);
@@ -1810,7 +1810,7 @@ void LiDARTag::_initFunctionDecoder()
 /* [Decoder]
  * Create hash table of chosen tag family
  */
-void LiDARTag::_initDecoder()
+void LidarTag::_initDecoder()
 {
   string famname = "tag" + to_string(_tag_family) + "h" + to_string(_tag_hamming_distance);
   if (famname == "tag49h14")
@@ -1829,14 +1829,14 @@ void LiDARTag::_initDecoder()
   if (_decode_method == 0 || _decode_method == 1) {
     BipedAprilLab::QuickDecodeInit(tf, _max_decode_hamming);
   } else if (_decode_method == 2) {
-    LiDARTag::_initFunctionDecoder();
+    LidarTag::_initFunctionDecoder();
   }
 }
 
 /*
  *
  */
-void LiDARTag::_testInitDecoder()
+void LidarTag::_testInitDecoder()
 {
   uint64_t rcode = 0x0001f019cf1cc653UL;
   QuickDecodeEntry_t entry;

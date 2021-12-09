@@ -134,7 +134,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.05000000074505806
       Style: Spheres
-      Topic: /LiDARTag/lidartag_main/WholeEdgedPC
+      Topic: /lidartag/lidartag_main/WholeEdgedPC
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -164,7 +164,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.029999999329447746
       Style: Spheres
-      Topic: /LiDARTag/lidartag_main/ClusterEdgePC
+      Topic: /lidartag/lidartag_main/ClusterEdgePC
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -194,14 +194,14 @@ Visualization Manager:
       Size (Pixels): 10
       Size (m): 0.019999999552965164
       Style: Points
-      Topic: /LiDARTag/lidartag_main/DetectedPC
+      Topic: /lidartag/lidartag_main/DetectedPC
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: false
       Value: false
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /LiDARTag/lidartag_main/BoundaryMarker
+      Marker Topic: /lidartag/lidartag_main/BoundaryMarker
       Name: ClusterBoundaries
       Namespaces:
         {}
@@ -209,7 +209,7 @@ Visualization Manager:
       Value: false
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /LiDARTag/lidartag_main/ClusterMarker
+      Marker Topic: /lidartag/lidartag_main/ClusterMarker
       Name: FillInClusterB&W
       Namespaces:
         {}
@@ -240,7 +240,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.019999999552965164
       Style: Boxes
-      Topic: /LiDARTag/lidartag_main/BoundaryPts
+      Topic: /lidartag/lidartag_main/BoundaryPts
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -270,7 +270,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.10000000149011612
       Style: Spheres
-      Topic: /LiDARTag/lidartag_main/TransformedPointsTag
+      Topic: /lidartag/lidartag_main/TransformedPointsTag
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -300,7 +300,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.10000000149011612
       Style: Spheres
-      Topic: /LiDARTag/lidartag_main/TransformedPoints
+      Topic: /lidartag/lidartag_main/TransformedPoints
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -330,14 +330,14 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/Initial_Template_points
+      Topic: /lidartag/lidartag_main/Initial_Template_points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
     - Class: rviz/Marker
       Enabled: false
-      Marker Topic: /LiDARTag/lidartag_main/TagFrame
+      Marker Topic: /lidartag/lidartag_main/TagFrame
       Name: TagFrame
       Namespaces:
         {}
@@ -345,7 +345,7 @@ Visualization Manager:
       Value: false
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /LiDARTag/lidartag_main/IDMarkers
+      Marker Topic: /lidartag/lidartag_main/IDMarkers
       Name: ID
       Namespaces:
         Text0: true
@@ -376,7 +376,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/Template_points
+      Topic: /lidartag/lidartag_main/Template_points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -406,7 +406,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/Template_points_3d
+      Topic: /lidartag/lidartag_main/Template_points_3d
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -436,14 +436,14 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/Associated_pattern_3d
+      Topic: /lidartag/lidartag_main/Associated_pattern_3d
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /LiDARTag/lidartag_main/IdealFrame
+      Marker Topic: /lidartag/lidartag_main/IdealFrame
       Name: Tamplate
       Namespaces:
         {}
@@ -451,7 +451,7 @@ Visualization Manager:
       Value: false
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /LiDARTag/lidartag_main/detail_valid_marker
+      Marker Topic: /lidartag/lidartag_main/detail_valid_marker
       Name: MarkerArray
       Namespaces:
         {}
@@ -482,7 +482,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.05000000074505806
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/EdgeGroup1
+      Topic: /lidartag/lidartag_main/EdgeGroup1
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -512,7 +512,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.05000000074505806
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/EdgeGroup2
+      Topic: /lidartag/lidartag_main/EdgeGroup2
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -542,7 +542,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.05000000074505806
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/EdgeGroup3
+      Topic: /lidartag/lidartag_main/EdgeGroup3
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -572,7 +572,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.05000000074505806
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/EdgeGroup4
+      Topic: /lidartag/lidartag_main/EdgeGroup4
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -602,7 +602,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/lidartag_cluster_points
+      Topic: /lidartag/lidartag_main/lidartag_cluster_points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -619,7 +619,7 @@ Visualization Manager:
       Overtake BG Color Properties: false
       Overtake FG Color Properties: true
       Overtake Position Properties: false
-      Topic: /LiDARTag/lidartag_main/detail_valid_text
+      Topic: /lidartag/lidartag_main/detail_valid_text
       Value: true
       font: DejaVu Sans Mono
       height: 128
@@ -653,7 +653,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.05000000074505806
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/lidartag_cluster_edge_points
+      Topic: /lidartag/lidartag_main/lidartag_cluster_edge_points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -683,7 +683,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.05000000074505806
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/lidartag_cluster_trasformed_edge_points
+      Topic: /lidartag/lidartag_main/lidartag_cluster_trasformed_edge_points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -713,14 +713,14 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/transformed_edge_pc
+      Topic: /lidartag/lidartag_main/transformed_edge_pc
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /LiDARTag/lidartag_main/intesection_markers
+      Marker Topic: /lidartag/lidartag_main/intesection_markers
       Name: MarkerArray
       Namespaces:
         intersection_marker: true
@@ -733,7 +733,7 @@ Visualization Manager:
       History Length: 1
       Name: PointStamped
       Radius: 0.20000000298023224
-      Topic: /LiDARTag/lidartag_main/average_point
+      Topic: /lidartag/lidartag_main/average_point
       Unreliable: false
       Value: false
     - Alpha: 1
@@ -761,7 +761,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/before_transformed_edge_pc
+      Topic: /lidartag/lidartag_main/before_transformed_edge_pc
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -791,7 +791,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/transformed_edge_pc
+      Topic: /lidartag/lidartag_main/transformed_edge_pc
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -821,7 +821,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.10000000149011612
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/TransformedPoints
+      Topic: /lidartag/lidartag_main/TransformedPoints
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -851,14 +851,14 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.10000000149011612
       Style: Flat Squares
-      Topic: /LiDARTag/lidartag_main/TransformedPointsTag
+      Topic: /lidartag/lidartag_main/TransformedPointsTag
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /LiDARTag/lidartag_main/left_corner
+      Marker Topic: /lidartag/lidartag_main/left_corner
       Name: Marker
       Namespaces:
         tag_left_corners: true
@@ -866,7 +866,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /LiDARTag/lidartag_main/top_corners
+      Marker Topic: /lidartag/lidartag_main/top_corners
       Name: Marker
       Namespaces:
         tag_top_corners: true
@@ -874,7 +874,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /LiDARTag/lidartag_main/down_corners
+      Marker Topic: /lidartag/lidartag_main/down_corners
       Name: Marker
       Namespaces:
         tag_down_corners: true
@@ -882,7 +882,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /LiDARTag/lidartag_main/right_corners
+      Marker Topic: /lidartag/lidartag_main/right_corners
       Name: Marker
       Namespaces:
         tag_right_corners: true

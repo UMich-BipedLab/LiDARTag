@@ -1,7 +1,7 @@
 /* Copyright (C) 2013-2020, The Regents of The University of Michigan.
  * All rights reserved.
- * This software was developed in the Biped Lab (https://www.biped.solutions/) 
- * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may 
+ * This software was developed in the Biped Lab (https://www.biped.solutions/)
+ * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may
  * be available under alternative licensing terms; contact the address above.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -23,7 +23,7 @@
  * The views and conclusions contained in the software and documentation are those
  * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the Regents of The University of Michigan.
- * 
+ *
  * AUTHOR: Bruce JK Huang (bjhuang@umich.edu)
  * WEBSITE: https://www.brucerobot.com/
  */
@@ -41,10 +41,10 @@ using namespace std;
 namespace BipedLab
 {
 /*
-     * A function to cluster a single point into a new cluster or an existing cluster 
+     * A function to cluster a single point into a new cluster or an existing cluster
      */
-void LiDARTag::_clusterClassifier(
-  const LiDARPoints_t & point, vector<ClusterFamily_t> & cluster_buff)
+void LidarTag::_clusterClassifier(
+  const LidarPoints_t & point, vector<ClusterFamily_t> & cluster_buff)
 {
   // The first time to cluster the point cloud
   int ValidCluster = 1;  // Marker every cluster is valid and will be checked again later
@@ -153,43 +153,43 @@ void LiDARTag::_clusterClassifier(
       // Check every time when new marker added
       // visualization_msgs::msg::MarkerArray CheckArray;
       // visualization_msgs::msg::Marker CheckMarker;
-      // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::msg::Marker::CUBE, 
+      // LidarTag::_assignMarker(CheckMarker, visualization_msgs::msg::Marker::CUBE,
       //                       "Check0",
       //                       1, 0, 0,
       //                       top_most_point, 0, 0.05);
       // CheckArray.markers.push_back(CheckMarker);
 
-                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE, 
+                // LidarTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE,
       //                       "Check1",
       //                       1, 0, 0,
       //                       bottom_most_point, 1, 0.05);
       // CheckArray.markers.push_back(CheckMarker);
 
-                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE, 
+                // LidarTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE,
       //                       "Check2",
       //                       1, 0, 0,
       //                       front_most_point, 2, 0.05);
       // CheckArray.markers.push_back(CheckMarker);
 
-                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE, 
+                // LidarTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE,
       //                       "Check3",
       //                       1, 0, 0,
       //                       back_most_point, 3, 0.05);
       // CheckArray.markers.push_back(CheckMarker);
 
-                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE, 
+                // LidarTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE,
       //                       "Check4",
       //                       1, 0, 0,
       //                       left_most_point, 4, 0.05);
       // CheckArray.markers.push_back(CheckMarker);
 
-                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE, 
+                // LidarTag::_assignMarker(CheckMarker, visualization_msgs::Marker::CUBE,
       //                       "Check5",
       //                       1, 0, 0,
       //                       right_most_point, 5, 0.05);
       // CheckArray.markers.push_back(CheckMarker);
 
-                // LiDARTag::_assignMarker(CheckMarker, visualization_msgs::Marker::SPHERE, 
+                // LidarTag::_assignMarker(CheckMarker, visualization_msgs::Marker::SPHERE,
       //                       "Check6",
       //                       0, 1, 0,
       //                       Point, 5, 0.1);
@@ -226,10 +226,10 @@ void LiDARTag::_clusterClassifier(
 /*
      * A function update some information about a cluster if this point belongs to
      * this cluster; if not belonging to this cluster then return and create a new
-     * one 
+     * one
      */
-void LiDARTag::_updateCluster(
-  const LiDARPoints_t & point, ClusterFamily_t & old_cluster, TestCluster_t * new_cluster)
+void LidarTag::_updateCluster(
+  const LidarPoints_t & point, ClusterFamily_t & old_cluster, TestCluster_t * new_cluster)
 {
   // This point is outside of the current cluster
   if (!_isWithinCluster(point, old_cluster)) {
@@ -321,7 +321,7 @@ void LiDARTag::_updateCluster(
   }
 }
 
-bool LiDARTag::_isWithinCluster(const LiDARPoints_t & point, ClusterFamily_t & cluster)
+bool LidarTag::_isWithinCluster(const LidarPoints_t & point, ClusterFamily_t & cluster)
 {
   // auto upper_z_threshold = 0;     //_threshold
   // auto lower_z_threshold = 0;     //_threshold
@@ -375,8 +375,8 @@ bool LiDARTag::_isWithinCluster(const LiDARPoints_t & point, ClusterFamily_t & c
          _isWithinClusterHorizon(point, cluster, _lidartag_params.linkage_threshold);
 }
 
-bool LiDARTag::_isWithinClusterHorizon(
-  const LiDARPoints_t & point, ClusterFamily_t & cluster, double threshold)
+bool LidarTag::_isWithinClusterHorizon(
+  const LidarPoints_t & point, ClusterFamily_t & cluster, double threshold)
 {
   return (point.point.x < cluster.front_most_point.x + threshold) &&
          (cluster.back_most_point.x - threshold < point.point.x) &&

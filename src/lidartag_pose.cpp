@@ -86,7 +86,7 @@ Eigen::VectorXd d_pz_euler(
 
 // double costfunc(const std::vector<double> &x, std::vector<double> &grad, void *func_data) {
 //     // x[0-2] transaltion , x[3-5] euler
-//     pcl::PointCloud<LiDARPoints_t>* d = reinterpret_cast<pcl::PointCloud<LiDARPoints_t>*>(func_data);
+//     pcl::PointCloud<LidarPoints_t>* d = reinterpret_cast<pcl::PointCloud<LidarPoints_t>*>(func_data);
 //     const double box_width = 0.02;   //0.02
 //     const double tag_size = (*d)[d->size()-1].tag_size;
 //     double total_cost = 0;
@@ -879,7 +879,7 @@ double computeCost_euler(
 //     return cost_x + cost_y + cost_z;;
 // }
 
-// bool LiDARTag::_optimizePoseGrad(ClusterFamily_t &cluster){
+// bool LidarTag::_optimizePoseGrad(ClusterFamily_t &cluster){
 //     // Analytical gradient methods
 //     // LD_SLSQP  LD_MMA
 //     nlopt::opt opt(nlopt::LD_MMA, 6);
@@ -916,12 +916,12 @@ double computeCost_euler(
 //     data.block(0, 0, 3, num_points) = cluster.merged_data.topRows(3);
 //     data(0, num_points) = cluster.tag_size;
 
-//     // pcl::PointCloud<LiDARPoints_t> data = cluster.data;
-//     // pcl::PointCloud<LiDARPoints_t> edge_points = cluster.edge_points;
+//     // pcl::PointCloud<LidarPoints_t> data = cluster.data;
+//     // pcl::PointCloud<LidarPoints_t> edge_points = cluster.edge_points;
 //     // data.reserve(data.size() + edge_points.size());
 //     // data.insert(data.end(), edge_points.begin(), edge_points.end());
 //     // edge_points.clear();
-//     // LiDARPoints_t p;
+//     // LidarPoints_t p;
 //     // p.tag_size = cluster.tag_size;
 //     // data.push_back(p);
 //     opt.set_lower_bounds(lb);
@@ -984,7 +984,7 @@ double computeCost_euler(
 // -2 if rejected by coverage of area
 // -3 initial guess is bad and optimization diverged
 // -4 initial guess is bad and optimization failed
-int LiDARTag::_optimizePose(ClusterFamily_t & cluster)
+int LidarTag::_optimizePose(ClusterFamily_t & cluster)
 {
   int num_points = cluster.merged_data.cols();
   // box_width, tag size

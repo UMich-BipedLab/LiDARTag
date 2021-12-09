@@ -35,7 +35,7 @@
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <velodyne_pointcloud/point_types.h>
-#include <velodyne_pointcloud/pointcloudXYZIR.h> 
+#include <velodyne_pointcloud/pointcloudXYZIR.h>
 
 #include <fstream>
 #include "rclcpp/rclcpp.hpp" // package
@@ -55,13 +55,13 @@ namespace BipedLab
  * the points on the tag is too less, which means it is not a valid tag where it
  * might just a shadow of a valid tag
  */
-bool LiDARTag::_clusterPointsCheck(ClusterFamily_t & Cluster)
+bool LidarTag::_clusterPointsCheck(ClusterFamily_t & Cluster)
 {
   auto distance = sqrt(pow(Cluster.average.x, 2) + pow(Cluster.average.y, 2));
   // cout << "distance: " << distance << "X: " << Cluster.average.x << "Y: " <<
   // Cluster.average.y << endl;
-  int maxPoints = LiDARTag::_areaPoints(distance, _payload_size * SQRT2, _payload_size * SQRT2);
-  int minPoints = LiDARTag::_areaPoints(distance, _payload_size / SQRT2, _payload_size / SQRT2);
+  int maxPoints = LidarTag::_areaPoints(distance, _payload_size * SQRT2, _payload_size * SQRT2);
+  int minPoints = LidarTag::_areaPoints(distance, _payload_size / SQRT2, _payload_size / SQRT2);
   // cout << "Cluster Size: " << Cluster.data.size() << " Max Points: " <<
   // maxPoints << " Min Points: " << minPoints << endl;
   // cout << "Data: " << Cluster.data.size() << endl;
@@ -80,7 +80,7 @@ bool LiDARTag::_clusterPointsCheck(ClusterFamily_t & Cluster)
 /*
  * A function to get a number of points on a given-distance tag or object
  */
-int LiDARTag::_areaPoints(
+int LidarTag::_areaPoints(
   const double & Distance, const double & ObjWidth, const double & ObjHeight)
 {
   // double WAngle = ObjWidth * (1 + SQRT2) / abs(Distance);
@@ -133,7 +133,7 @@ int LiDARTag::_areaPoints(
  * A function to calculate the upper bound of points that can exist in a cluster
  * based on the payload size
  */
-int LiDARTag::_maxPointsCheck(ClusterFamily_t & cluster)
+int LidarTag::_maxPointsCheck(ClusterFamily_t & cluster)
 {
   int ring = std::round(_beam_num / 2);
   int longer_side_ring = std::round((cluster.top_ring + cluster.bottom_ring) / 2);
@@ -193,7 +193,7 @@ int LiDARTag::_maxPointsCheck(ClusterFamily_t & cluster)
  * Fit a plane to a cluster. Returns false if unable to estimate a plane.
  * Otherwise, returns the number of inliers and the coefficients of the plane.
  */
-bool LiDARTag::_rejectWithPlanarCheck(
+bool LidarTag::_rejectWithPlanarCheck(
   ClusterFamily_t & cluster, pcl::PointIndices::Ptr inliers,
   pcl::ModelCoefficients::Ptr coefficients, std::ostream & fplanefit)
 {
@@ -244,7 +244,7 @@ bool LiDARTag::_rejectWithPlanarCheck(
     return false;
   }
 
-  if (_debug_info) 
+  if (_debug_info)
     RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << true);
   if (_log_data) {
     fplanefit << "-----------------begining--------------------" << endl;

@@ -37,7 +37,7 @@ if(TBB_FOUND)
     message(STATUS "===============================TBB defs: ${TBB_DEFINITIONS}")
 else()
     message(STATUS "=============================================TBB NOT FOUND")
-endif() 
+endif()
 
 
 message(STATUS "Trying to include Eigen library")
@@ -49,12 +49,11 @@ message(STATUS "================================== EIGEN (internal): " ${EIGEN3_
 
 find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
 
-ament_auto_find_build_dependencies() # This makes the find packages from the xml redundant
+ament_auto_find_build_dependencies()
 
 
 ament_export_include_directories(
-#include_directories(
-  include 
+  include
   ${Boost_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
   ${TBB_INCLUDE_DIRS}
@@ -63,25 +62,25 @@ ament_export_include_directories(
 
 # COMPILE THE SOURCE
 #========================================================================
-ament_auto_add_executable(lidartag_main 
-    src/main.cc 
-    src/lidartag_pose.cc 
-    src/lidartag.cc 
-    src/lidartag_decode.cc 
-    src/apriltag_utils.cc 
-    src/utils.cc 
-    src/tag49h14.cc 
-    src/tag16h5.cc 
-    src/lidartag_rviz.cc 
-    src/lidartag_cluster.cc 
-    src/lidartag_prune.cc)
+ament_auto_add_executable(lidartag_main
+    src/main.cpp
+    src/lidartag_pose.cpp
+    src/lidartag.cpp
+    src/lidartag_decode.cpp
+    src/apriltag_utils.cpp
+    src/utils.cpp
+    src/tag49h14.cpp
+    src/tag16h5.cpp
+    src/lidartag_rviz.cpp
+    src/lidartag_cluster.cpp
+    src/lidartag_prune.cpp)
 
-target_link_libraries(lidartag_main 
+target_link_libraries(lidartag_main
     ${PCL_LIBRARIES}
     ${NLOPT_LIBRARIES}
     ${TBB_LIBRARIES}
     ${Boost_LIBRARIES}
-    Boost::thread # Thos should be redundant from the last line (${Boost_LIBRARIES}) but if not explicitly added, CMake will not link against it...
+    Boost::thread
 )
 
 if(BUILD_TESTING)
@@ -89,8 +88,6 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-
-#ament_package() # This seems to be at the end
 ament_auto_package(
   INSTALL_TO_SHARE
     launch

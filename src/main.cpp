@@ -1,8 +1,7 @@
-<!--
- * Copyright (C) 2013-2025, The Regents of The University of Michigan.
+/* Copyright (C) 2013-2020, The Regents of The University of Michigan.
  * All rights reserved.
- * This software was developed in the Biped Lab (https://www.biped.solutions/) 
- * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may 
+ * This software was developed in the Biped Lab (https://www.biped.solutions/)
+ * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may
  * be available under alternative licensing terms; contact the address above.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -24,27 +23,47 @@
  * The views and conclusions contained in the software and documentation are those
  * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the Regents of The University of Michigan.
- * 
- * AUTHOR: Bruce JK Huang (bjhuang[at]umich.edu)
+ *
+ * AUTHOR: Bruce JK Huang (bjhuang@umich.edu)
  * WEBSITE: https://www.brucerobot.com/
--->
+ */
 
-<launch>
-            <include file="$(find lidartag)/launch/LiDARTag_master.launch" />
+//#include <ros/ros.h>
+#include <lidartag.h>
 
-            <group ns="LiDARTag">
+#include "rclcpp/rclcpp.hpp"
+/*#include "sensor_msgs/msg/point_cloud2.hpp"
+#include "rclcpp/clock.hpp"
 
-            <!-- Tunable for PoI clustering -->
-            <param name="nearby_factor" type="double" value="4" />
+#include "pcl/PCLPointCloud2.h"
+#include "pcl/point_types.h"
+#include "pcl/registration/gicp.h"
+#include "pcl_conversions/pcl_conversions.h"
+#include "pcl_ros/transforms.hpp"
+#include "pcl/io/pcd_io.h"
+#include "pcl/filters/voxel_grid.h"
+#include "pcl/segmentation/sac_segmentation.h"
+#include "pcl/filters/extract_indices.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "autoware_calibration_msgs/srv/extrinsic_calibrator.hpp" */
 
-            <!-- 1 for outdoor, 0.5 for indoor -->
-            <param name="linkage_tunable" type="double" value="0.5" />
 
-            <!-- Tunable for cluster validation -->
-            <!-- 0.35 for outdoor, 0.05 for indoor -->
-            <param name="max_outlier_ratio" type="double" value="0.05" />
 
-            <rosparam param="tag_size_list"> [0.8051, 0.61]</rosparam>
-            </group>
-</launch>
 
+using namespace std;
+
+int main(int argc, char **argv){
+
+    rclcpp::init(argc, argv);
+    rclcpp::NodeOptions node_options;
+    auto node = std::make_shared<BipedLab::LidarTag>(node_options);
+
+    rclcpp::spin(node);
+    rclcpp::shutdown();
+
+    cout << "Done!" << endl;
+
+    return 0;
+}

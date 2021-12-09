@@ -1,8 +1,8 @@
 <!--
  * Copyright (C) 2013-2025, The Regents of The University of Michigan.
  * All rights reserved.
- * This software was developed in the Biped Lab (https://www.biped.solutions/) 
- * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may 
+ * This software was developed in the Biped Lab (https://www.biped.solutions/)
+ * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may
  * be available under alternative licensing terms; contact the address above.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -24,7 +24,7 @@
  * The views and conclusions contained in the software and documentation are those
  * of the authors and should not be interpreted as representing official policies,
  * either expressed or implied, of the Regents of The University of Michigan.
- * 
+ *
  * AUTHOR: Bruce JK Huang (bjhuang[at]umich.edu)
  * WEBSITE: https://www.brucerobot.com/
 -->
@@ -32,8 +32,8 @@
 <launch>
 
   <arg name="library_path" default="$(find lidartag)/lib/origin/" />
-  <!-- LiDARTag node -->
-  <group ns="LiDARTag">
+  <!-- lidartag node -->
+  <group ns="lidartag">
     <!-- valgrind /-/-tool=callgrind /-/-callgrind-out-file='callgrind.lidar_tag.%p'  -->
     <node pkg="lidartag" launch-prefix="" type="lidartag_main" name="lidartag_main" output="screen" respawn="true" />
 
@@ -78,7 +78,7 @@
     <!--  LiDAR System  -->
     <param name="frame_name" type="string" value="velodyne" />
     <param name="pointcloud_topic" type="string" value="/velodyne_points" />
-    <param name="lidartag_detection_topic" value="/LiDARTag/lidar_tag/LiDARTagDetectionArray" />
+    <param name="lidartag_detection_topic" value="/lidartag/lidar_tag/lidartagDetectionArray" />
     <param name="beam_number" type="int" value="32" />
     <param name="vertical_fov" type="int" value="40" />
     <param name="num_accumulation" type="int" value="1" />

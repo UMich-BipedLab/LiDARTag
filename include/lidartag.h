@@ -86,10 +86,10 @@
 // #include "tensorflow_ros_test/lib.h"
 
 namespace BipedLab {
-class LiDARTag: public rclcpp::Node {
+class LidarTag: public rclcpp::Node {
 public:
-  LiDARTag(const rclcpp::NodeOptions & options);
-  ~LiDARTag();
+  LidarTag(const rclcpp::NodeOptions & options);
+  ~LidarTag();
   //EIGEN_MAKE_ALIGNED_OPERATOR_NEW we should not need this
 
 private:
@@ -181,7 +181,7 @@ private:
   //rclcpp::NodeHandle _nh; // TODO KL: Delete after it works
   tf2_ros::TransformBroadcaster broadcaster_;
   rclcpp::Clock::SharedPtr _clock;
-            
+
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr _lidar1_sub;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _original_pc_pub;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _edge_pub;
@@ -206,13 +206,13 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _payload_grid_pub; // grid visualization
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr _payload_grid_line_pub; // grid visualization
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _ideal_frame_pub;
-  
+
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr _tag_frame_pub;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _edge_vector_pub;
   rclcpp::Publisher<lidartag_msgs::msg::LidarTagDetectionArray>::SharedPtr _lidartag_pose_pub; // Publish LiDAR pose
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _clustered_points_pub; // Points after minor clusters removed
   rclcpp::Publisher<lidartag_msgs::msg::LidarTagDetectionArray>::SharedPtr _detectionArray_pub;
-  
+
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _lidartag_cluster_pub;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _lidartag_cluster_edge_points_pub;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _lidartag_cluster_transformed_edge_points_pub;
@@ -244,7 +244,7 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _colored_cluster_buff_pub;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _ps_cluster_buff__pub;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr _in_cluster_buff__pub;
-	  
+
   // Flag
   int _point_cloud_received; // check if a scan of point cloud has received or
                              // not
@@ -256,7 +256,7 @@ private:
   // rclcpp::Publisher<> DebugExtractPayloadPub_; // Debug
 
   //rclcpp::Publisher<> TextPub_; // publish text
-  // visualization_msgs::MarkerArray _markers; 
+  // visualization_msgs::MarkerArray _markers;
 
   // Queue for pc data
   std::queue<sensor_msgs::msg::PointCloud2::SharedPtr> _point_cloud1_queue;
@@ -266,7 +266,8 @@ private:
   rclcpp::Time _current_scan_time; // store current time of the lidar scan
   std::string _pointcloud_topic; // subscribe channel
   std::string _pub_frame;        // publish under what frame?
-  std::string _lidartag_detection_topic;
+  std::string _lidartag_detections_topic;
+  std::string _corners_array_topic;
   // Overall LiDAR system parameters
   LiDARSystem_t _LiDAR_system;
   int _beam_num;
@@ -379,7 +380,7 @@ private:
   inline void _rosSpin();
 
   /* [basic ros]
-             * A function to make sure the program has received at least one pointcloud 
+             * A function to make sure the program has received at least one pointcloud
              * from subscribed channel
              * at the very start of this program
              */
@@ -402,7 +403,7 @@ private:
    * vector (EdgeBuff) into a standard type (PointXYZRI) of pcl vector (out)
    */
   void
-  _buffToPclVector(const std::vector<std::vector<LiDARPoints_t>> &t_edge_buff,
+  _buffToPclVector(const std::vector<std::vector<LidarPoints_t>> &t_edge_buff,
                    pcl::PointCloud<PointXYZRI>::Ptr t_out);
 
   /* [Pre-Processing]
@@ -411,7 +412,7 @@ private:
    */
   inline void
   _fillInOrderedPC(const pcl::PointCloud<PointXYZRI>::Ptr &t_pcl_pointcloud,
-                   std::vector<std::vector<LiDARPoints_t>> &t_ordered_buff);
+                   std::vector<std::vector<LidarPoints_t>> &t_ordered_buff);
   /*
    * A function to compute angle between the line from origin to this point
    * and z=0 plane in lidar
@@ -424,7 +425,7 @@ private:
    * A function to get pcl OrderedBuff from a ros sensor-msgs form of
    * pointcould queue
    */
-  std::vector<std::vector<LiDARPoints_t>> _getOrderBuff();
+  std::vector<std::vector<LidarPoints_t>> _getOrderBuff();
   // void GetOrderBuff(std::vector<std::vector<PointXYZRI>>& OrderedBuff);
 
   /* [LiDAR analysis]
@@ -441,7 +442,7 @@ private:
       std::vector<int> &t_point_count_table,
       std::vector<MaxMin_t> &t_max_min_table,
       std::vector<MaxMin_t> &t_ring_average_table,
-      const std::vector<std::vector<LiDARPoints_t>> &t_ordered_buff);
+      const std::vector<std::vector<LidarPoints_t>> &t_ordered_buff);
 
   /* [LiDAR analysis]
    * A function to calculate how many points are supposed to be on a cluster at
@@ -456,12 +457,12 @@ private:
   int _areaPoints(const double &t_distance, const double &t_obj_width,
                   const double &t_obj_height);
 
-  /* [LiDARTag detection]
+  /* [LidarTag detection]
    * Given lidar pointcloud, this function performs
    * lidartag detection and decode the corresponding id
    */
   pcl::PointCloud<PointXYZRI>::Ptr _lidarTagDetection(
-      const std::vector<std::vector<LiDARPoints_t>> &t_ordered_buff,
+      const std::vector<std::vector<LidarPoints_t>> &t_ordered_buff,
       std::vector<ClusterFamily_t> &t_cluster_buff);
 
   /* [Edge detection and clustering]
@@ -470,8 +471,8 @@ private:
    * pointcloud (2) group detected 'edge' into different group
    */
   void _gradientAndGroupEdges(
-      const std::vector<std::vector<LiDARPoints_t>> &t_ordered_buff,
-      std::vector<std::vector<LiDARPoints_t>> &t_edge_buff,
+      const std::vector<std::vector<LidarPoints_t>> &t_ordered_buff,
+      std::vector<std::vector<LidarPoints_t>> &t_edge_buff,
       std::vector<ClusterFamily_t> &t_cluster_buff);
 
   /* [Edge detection from n consecutive points]
@@ -483,14 +484,14 @@ private:
    *point Return value : 2 mean the right side point is the edge point, 3 mean
    *two side points are edge points
    */
-  int _getEdgePoints(const std::vector<std::vector<LiDARPoints_t>> &OrderedBuff,
+  int _getEdgePoints(const std::vector<std::vector<LidarPoints_t>> &OrderedBuff,
                      int i, int j, int n);
 
   /* [Clustering-Linkage]
    * A function to cluster a single edge point into a new cluster or an existing
    * cluster
    */
-  void _clusterClassifier(const LiDARPoints_t &point,
+  void _clusterClassifier(const LidarPoints_t &point,
                           std::vector<ClusterFamily_t> &t_cluster_buff);
 
   /* [Clustering-Update]
@@ -498,7 +499,7 @@ private:
    * this cluster; if not belonging to this cluster then return and create a new
    * one
    */
-  void _updateCluster(const LiDARPoints_t &t_point,
+  void _updateCluster(const LidarPoints_t &t_point,
                       ClusterFamily_t &t_old_cluster,
                       TestCluster_t *t_new_cluster);
 
@@ -506,13 +507,13 @@ private:
    * A function that determines if a point is within a given cluster adaptively
    * based on the ring number and range of the point.
    */
-  bool _isWithinCluster(const LiDARPoints_t &point, ClusterFamily_t &cluster);
+  bool _isWithinCluster(const LidarPoints_t &point, ClusterFamily_t &cluster);
 
   /* [Adaptive-Clustering]
    * A function that determines if a point is within a given cluster
    * horizontally and adaptively based on the range of the point.
    */
-  bool _isWithinClusterHorizon(const LiDARPoints_t &point,
+  bool _isWithinClusterHorizon(const LidarPoints_t &point,
                                ClusterFamily_t &cluster, double threshold);
 
   /* [Clustering-Validation] <For all Clusters>
@@ -525,7 +526,7 @@ private:
    *     with the average value
    */
   void
-  _fillInCluster(const std::vector<std::vector<LiDARPoints_t>> &t_ordered_buff,
+  _fillInCluster(const std::vector<std::vector<LidarPoints_t>> &t_ordered_buff,
                  std::vector<ClusterFamily_t> &t_cluster_buff);
 
   /* [Clustering-Validation] <For "a" cluster>
@@ -644,7 +645,7 @@ private:
   /* [Pose: tag to robot]
    * A function to publish pose of tag to the robot
    */
-  void _tagToRobot(const int &t_cluster_id, const Eigen::Vector3f &t_normal_vec, 
+  void _tagToRobot(const int &t_cluster_id, const Eigen::Vector3f &t_normal_vec,
                    Homogeneous_t &t_pose, tf2::Transform &t_transform,
                    const PointXYZRI &t_ave);
   /* [Payload decoding]
@@ -662,7 +663,7 @@ private:
    * methods
    */
   void _getCodeNaive(std::string &t_code,
-                     pcl::PointCloud<LiDARPoints_t *> t_payload);
+                     pcl::PointCloud<LidarPoints_t *> t_payload);
 
   /* [Decoder]
    * Decode using Weighted Gaussian weight
@@ -672,8 +673,8 @@ private:
    */
   int _getCodeWeightedGaussian(
       std::string &Code, Homogeneous_t &t_pose, int &t_payload_points,
-      const PointXYZRI &ave, const pcl::PointCloud<LiDARPoints_t *> &t_payload,
-      const std::vector<LiDARPoints_t *> &t_payload_boundary_ptr);
+      const PointXYZRI &ave, const pcl::PointCloud<LidarPoints_t *> &t_payload,
+      const std::vector<LidarPoints_t *> &t_payload_boundary_ptr);
 
   /* [Decoder]
    * 1) Transfrom the payload points to 3D-shape pc
@@ -800,28 +801,28 @@ private:
   visualization_msgs::msg::MarkerArray &t_marker_array);
   void _plotIdealFrame();
   void _plotTagFrame(const ClusterFamily_t &t_cluster);
-  visualization_msgs::msg::Marker _visualizeVector(Eigen::Vector3f edge_vector, 
+  visualization_msgs::msg::Marker _visualizeVector(Eigen::Vector3f edge_vector,
                                                    PointXYZRI centriod, int t_ID);
   /* [accumulating temporal cluster]
    * A function to save temporal clusters data
    */
   // void _saveTemporalCluster(const std::vector<ClusterFamily_t> &t_cluster,
-  // std::vector<std::vector<pcl::PointCloud<LiDARPoints_t>>> &matData);
+  // std::vector<std::vector<pcl::PointCloud<LidarPoints_t>>> &matData);
 
   /* [save points to mat files]
    * A function to save points as .mat data
    */
   // void
-  // _saveMatFiles(std::vector<std::vector<pcl::PointCloud<LiDARPoints_t>>>&
+  // _saveMatFiles(std::vector<std::vector<pcl::PointCloud<LidarPoints_t>>>&
   // matData);
 
-            // [A function to put clusterFamily to LiDARTagDetectionArray]
+            // [A function to put clusterFamily to LidarTagDetectionArray]
   void _detectionArrayPublisher(const ClusterFamily_t &Cluster);
 
   /* [Drawing]
    * A function to draw lines in rviz
    */
-  void _assignLine(visualization_msgs::msg::Marker &marker, 
+  void _assignLine(visualization_msgs::msg::Marker &marker,
                    visualization_msgs::msg::MarkerArray t_mark_array,
                    const uint32_t shape, const std::string ns, const double r,
                    const double g, const double b, const PointXYZRI t_point1,
@@ -837,7 +838,7 @@ private:
                      const double t_size, const std::string Text = "");
 
 
-  void _assignVectorMarker(visualization_msgs::msg::Marker &t_marker, 
+  void _assignVectorMarker(visualization_msgs::msg::Marker &t_marker,
                            const uint32_t t_shape,
                            const std::string t_namespace, const double r,
                            const double g, const double b, const int t_count,
@@ -873,7 +874,7 @@ private:
   void _freeUp(std::vector<ClusterFamily_t> &ClusterBuff);
   void _freeCluster(ClusterFamily_t &Cluster);
   template <typename Container> void _freeVec(Container &c);
-  void _freePCL(pcl::PointCloud<LiDARPoints_t *> &vec);
+  void _freePCL(pcl::PointCloud<LidarPoints_t *> &vec);
   void _freeTagLineStruc(TagLines_t &TagEdges);
   void visualiseClusterBuff(std::vector<ClusterFamily_t> &cluster_buff);
   void keyboardEventOccurred(const pcl::visualization::KeyboardEvent &event,
@@ -894,7 +895,7 @@ private:
   displayClusterPointSize(const std::vector<ClusterFamily_t> &cluster_buff);
   void
   displayClusterIndexNumber(const std::vector<ClusterFamily_t> &cluster_buff);
-  //void dynparamCallback(const lidartag_msgs::LiDARTagMsgsConfig &dyn_msg,
+  //void dynparamCallback(const lidartag_msgs::LidarTagMsgsConfig &dyn_msg,
   //                      const uint32_t level); // KL: reconfigure eas deprecated and we ave still not implemented the new one
 }; // GrizTag
 } // namespace BipedLab

@@ -136,7 +136,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/WholeEdgedPC
+        Value: /lidartag/WholeEdgedPC
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -170,7 +170,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/ClusterEdgePC
+        Value: /lidartag/ClusterEdgePC
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -204,7 +204,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/DetectedPC
+        Value: /lidartag/DetectedPC
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -218,7 +218,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/BoundaryMarker
+        Value: /lidartag/BoundaryMarker
       Value: false
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
@@ -230,7 +230,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/ClusterMarker
+        Value: /lidartag/ClusterMarker
       Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -262,7 +262,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/BoundaryPts
+        Value: /lidartag/BoundaryPts
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -296,7 +296,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/TransformedPointsTag
+        Value: /lidartag/TransformedPointsTag
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -330,7 +330,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/TransformedPoints
+        Value: /lidartag/TransformedPoints
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -364,7 +364,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/Initial_Template_points
+        Value: /lidartag/Initial_Template_points
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -379,7 +379,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/TagFrame
+        Value: /lidartag/TagFrame
       Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
@@ -392,7 +392,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/IDMarkers
+        Value: /lidartag/IDMarkers
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -424,7 +424,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/Template_points
+        Value: /lidartag/Template_points
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -458,7 +458,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/Template_points_3d
+        Value: /lidartag/Template_points_3d
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -492,7 +492,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/Associated_pattern_3d
+        Value: /lidartag/Associated_pattern_3d
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -506,7 +506,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/IdealFrame
+        Value: /lidartag/IdealFrame
       Value: false
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
@@ -518,7 +518,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/detail_valid_marker
+        Value: /lidartag/detail_valid_marker
       Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -550,7 +550,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/before_transformed_edge_pc
+        Value: /lidartag/before_transformed_edge_pc
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -564,7 +564,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/intesection_markers
+        Value: /lidartag/intesection_markers
       Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -596,7 +596,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/lidartag_cluster_points
+        Value: /lidartag/lidartag_cluster_points
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -630,7 +630,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/lidartag_cluster_edge_points
+        Value: /lidartag/lidartag_cluster_edge_points
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -659,7 +659,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/cluster_buff_index_number_markers
+        Value: /lidartag/cluster_buff_index_number_markers
       Value: false
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
@@ -671,7 +671,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/cluster_buff_points_size_markers
+        Value: /lidartag/cluster_buff_points_size_markers
       Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -703,7 +703,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /LiDARTag/colored_cluster_buff
+        Value: /lidartag/colored_cluster_buff
       Use Fixed Frame: true
       Use rainbow: true
       Value: false

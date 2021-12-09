@@ -12,8 +12,8 @@
 namespace BipedLab {
 class ThreadPool {
 public:
-ThreadPool (int threads) : 
-    shutdown_ (false), 
+ThreadPool (int threads) :
+    shutdown_ (false),
     job_counter_(0) {
     // Create the specified number of threads
     threads_.reserve (threads);
