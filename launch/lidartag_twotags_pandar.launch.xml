@@ -33,8 +33,9 @@
 <launch>
 
   <arg name="pointcloud_topic" default="/pointcloud_raw" />
-  <arg name="lidartag_detections_topic" default="/lidartag_detection_array" />
-  <arg name="corners_array_topic" default="/lidartag/corners_array" />
+  <arg name="lidartag_detections_topic" default="detection_array" />
+  <arg name="corners_array_topic" default="corners_array" />
+  <arg name="launch_pandar_driver" default="false" />
 
   <include file="$(find-pkg-share lidartag)/launch/lidartag_master_pandar.launch.xml" >
 
@@ -61,9 +62,10 @@
 
   </include>
 
-  <include file="$(find-pkg-share pandar_pointcloud)/launch/pandar_cloud.launch.xml" >
+  <include if="$(var launch_pandar_driver)" file="$(find-pkg-share pandar_pointcloud)/launch/pandar_cloud.launch.xml" >
     <arg name="override_timestamp" value="true"/>
   </include>
+
 
   <!--node pkg="rviz2" exec="rviz2" name="rviz" args="-d $(find-pkg-share lidartag)/rviz/tag_calib.rviz" respawn="true" /-->
 </launch>
