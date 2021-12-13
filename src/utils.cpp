@@ -156,24 +156,18 @@ Eigen::Vector3f rotationMatrixToEulerAngles(Eigen::Matrix3f & t_R)
 /*
  * A function to check if get all parameters
  */
-bool checkParameters(int t_n, ...)
+bool checkParameters(const std::vector<bool>& list)
 {
-  va_list vl_num;
-  va_start(vl_num, t_n);
-  bool Pass = true;
+  bool pass = true;
 
-  for (int i = 0; i < t_n; ++i) {
-    bool Got = va_arg(vl_num, int);
-    if (Got)
-      continue;
-    else {
+  for (int i = 0; i < list.size(); ++i) {
+    if (!list[i]) {
+      pass = false;
       std::cout << "didn't get i: " << i << " in the launch file" << std::endl;
-      Pass = false;
-      break;
     }
   }
-  va_end(vl_num);
-  return Pass;
+
+  return pass;
 }
 
 // Overload operator << for PointXYZRI
@@ -307,12 +301,12 @@ float dot(
   return t_p1.y * t_p2.y + t_p1.z * t_p2.z;
 }
 
-float Norm(const velodyne_pointcloud::PointXYZIR & t_p)
+float norm(const velodyne_pointcloud::PointXYZIR & t_p)
 {
   return std::sqrt(std::pow(t_p.y, 2) + std::pow(t_p.z, 2));
 }
 
-double MVN(
+double mvn(
   const float & t_tag_size, const int & t_d, const Eigen::Vector2f & t_X,
   const Eigen::Vector2f t_mean)
 {
@@ -342,7 +336,7 @@ void getProjection(
   velodyne_pointcloud::PointXYZIR v12 = vectorize(t_p1, t_p2);
   velodyne_pointcloud::PointXYZIR v1p = vectorize(t_p1, t_p);
 
-  k = std::abs(dot(v12, v1p) / Norm(v12));
+  k = std::abs(dot(v12, v1p) / norm(v12));
   // v = v12;
 }
 
@@ -384,12 +378,12 @@ void assignCellIndex(
 
   // which grid it belongs to (in 1-16 vector form)?
   Eigen::Vector2f X(y, z);
-  Eigen::Vector2f Mean(cy, cz);
+  Eigen::Vector2f mean(cy, cz);
   t_vote.centroid.x = 0;
   t_vote.centroid.y = cy;
   t_vote.centroid.z = cz;
   t_vote.cell = t_d * cellIndexK + cellIndexT;
-  t_vote.weight = MVN(t_tag_size, t_d, X, Mean);
+  t_vote.weight = mvn(t_tag_size, t_d, X, mean);
 }
 
 // normalize weight and classify them into grid
@@ -430,7 +424,7 @@ void formGrid(Eigen::MatrixXf & t_vertices, float x, float y, float z, float t_t
 }
 
 void fitGrid(
-  Eigen::MatrixXf & GridVertices, Eigen::Matrix3f & H, const velodyne_pointcloud::PointXYZIR & t_p1,
+  Eigen::MatrixXf & grid_vertices, Eigen::Matrix3f & H, const velodyne_pointcloud::PointXYZIR & t_p1,
   const velodyne_pointcloud::PointXYZIR & t_p2, const velodyne_pointcloud::PointXYZIR & t_p3,
   const velodyne_pointcloud::PointXYZIR & t_p4)
 {
@@ -451,7 +445,7 @@ void fitGrid(
   payload_vertices(1, 3) = t_p4.y;
   payload_vertices(2, 3) = t_p4.z;
 
-  Eigen::Matrix3f M = GridVertices.rightCols(4) * payload_vertices.transpose();
+  Eigen::Matrix3f M = grid_vertices.rightCols(4) * payload_vertices.transpose();
   Eigen::JacobiSVD<Eigen::MatrixXf> svd(M, Eigen::ComputeFullU | Eigen::ComputeFullV);
   // Eigen::Matrix<float,3,3,Eigen::DontAlign> R =
   // svd.matrixV()*svd.matrixU().transpose();
@@ -459,12 +453,12 @@ void fitGrid(
   H = R;  // H: payload -> ref
 }
 
-std::vector<Eigen::MatrixXf> fitGrid_new(
-  const Eigen::MatrixXf & GridVertices, Eigen::Matrix3f & H,
+std::vector<Eigen::MatrixXf> fitGridNew(
+  const Eigen::MatrixXf & grid_vertices, Eigen::Matrix3f & H,
   const Eigen::MatrixXf & payload_vertices)
 {
   std::vector<Eigen::MatrixXf> mats;
-  Eigen::Matrix3f M = GridVertices.rightCols(4) * payload_vertices.transpose();
+  Eigen::Matrix3f M = grid_vertices.rightCols(4) * payload_vertices.transpose();
   Eigen::Matrix<float, 3, 3, Eigen::DontAlign> R;
   //   Eigen::JacobiSVD<Eigen::MatrixXf> svd(M, Eigen::ComputeFullU |
   //                                                Eigen::ComputeFullV);
@@ -528,7 +522,7 @@ float distance(
 template <class T, class U>
 float getAngle(T a, U b)
 {
-  return rad2Deg(std::acos(dot(a, b) / (Norm(a) * Norm(b))));
+  return rad2Deg(std::acos(dot(a, b) / (norm(a) * norm(b))));
 }
 
 /*
@@ -538,40 +532,69 @@ float getAngle(T a, U b)
  * return -2: incorrect angle
  */
 int checkCorners(
-  const float Tagsize, const velodyne_pointcloud::PointXYZIR & t_p1,
+  const float tag_size, const velodyne_pointcloud::PointXYZIR & t_p1,
   const velodyne_pointcloud::PointXYZIR & t_p2, const velodyne_pointcloud::PointXYZIR & t_p3,
   const velodyne_pointcloud::PointXYZIR & t_p4)
 {
   // XXX tunable
   float ratio = 1 / 3;
-  float AngleLowerBound = 75;
-  float AngleUpperBound = 105;
-  if (distance(t_p1, t_p2) < Tagsize * ratio) return -1;
-  if (distance(t_p1, t_p3) < Tagsize * ratio) return -1;
-  if (distance(t_p1, t_p4) < Tagsize * ratio) return -1;
-  if (distance(t_p2, t_p3) < Tagsize * ratio) return -1;
-  if (distance(t_p2, t_p4) < Tagsize * ratio) return -1;
-  if (distance(t_p3, t_p4) < Tagsize * ratio) return -1;
+  float angle_lower_bound = 75;
+  float angle_upper_bound = 105;
+
+  if (distance(t_p1, t_p2) < tag_size * ratio) {
+    return -1;
+  }
+
+  if (distance(t_p1, t_p3) < tag_size * ratio) {
+    return -1;
+  }
+  if (distance(t_p1, t_p4) < tag_size * ratio) {
+    return -1;
+  }
+
+  if (distance(t_p2, t_p3) < tag_size * ratio) {
+    return -1;
+  }
+
+  if (distance(t_p2, t_p4) < tag_size * ratio) {
+    return -1;
+  }
+
+  if (distance(t_p3, t_p4) < tag_size * ratio) {
+    return -1;
+  }
 
   // angle between p12 and p14
-  float Angle1 = getAngle<velodyne_pointcloud::PointXYZIR, velodyne_pointcloud::PointXYZIR>(
+  float angle_1 = getAngle<velodyne_pointcloud::PointXYZIR, velodyne_pointcloud::PointXYZIR>(
     vectorize(t_p1, t_p2), vectorize(t_p1, t_p4));
-  if ((Angle1 < AngleLowerBound) || (AngleUpperBound < Angle1)) return -2;
+
+  if ((angle_1 < angle_lower_bound) || (angle_upper_bound < angle_1)) {
+    return -2;
+  }
 
   // angle between p21 and p23
-  float Angle2 = getAngle<velodyne_pointcloud::PointXYZIR, velodyne_pointcloud::PointXYZIR>(
+  float angle_2 = getAngle<velodyne_pointcloud::PointXYZIR, velodyne_pointcloud::PointXYZIR>(
     vectorize(t_p2, t_p1), vectorize(t_p2, t_p3));
-  if ((Angle2 < AngleLowerBound) || (AngleUpperBound < Angle2)) return -2;
+
+  if ((angle_2 < angle_lower_bound) || (angle_upper_bound < angle_2)) {
+    return -2;
+  }
 
   // angle between p32 and p34
-  float Angle3 = getAngle<velodyne_pointcloud::PointXYZIR, velodyne_pointcloud::PointXYZIR>(
+  float angle_3 = getAngle<velodyne_pointcloud::PointXYZIR, velodyne_pointcloud::PointXYZIR>(
     vectorize(t_p3, t_p2), vectorize(t_p3, t_p4));
-  if ((Angle3 < AngleLowerBound) || (AngleUpperBound < Angle3)) return -2;
+
+  if ((angle_3 < angle_lower_bound) || (angle_upper_bound < angle_3)) {
+    return -2;
+  }
 
   // angle between p43 and p41
-  float Angle4 = getAngle<velodyne_pointcloud::PointXYZIR, velodyne_pointcloud::PointXYZIR>(
+  float angle_4 = getAngle<velodyne_pointcloud::PointXYZIR, velodyne_pointcloud::PointXYZIR>(
     vectorize(t_p4, t_p3), vectorize(t_p4, t_p1));
-  if ((Angle4 < AngleLowerBound) || (AngleUpperBound < Angle4)) return -2;
+
+  if ((angle_4 < angle_lower_bound) || (angle_upper_bound < angle_4)) {
+    return -2;
+  }
 
   return 0;
 }
@@ -591,18 +614,18 @@ T blockMatrix(int t_n, ...)
     rows_now = rows_now + matrix.rows();
   }
   va_end(vl_num);
-  T Mblock = T::Zero(rows_now, cols_now);
+  T m_block = T::Zero(rows_now, cols_now);
   va_list vl;
   va_start(vl, t_n);
   int rows = 0;
   int cols = 0;
   for (int i = 0; i < t_n; ++i) {
     T matrix = va_arg(vl, T);
-    Mblock.block(rows, cols, matrix.rows(), matrix.cols()) = matrix;
+    m_block.block(rows, cols, matrix.rows(), matrix.cols()) = matrix;
     rows += matrix.rows();
     cols += matrix.cols();
   }
-  return Mblock;
+  return m_block;
 }
 
 // pose is geometry_msgs pose
@@ -691,12 +714,12 @@ std::vector<int> complementOfSet(const std::vector<int> & set, std::size_t n)
   return complement;
 }
 
-float dot_product(Eigen::Vector3f v1, Eigen::Vector3f v2)
+float dotProduct(const Eigen::Vector3f & v1, const Eigen::Vector3f & v2)
 {
   return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
-Eigen::Vector3f cross_product(Eigen::Vector3f v1, Eigen::Vector3f v2)
+Eigen::Vector3f crossProduct(const Eigen::Vector3f & v1, const Eigen::Vector3f & v2)
 {
   Eigen::Vector3f res;
   res[0] = v1[1] * v2[2] - v1[2] * v2[1];
@@ -761,7 +784,7 @@ Eigen::Matrix4f computeTransformation(Eigen::Vector3f rot_v, Eigen::Vector3f tra
   return H;
 }
 
-double get_sign(double x)
+double getSign(double x)
 {
   double output;
   if (x >= 0) {
@@ -772,23 +795,23 @@ double get_sign(double x)
   return output;
 }
 
-Eigen::Matrix3f skew(const Eigen::Vector3d v)
+Eigen::Matrix3f skew(const Eigen::Vector3d & v)
 {
   Eigen::Matrix3f m;
   m << 0, -v[2], v[1], v[2], 0, -v[0], -v[1], v[0], 0;
   return m;
 }
 
-Eigen::Vector3d unskew(const Eigen::Matrix3f Ax)
+Eigen::Vector3d unskew(const Eigen::Matrix3f & a_x)
 {
-  Eigen::Vector3d v(Ax(2, 1), Ax(0, 2), Ax(1, 0));
+  Eigen::Vector3d v(a_x(2, 1), a_x(0, 2), a_x(1, 0));
   return v;
 }
 
-Eigen::Matrix3f Exp_SO3(const Eigen::Vector3d w)
+Eigen::Matrix3f expSO3(const Eigen::Vector3d & w)
 {
   double theta = w.norm();
-  Eigen::Matrix3f A = skew(w);
+  Eigen::Matrix3f A = utils::skew(w);
   Eigen::Matrix3f output;
   // cout << Eigen::Matrix3d::Identity() << endl;
   if (theta == 0) {
@@ -800,7 +823,7 @@ Eigen::Matrix3f Exp_SO3(const Eigen::Vector3d w)
   return output;
 }
 
-Eigen::Vector3d Log_SO3(const Eigen::Matrix3f A)
+Eigen::Vector3d logSO3(const Eigen::Matrix3f & A)
 {
   double theta = std::acos((A(0, 0) + A(1, 1) + A(2, 2) - 1) / 2);
   Eigen::Matrix3f A_transpose = A.transpose();
@@ -808,7 +831,7 @@ Eigen::Vector3d Log_SO3(const Eigen::Matrix3f A)
   if (theta == 0) {
     output = Eigen::Vector3d::Zero(3);
   } else {
-    output = unskew(theta * (A - A_transpose) / (2 * std::sin(theta)));
+    output = utils::unskew(theta * (A - A_transpose) / (2 * std::sin(theta)));
   }
   return output;
 }
@@ -871,7 +894,10 @@ float computePolygonArea(const Eigen::MatrixXf & vertices)
 void constructConvexHull(const Eigen::MatrixXf & P, Eigen::MatrixXf & convex_hull)
 {
   size_t n = P.cols();
-  if (n <= 3) convex_hull = P;
+
+  if (n <= 3) {
+    convex_hull = P;
+  }
 
   // Eigen::MatrixXf Q(Eigen::MatrixXf::Random(3, 4));
   // Q(1, 0) = 3;

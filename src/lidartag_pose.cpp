@@ -162,9 +162,9 @@ void d_px_lie_mat(
   double t2 = std::abs(r11);
   double t3 = std::abs(r12);
   double t4 = std::abs(r13);
-  double t5 = utils::get_sign(r11);
-  double t6 = utils::get_sign(r12);
-  double t7 = utils::get_sign(r13);
+  double t5 = utils::getSign(r11);
+  double t6 = utils::getSign(r12);
+  double t7 = utils::getSign(r13);
   double t8 = std::pow(r12, 2);
   double t9 = std::pow(r13, 2);
   double t10 = std::pow(t2, 2);
@@ -219,9 +219,9 @@ void d_py_lie_mat(
   double t2 = std::abs(r11);
   double t3 = std::abs(r12);
   double t4 = std::abs(r13);
-  double t5 = utils::get_sign(r11);
-  double t6 = utils::get_sign(r12);
-  double t7 = utils::get_sign(r13);
+  double t5 = utils::getSign(r11);
+  double t6 = utils::getSign(r12);
+  double t7 = utils::getSign(r13);
   double t8 = std::pow(r11, 2);
   double t9 = std::pow(r13, 2);
   double t10 = std::pow(t2, 2);
@@ -277,9 +277,9 @@ void d_pz_lie_mat(
   double t2 = std::abs(r11);
   double t3 = std::abs(r12);
   double t4 = std::abs(r13);
-  double t5 = utils::get_sign(r11);
-  double t6 = utils::get_sign(r12);
-  double t7 = utils::get_sign(r13);
+  double t5 = utils::getSign(r11);
+  double t6 = utils::getSign(r12);
+  double t7 = utils::getSign(r13);
   double t8 = std::pow(r11, 2);
   double t9 = std::pow(r12, 2);
   double t10 = std::pow(t2, 2);
@@ -432,7 +432,7 @@ double computeCost_lie(const std::vector<double> & x, std::vector<double> & grad
   const double tag_size = (*d)(0, num_points) * 2;
   Eigen::Vector3d q(x[3], x[4], x[5]);
   Eigen::Matrix4f H = Eigen::Matrix4f::Identity(4, 4);
-  H.topLeftCorner(3, 3) = utils::Exp_SO3(q);
+  H.topLeftCorner(3, 3) = utils::expSO3(q);
   H.topRightCorner(3, 1) << x[0], x[1], x[2];
 
   // Eigen::MatrixXf transfomed_points_mat =
@@ -1035,7 +1035,7 @@ int LidarTag::optimizePose(ClusterFamily_t & cluster)
     x[4] = cluster.initial_pose.pitch;
     x[5] = cluster.initial_pose.yaw;
   } else {
-    Eigen::Vector3d lie_algebra = utils::Log_SO3(cluster.initial_pose.rotation);
+    Eigen::Vector3d lie_algebra = utils::logSO3(cluster.initial_pose.rotation);
     x[3] = lie_algebra[0];
     x[4] = lie_algebra[1];
     x[5] = lie_algebra[2];
@@ -1242,7 +1242,7 @@ int LidarTag::optimizePose(ClusterFamily_t & cluster)
       rotation = q.matrix();
     } else {
       Eigen::Vector3d q(x[3], x[4], x[5]);
-      rotation = utils::Exp_SO3(q);
+      rotation = utils::expSO3(q);
     }
 
     if (debug_info_) {

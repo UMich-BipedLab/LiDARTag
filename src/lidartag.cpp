@@ -49,7 +49,6 @@
 #include "apriltag_utils.h"
 #include "utils.h"
 #include "ultra_puck.h"
-#include "utils.h"
 
 #include <math.h>   /* sqrt, pow(a,b) */
 #include <stdlib.h> /* srand, rand */
@@ -127,7 +126,7 @@ LidarTag::LidarTag(const rclcpp::NodeOptions & options) :
   transformed_points_pub_ =
     this->create_publisher<sensor_msgs::msg::PointCloud2>("transformed_points", 10);
   transformed_pointstag_pub__ =
-    this->create_publisher<sensor_msgs::msg::PointCloud2>("transformed_pointsTag", 10);
+    this->create_publisher<sensor_msgs::msg::PointCloud2>("transformed_points_tag", 10);
   edge1_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("edge_group_1", 10);
   edge2_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("edge_group_2", 10);
   edge3_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("edge_group_3", 10);
@@ -140,7 +139,7 @@ LidarTag::LidarTag(const rclcpp::NodeOptions & options) :
   initag_pub_ =
     this->create_publisher<sensor_msgs::msg::PointCloud2>("initial_template_points", 10);
   boundary_marker_pub_ =
-    this->create_publisher<visualization_msgs::msg::MarkerArray>("boundaryMarker", 10);
+    this->create_publisher<visualization_msgs::msg::MarkerArray>("boundary_marker", 10);
   id_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("id_markers", 10);
   cluster_marker_pub_ =
     this->create_publisher<visualization_msgs::msg::MarkerArray>("cluster_marker", 10);
@@ -626,7 +625,7 @@ void LidarTag::getParameters() {
   tag_size_list_.assign( std::istream_iterator<double>( is ), std::istream_iterator<double>() );
 
   bool pass = utils::checkParameters(
-    73, GotSensorQOS, GotPubFrame, GotFakeTag, GotLidarTopic, GotBeamNum, GotOptPose, GotDecodeId,
+    {GotSensorQOS, GotPubFrame, GotFakeTag, GotLidarTopic, GotBeamNum, GotOptPose, GotDecodeId,
     GotPlaneFitting, GotOutPutPath, GotDistanceBound,
     GotDepthBound, GotTagFamily, GotTagHamming, GotMaxDecodeHamming, GotFineClusterThreshold,
     GotVerticalFOV, GotFillInGapThreshold, GotMaxOutlierRatio, GotPointsThresholdFactor,
@@ -641,7 +640,7 @@ void LidarTag::getParameters() {
     GotNumAccumulation, GotDerivativeMethod, GotUpbound, GotLowbound, GotCoaTunable,
     GotTagsizeTunable, GotMaxClusterIndex, GotMinClusterIndex, GotMaxClusterPointsSize,
     GotMinClusterPointsSize, GotDebugSinglePointcloud, GotDebugPointX, GotDebugPointY,
-    GotDebugPointZ, GotDebugClusterId, GotVisualizeCluster, GotClearance);
+    GotDebugPointZ, GotDebugClusterId, GotVisualizeCluster, GotClearance});
 
   if (!pass) {
     rclcpp::shutdown();
@@ -2043,11 +2042,11 @@ Homogeneous_t LidarTag::estimatePose(ClusterFamily_t & cluster)
   // rotation//
   Eigen::Vector3f x_axis(1, 0, 0);
   Eigen::Vector3f edge_direction(0, 0, 1);
-  Eigen::Vector3f base_vector1 = utils::cross_product(x_axis, edge_direction);
+  Eigen::Vector3f base_vector1 = utils::crossProduct(x_axis, edge_direction);
 
   Eigen::Vector3f normal_vector = cluster.normal_vector;
   Eigen::Vector3f edge_vector = estimateEdgeVector(cluster);
-  Eigen::Vector3f base_vector2 = utils::cross_product(normal_vector, edge_vector);
+  Eigen::Vector3f base_vector2 = utils::crossProduct(normal_vector, edge_vector);
 
   Eigen::Matrix3f V, W;
   V.col(0) = normal_vector;
@@ -2359,7 +2358,7 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
   utils::formGrid(Vertices, 0, 0, 0, cluster.tag_size);
   Eigen::Matrix3f R;
   std::vector<Eigen::MatrixXf> mats;
-  mats = utils::fitGrid_new(Vertices, R, ordered_payload_vertices);
+  mats = utils::fitGridNew(Vertices, R, ordered_payload_vertices);
   U_ = mats.front();
   mats.erase(mats.begin());
   V_ = mats.front();

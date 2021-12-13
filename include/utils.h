@@ -122,7 +122,7 @@ T rad2Deg(T t_radian)
 bool isRotationMatrix(Eigen::Matrix3f & t_R);
 Eigen::Vector3f rotationMatrixToEulerAngles(Eigen::Matrix3f & t_R);
 
-bool checkParameters(int t_n, ...);
+bool checkParameters(const std::vector<bool>& list);
 void COUT(const velodyne_pointcloud::PointXYZIR & t_p);
 bool compareIndex(LidarPoints_t * A, LidarPoints_t * B);
 uint64_t bitShift(std::string const & t_value);
@@ -144,7 +144,7 @@ velodyne_pointcloud::PointXYZIR vectorize(
 float dot(
   const velodyne_pointcloud::PointXYZIR & t_p1, const velodyne_pointcloud::PointXYZIR & t_p2);
 
-float Norm(const velodyne_pointcloud::PointXYZIR & t_p);
+float norm(const velodyne_pointcloud::PointXYZIR & t_p);
 
 // a function to determine the step of given two points
 float getStep(
@@ -155,7 +155,7 @@ void getProjection(
   const velodyne_pointcloud::PointXYZIR & t_p1, const velodyne_pointcloud::PointXYZIR & t_p2,
   const velodyne_pointcloud::PointXYZIR & t_p, float & t_k, Eigen::Vector2f & t_v);
 
-double MVN(
+double mvn(
   const float & t_tag_size, const int & t_d, const Eigen::Vector2f & t_X,
   const Eigen::Vector2f t_mean);
 
@@ -178,7 +178,7 @@ void fitGrid(
   const velodyne_pointcloud::PointXYZIR & t_p2, const velodyne_pointcloud::PointXYZIR & t_p3,
   const velodyne_pointcloud::PointXYZIR & t_p4);
 
-std::vector<Eigen::MatrixXf> fitGrid_new(
+std::vector<Eigen::MatrixXf> fitGridNew(
   const Eigen::MatrixXf & t_vertices, Eigen::Matrix3f & H,
   const Eigen::MatrixXf & t_payload_vertices);
 
@@ -186,14 +186,14 @@ float distance(
   const velodyne_pointcloud::PointXYZIR & t_p1, const velodyne_pointcloud::PointXYZIR & t_p2);
 template <class T, class U>
 float getAngle(T a, U b);
-double get_sign(double x);
-Eigen::Matrix3f skew(const Eigen::Vector3d t_v);
+double getSign(double x);
+Eigen::Matrix3f skew(const Eigen::Vector3d & t_v);
 
-Eigen::Matrix3f Exp_SO3(const Eigen::Vector3d t_w);
+Eigen::Matrix3f expSO3(const Eigen::Vector3d & t_w);
 
-Eigen::Vector3d unskew(const Eigen::Matrix3f t_Ax);
+Eigen::Vector3d unskew(const Eigen::Matrix3f & t_Ax);
 
-Eigen::Vector3d Log_SO3(const Eigen::Matrix3f t_A);
+Eigen::Vector3d logSO3(const Eigen::Matrix3f & t_A);
 
 int checkCorners(
   const float t_tag_size, const velodyne_pointcloud::PointXYZIR & t_p1,
@@ -266,9 +266,9 @@ void removeIndicesFromVector(C<T> & c, std::vector<int> & rm)
 
 std::vector<int> complementOfSet(const std::vector<int> & set, std::size_t n);
 // std::ostream& operator<<(std::ostream& os, const velodyne_pointcloud::PointXYZIR& p);
-float dot_product(Eigen::Vector3f v1, Eigen::Vector3f v2);
+float dotProduct(const Eigen::Vector3f & v1, const Eigen::Vector3f & v2);
 
-Eigen::Vector3f cross_product(Eigen::Vector3f v1, Eigen::Vector3f v2);
+Eigen::Vector3f crossProduct(const Eigen::Vector3f & v1, const Eigen::Vector3f & v2);
 
 /* A function to read data in a csv file
  * and load the data to an eigen matrix

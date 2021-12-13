@@ -781,7 +781,7 @@ void LidarTag::getBoundaryCorners(
   utils::formGrid(Vertices, 0, 0, 0, cluster.tag_size);
   Eigen::Matrix3f R;
   std::vector<Eigen::MatrixXf> mats;
-  mats = utils::fitGrid_new(Vertices, R, ordered_payload_vertices);
+  mats = utils::fitGridNew(Vertices, R, ordered_payload_vertices);
 
   Eigen::MatrixXf::Index col;
   payload_vertices.row(1).minCoeff(&col);
