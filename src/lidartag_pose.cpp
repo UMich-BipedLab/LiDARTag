@@ -101,7 +101,7 @@ Eigen::VectorXd d_pz_euler(
 //     Eigen::Vector3f translation(x[0], x[1], x[2]);
 
 //     Eigen::VectorXf grad_eig = Eigen::VectorXf::Zero(6);
-//     // if (_debug_info) {
+//     // if (debug_info_) {
 //     //     ROS_INFO_STREAM("Optimizing pose.... ");
 //     // }
 //     for(int i =0; i< d->size()-1; ++i){
@@ -879,7 +879,7 @@ double computeCost_euler(
 //     return cost_x + cost_y + cost_z;;
 // }
 
-// bool LidarTag::_optimizePoseGrad(ClusterFamily_t &cluster){
+// bool LidarTag::optimizePoseGrad(ClusterFamily_t & cluster){
 //     // Analytical gradient methods
 //     // LD_SLSQP  LD_MMA
 //     nlopt::opt opt(nlopt::LD_MMA, 6);
@@ -938,7 +938,7 @@ double computeCost_euler(
 //             Eigen::AngleAxisf(x[3], Eigen::Vector3f::UnitX()) *
 //             Eigen::AngleAxisf(x[4], Eigen::Vector3f::UnitY()) *
 //             Eigen::AngleAxisf(x[5], Eigen::Vector3f::UnitZ());
-//         if (_debug_info) {
+//         if (debug_info_) {
 //             std::cout << "optimzed euler angle : "
 //                       << x[3]*180/M_PI << "  "
 //                       << x[4]*180/M_PI << "  "
@@ -958,18 +958,18 @@ double computeCost_euler(
 //         cluster.pose_tag_to_lidar.rotation = rotation;
 //         // std::cout << "found minimum at f(" << x[0] << "," << x[1] << "," << x[2] << ") = "
 //         //     << std::setprecision(10) << minf << std::endl;
-//         if (_debug_info) {
+//         if (debug_info_) {
 //             std::cout << "found minimum at \n" << homogeneous << "\n the cost is: "
 //                 << std::setprecision(10) << minf << std::endl;
 //         }
 
 //     }
 //     catch(std::exception &e) {
-//         if (_debug_info) {
+//         if (debug_info_) {
 //             std::cout << "nlopt failed: " << e.what() << std::endl;
 //         }
 //     }
-//     if (minf > _optimization_percent * cluster.inliers / 100) {
+//     if (minf > optimization_percent_ * cluster.inliers / 100) {
 //         return false;
 //     } else {
 //         return true;
@@ -984,7 +984,7 @@ double computeCost_euler(
 // -2 if rejected by coverage of area
 // -3 initial guess is bad and optimization diverged
 // -4 initial guess is bad and optimization failed
-int LidarTag::_optimizePose(ClusterFamily_t & cluster)
+int LidarTag::optimizePose(ClusterFamily_t & cluster)
 {
   int num_points = cluster.merged_data.cols();
   // box_width, tag size
@@ -995,17 +995,17 @@ int LidarTag::_optimizePose(ClusterFamily_t & cluster)
     cluster.initial_pose.homogeneous, cluster.merged_data_h, template_bound, transformed_points);
   int status = 1;
 
-  if (_debug_info) {
-    RCLCPP_DEBUG_STREAM(get_logger(), "==== _optimizePose ====");
+  if (debug_info_) {
+    RCLCPP_DEBUG_STREAM(get_logger(), "==== optimizePose ====");
     float distance =
       std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.y, 2) + pow(cluster.average.z, 2));
     RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance);
     RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
     RCLCPP_DEBUG_STREAM(get_logger(), "Inital Cost: " << initial_cost);
-    RCLCPP_DEBUG_STREAM(get_logger(), "Cost Threshold: " << _optimization_percent * cluster.inliers / 100);
+    RCLCPP_DEBUG_STREAM(get_logger(), "Cost Threshold: " << optimization_percent_ * cluster.inliers / 100);
   }
 
-  if (initial_cost > _optimization_percent * cluster.inliers / 100) {
+  if (initial_cost > optimization_percent_ * cluster.inliers / 100) {
     status = -1;
     RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << status);
 
@@ -1018,7 +1018,7 @@ int LidarTag::_optimizePose(ClusterFamily_t & cluster)
   float initial_area = utils::computePolygonArea(convex_hull);
   float coverage_area = initial_area / (cluster.tag_size * cluster.tag_size);
   // float coa_tunable = 0.75;
-  if (coverage_area < _coa_tunable) {
+  if (coverage_area < coa_tunable_) {
     status = -2;
     RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << false);
 
@@ -1030,7 +1030,7 @@ int LidarTag::_optimizePose(ClusterFamily_t & cluster)
   x[0] = cluster.initial_pose.translation[0];
   x[1] = cluster.initial_pose.translation[1];
   x[2] = cluster.initial_pose.translation[2];
-  if (_derivative_method) {
+  if (derivative_method_) {
     x[3] = cluster.initial_pose.roll;
     x[4] = cluster.initial_pose.pitch;
     x[5] = cluster.initial_pose.yaw;
@@ -1048,16 +1048,16 @@ int LidarTag::_optimizePose(ClusterFamily_t & cluster)
   lb[0] = x[0] - 0.2;  //in meters
   lb[1] = x[1] - 0.2;
   lb[2] = x[2] - 0.2;
-  lb[3] = x[3] - _opt_lb;  // 1.57 in rad (180 deg)
-  lb[4] = x[4] - _opt_lb;
-  lb[5] = x[5] - _opt_lb;
+  lb[3] = x[3] - opt_lb_;  // 1.57 in rad (180 deg)
+  lb[4] = x[4] - opt_lb_;
+  lb[5] = x[5] - opt_lb_;
 
   ub[0] = x[0] + 0.2;
   ub[1] = x[1] + 0.2;
   ub[2] = x[2] + 0.2;
-  ub[3] = x[3] + _opt_ub;
-  ub[4] = x[4] + _opt_ub;
-  ub[5] = x[5] + _opt_ub;
+  ub[3] = x[3] + opt_ub_;
+  ub[4] = x[4] + opt_ub_;
+  ub[5] = x[5] + opt_ub_;
 
   // Numerical gradient methods
   // good: LN_PRAXIS   LN_NEWUOA_BOUND  LN_SBPLX
@@ -1073,7 +1073,7 @@ int LidarTag::_optimizePose(ClusterFamily_t & cluster)
   // LD_TNEWTON
 
   nlopt::algorithm opt_method;
-  switch (_optimization_solver) {
+  switch (optimization_solver_) {
     // Below is numerical gradient-based methods
     case 1:
       opt_method = nlopt::LN_PRAXIS;
@@ -1177,7 +1177,7 @@ int LidarTag::_optimizePose(ClusterFamily_t & cluster)
   opt.set_xtol_rel(x_tol);
   std::vector<double> steps = {0.01, 0.01, 0.01, 0.01, 0.01, 0.01};  // tx, ty, tz, r, p, y
   opt.set_default_initial_step(steps);
-  if (_derivative_method) {
+  if (derivative_method_) {
     opt.set_min_objective(computeCost_euler, &data);
   } else {
     opt.set_min_objective(computeCost_lie, &data);
@@ -1209,19 +1209,19 @@ int LidarTag::_optimizePose(ClusterFamily_t & cluster)
 
     //     return false; // timeout
     // }
-    if (minf > _optimization_percent * cluster.inliers / 1000) {
+    if (minf > optimization_percent_ * cluster.inliers / 1000) {
       status = -3;
-      if (_debug_info) {
+      if (debug_info_) {
         RCLCPP_WARN_STREAM(get_logger(), "Optimized Cost too large: " << std::setprecision(3) << minf);
         RCLCPP_WARN_STREAM(get_logger(), "Inital Cost: " << initial_cost);
-        RCLCPP_WARN_STREAM(get_logger(), "_optimization_percent: " << _optimization_percent);
+        RCLCPP_WARN_STREAM(get_logger(), "optimization_percent_: " << optimization_percent_);
         RCLCPP_WARN_STREAM(get_logger(), "cluster.inliers: " << cluster.inliers);
       }
-      if (initial_cost < 0.1 * _optimization_percent * cluster.inliers / 1000) {
+      if (initial_cost < 0.1 * optimization_percent_ * cluster.inliers / 1000) {
         status = 2;
-        if (_debug_info) {
+        if (debug_info_) {
           RCLCPP_WARN_STREAM(get_logger(), "Use initial pose.");
-          RCLCPP_WARN_STREAM(get_logger(), "_optimization_percent: " << _optimization_percent);
+          RCLCPP_WARN_STREAM(get_logger(), "optimization_percent_: " << optimization_percent_);
           RCLCPP_WARN_STREAM(get_logger(), "cluster.inliers: " << cluster.inliers);
         }
 
@@ -1235,7 +1235,7 @@ int LidarTag::_optimizePose(ClusterFamily_t & cluster)
     }
 
     Eigen::Matrix3f rotation;
-    if (_derivative_method) {
+    if (derivative_method_) {
       Eigen::Quaternion<float> q = Eigen::AngleAxisf(x[3], Eigen::Vector3f::UnitX()) *
                                    Eigen::AngleAxisf(x[4], Eigen::Vector3f::UnitY()) *
                                    Eigen::AngleAxisf(x[5], Eigen::Vector3f::UnitZ());
@@ -1245,8 +1245,8 @@ int LidarTag::_optimizePose(ClusterFamily_t & cluster)
       rotation = utils::Exp_SO3(q);
     }
 
-    if (_debug_info) {
-      if (_derivative_method) {
+    if (debug_info_) {
+      if (derivative_method_) {
         RCLCPP_DEBUG_STREAM(get_logger(), "Optimzed euler angle : "
           "Optimzed euler angle : " << x[3] * 180 / M_PI << ", " << x[4] * 180 / M_PI << ", "
                                     << x[5] * 180 / M_PI);
@@ -1266,7 +1266,7 @@ int LidarTag::_optimizePose(ClusterFamily_t & cluster)
     // std::cout << "found minimum at f(" << x[0] << "," << x[1] << "," << x[2] << ") = "
     //     << std::setprecision(10) << minf << std::endl;
 
-    if (_debug_info) {
+    if (debug_info_) {
       nlopt_result results_nlopt = static_cast<nlopt_result>(result);
       RCLCPP_DEBUG_STREAM(get_logger(), "Optimization result: " << std::string(nlopt_result_to_string(results_nlopt)));
       RCLCPP_DEBUG_STREAM(get_logger(), "Optimized cost is: " << std::setprecision(3) << minf);
@@ -1274,20 +1274,20 @@ int LidarTag::_optimizePose(ClusterFamily_t & cluster)
     }
   } catch (std::exception & e) {
     status = -4;
-    if (_debug_info)
+    if (debug_info_)
       RCLCPP_WARN_STREAM(get_logger(), "Pose optimization failed: " << e.what());
-    if (initial_cost < 0.1 * _optimization_percent * cluster.inliers / 1000) {
+    if (initial_cost < 0.1 * optimization_percent_ * cluster.inliers / 1000) {
       status = 3;
       cluster.pose_tag_to_lidar.homogeneous = cluster.initial_pose.homogeneous;
       cluster.pose_tag_to_lidar.translation = cluster.initial_pose.homogeneous.topRightCorner(3, 1);
       cluster.pose_tag_to_lidar.rotation = cluster.initial_pose.homogeneous.topLeftCorner(3, 3);
 
-      if (_debug_info)
+      if (debug_info_)
         RCLCPP_WARN_STREAM(get_logger(), "Use initial pose.");
     }
   }
 
-  if (_debug_info) {
+  if (debug_info_) {
     RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << status);
   }
 
@@ -1295,7 +1295,7 @@ int LidarTag::_optimizePose(ClusterFamily_t & cluster)
   // ROS_INFO_STREAM("Optimized Cost too large: "
   //         << std::setprecision(3) << minf);
   // ROS_INFO_STREAM("Inital Cost: " << initial_cost);
-  // ROS_INFO_STREAM("_optimization_percent: " << _optimization_percent);
+  // ROS_INFO_STREAM("optimization_percent_: " << optimization_percent_);
   // ROS_INFO_STREAM("cluster.inliers: " << cluster.inliers);
   return status;
 }

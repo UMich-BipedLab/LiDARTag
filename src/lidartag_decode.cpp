@@ -29,25 +29,23 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include "rclcpp/rclcpp.hpp" // package
-#include <functional>
-#include <numeric>
-
-// #include "KDTreeVectorOfVectorsAdaptor.h"
-#include "apriltag_utils.h"
 #include "lidartag.h"
+#include "apriltag_utils.h"
 #include "tag16h5.h"
 #include "tag49h14.h"
 #include "utils.h"
+
+#include <functional>
+#include <numeric>
 
 using namespace std;
 
 namespace BipedLab
 {
-void LidarTag::_getCodeNaive(string & Code, pcl::PointCloud<LidarPoints_t *> payload)
+void LidarTag::getCodeNaive(string & code, pcl::PointCloud<LidarPoints_t *> payload)
 {
   int topring = 0;
-  int bottomring = _beam_num;
+  int bottomring = beam_num_;
   PointXYZRI tl = payload[0]->point;
   PointXYZRI tr = payload[0]->point;
   PointXYZRI br = payload[0]->point;
@@ -62,24 +60,24 @@ void LidarTag::_getCodeNaive(string & Code, pcl::PointCloud<LidarPoints_t *> pay
     if (point.y < br.y && point.z < br.z) br = point;
   }
 
-  vector<int> payload49(_tag_family, 0);
-  int d = sqrt(_tag_family);
-  float IntervalY = abs((tl.y + bl.y) / 2 - (tr.y + br.y) / 2) / (d + _black_border - 1);
-  float IntervalZ = abs((tl.z + tr.z) / 2 - (bl.z + br.z) / 2) / (d + _black_border - 1);
+  vector<int> payload49(tag_family_, 0);
+  int d = sqrt(tag_family_);
+  float IntervalY = abs((tl.y + bl.y) / 2 - (tr.y + br.y) / 2) / (d + black_border_ - 1);
+  float IntervalZ = abs((tl.z + tr.z) / 2 - (bl.z + br.z) / 2) / (d + black_border_ - 1);
 
-  if (_fake_tag) {
+  if (fake_tag_) {
     tl.y = 0;
     tl.z = 0;
     IntervalY = 1;
     IntervalZ = 1;
     payload.clear();
-    payload.reserve((_tag_family + 4 * d * _black_border + 4 * (std::pow(_black_border, 2))));
+    payload.reserve((tag_family_ + 4 * d * black_border_ + 4 * (std::pow(black_border_, 2))));
     float j = 0;
     float k = 0;
     LidarPoints_t point;
-    for (int i = 0; i < (_tag_family + 4 * d * _black_border + 4 * (std::pow(_black_border, 2)));
+    for (int i = 0; i < (tag_family_ + 4 * d * black_border_ + 4 * (std::pow(black_border_, 2)));
          ++i) {
-      if (i % (d + 2 * _black_border) == 0 && i != 0) {
+      if (i % (d + 2 * black_border_) == 0 && i != 0) {
         k++;
         j = 0;
       }
@@ -102,46 +100,46 @@ void LidarTag::_getCodeNaive(string & Code, pcl::PointCloud<LidarPoints_t *> pay
   }
 
   // Calcutate Average intensity for thresholding
-  float AveIntensity = 0;
+  float avg_intensity = 0;
   for (int i = 0; i < payload.size(); ++i) {
-    AveIntensity += payload[i]->point.intensity;
+    avg_intensity += payload[i]->point.intensity;
   }
-  AveIntensity /= payload.size();
+  avg_intensity /= payload.size();
   // cout << "size: " << payload.size() << endl;
-  // cout << "AveIntensity: " << AveIntensity << endl;
+  // cout << "avg_intensity: " << avg_intensity << endl;
 
   // Split into grids
   for (int i = 0; i < payload.size(); ++i) {
-    PointXYZRI * pointPtr = &(payload[i]->point);
+    PointXYZRI * point_ptr = &(payload[i]->point);
     // cout << "i: " << i << endl;
-    // cout << "point.y: " << pointPtr->y << endl;
-    // cout << "point.z: " << pointPtr->z << endl;
-    float DeltaY = abs(pointPtr->y - tl.y);
-    float DeltaZ = abs(pointPtr->z - tl.z);
+    // cout << "point.y: " << point_ptr->y << endl;
+    // cout << "point.z: " << point_ptr->z << endl;
+    float delta_y = abs(point_ptr->y - tl.y);
+    float delta_z = abs(point_ptr->z - tl.z);
 
-    // if (DeltaY==0 || (DeltaY)) {
-    //     if (pointPtr->intensity < AveIntensity) payload49[0] -= 1;
+    // if (delta_y==0 || (delta_y)) {
+    //     if (point_ptr->intensity < avg_intensity) payload49[0] -= 1;
     //     else payload49[0] += 1;
     //     continue;
     // }
-    int Y = floor(DeltaY / IntervalY);
-    int Z = floor(DeltaZ / IntervalZ);
+    int y = floor(delta_y / IntervalY);
+    int z = floor(delta_z / IntervalZ);
     // cout << "Y: " << Y << endl;
     // cout << "Z: " << Z << endl;
 
     // remove black borders
     if (
-      Y >= _black_border && Z >= _black_border && Y <= d + _black_border &&
-      Z <= d + _black_border) {
-      int y = (Y - _black_border) % d;  // the yth column (remove the black border)
-      int z = (Z - _black_border) % d;  // the zth row (remove the black border)
+      y >= black_border_ && z >= black_border_ && y <= d + black_border_ &&
+      z <= d + black_border_) {
+      int y_2 = (y - black_border_) % d;  // the yth column (remove the black border)
+      int z_2 = (z - black_border_) % d;  // the zth row (remove the black border)
 
-      int k = d * z + y;  // index in a 1D vector
+      int k = d * z_2 + y_2;  // index in a 1D vector
       // cout << "y: " << y << endl;
       // cout << "z: " << z << endl;
       // cout << "k: " << k << endl;
-      // cout << "intensity: " << pointPtr->intensity << endl;
-      if (pointPtr->intensity <= AveIntensity)
+      // cout << "intensity: " << point_ptr->intensity << endl;
+      if (point_ptr->intensity <= avg_intensity)
         payload49[k] -= 1;
       else
         payload49[k] += 1;
@@ -151,33 +149,33 @@ void LidarTag::_getCodeNaive(string & Code, pcl::PointCloud<LidarPoints_t *> pay
   }
 
   // Threshold into black and white
-  for (int i = 0; i < _tag_family; ++i) {
+  for (int i = 0; i < tag_family_; ++i) {
     if (payload49[i] < 0)
-      Code += to_string(0);
+      code += to_string(0);
     else
-      Code += to_string(1);
+      code += to_string(1);
   }
 
-  for (int i = 0; i < _tag_family; ++i) {
+  for (int i = 0; i < tag_family_; ++i) {
     if (i % d == 0) {
       cout << "\n";
-      cout << " " << Code[i];
+      cout << " " << code[i];
     } else {
-      cout << " " << Code[i];
+      cout << " " << code[i];
     }
   }
 
-  Code += "UL";
+  code += "UL";
   // cout << "\ncodeB: " << Code << endl;
   // 0101111111111111UL
   // cout << "Code:  " << "0010001100011011UL" << endl;
   cout << "\nCode 1:  \n"
        << " 0 0 1 0\n 1 1 1 0\n 1 0 1 0\n 0 1 1 1" << endl;
   // exit(-1);
-  // Code = "0010001100011011UL";
-  // Code = "0b0000011111100000011000011000110011100000111111111UL";
-  // Code = "11111100000011000011000110011100000111111111UL"; //1
-  // Code = "0001100111110000011001100011111000000110001100011UL"; // 2
+  // code = "0010001100011011UL";
+  // code = "0b0000011111100000011000011000110011100000111111111UL";
+  // code = "11111100000011000011000110011100000111111111UL"; //1
+  // code = "0001100111110000011001100011111000000110001100011UL"; // 2
   // cout << "codeA: " << Code << endl;
 }
 
@@ -186,8 +184,8 @@ void LidarTag::_getCodeNaive(string & Code, pcl::PointCloud<LidarPoints_t *> pay
  * return -1: not enough return
  * return -2: fail corner detection
  */
-int LidarTag::_getCodeWeightedGaussian(
-  string & Code, Homogeneous_t & pose, int & payload_points, const PointXYZRI & average,
+int LidarTag::getCodeWeightedGaussian(
+  string & code, Homogeneous_t & pose, int & payload_points, const PointXYZRI & average,
   const pcl::PointCloud<LidarPoints_t *> & payload,
   const std::vector<LidarPoints_t *> & payload_boundary_ptr)
 {
@@ -202,20 +200,20 @@ int LidarTag::_getCodeWeightedGaussian(
    */
 
   // For visualization
-  visualization_msgs::msg::MarkerArray GridMarkerArray;
-  visualization_msgs::msg::Marker GridMarker;
+  visualization_msgs::msg::MarkerArray grid_marker_array;
+  visualization_msgs::msg::Marker grid_marker;
 
-  visualization_msgs::msg::Marker LineStrip;
-  LineStrip.header.frame_id = _pub_frame;
-  LineStrip.header.stamp = _current_scan_time;
-  LineStrip.ns = "boundary";
-  LineStrip.action = visualization_msgs::msg::Marker::ADD;
-  LineStrip.pose.orientation.w = 1.0;
-  LineStrip.id = 1;
-  LineStrip.type = visualization_msgs::msg::Marker::LINE_STRIP;
-  LineStrip.scale.x = 0.002;
-  LineStrip.color.b = 1.0;
-  LineStrip.color.a = 1.0;
+  visualization_msgs::msg::Marker line_strip;
+  line_strip.header.frame_id = pub_frame_;
+  line_strip.header.stamp = current_scan_time_;
+  line_strip.ns = "boundary";
+  line_strip.action = visualization_msgs::msg::Marker::ADD;
+  line_strip.pose.orientation.w = 1.0;
+  line_strip.id = 1;
+  line_strip.type = visualization_msgs::msg::Marker::LINE_STRIP;
+  line_strip.scale.x = 0.002;
+  line_strip.color.b = 1.0;
+  line_strip.color.a = 1.0;
 
   PointXYZRI p11{0, 0, -1000, 0};
   PointXYZRI p21{0, -1000, 0, 0};
@@ -231,55 +229,78 @@ int LidarTag::_getCodeWeightedGaussian(
   for (int i = 0; i < payload_boundary_ptr.size(); ++i) {
     PointXYZRI point = payload_boundary_ptr[i]->point;
 
-    if (point.z >= p11.z) p11 = point;
-    if (point.y >= p21.y) p21 = point;
-    if (point.z <= p31.z) p31 = point;
-    if (point.y <= p41.y) p41 = point;
+    if (point.z >= p11.z) {
+      p11 = point;
+    }
+
+    if (point.y >= p21.y) {
+      p21 = point;
+    }
+
+    if (point.z <= p31.z) {
+      p31 = point;
+    }
+
+    if (point.y <= p41.y) {
+      p41 = point;
+    }
   }
-  if (_grid_viz) {
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("11"), 0, 0, 0, p11, 1, 0.01);
-    GridMarkerArray.markers.push_back(GridMarker);
 
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("21"), 0, 0, 0, p21, 1, 0.01);
-    GridMarkerArray.markers.push_back(GridMarker);
+  if (grid_viz_) {
+    LidarTag::assignMarker(grid_marker, visualization_msgs::msg::Marker::CUBE,
+      "Grid_" + string("11"), 0, 0, 0, p11, 1, 0.01);
+    grid_marker_array.markers.push_back(grid_marker);
 
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("31"), 0, 0, 0, p31, 1, 0.01);
-    GridMarkerArray.markers.push_back(GridMarker);
+    LidarTag::assignMarker(grid_marker, visualization_msgs::msg::Marker::CUBE,
+      "Grid_" + string("21"), 0, 0, 0, p21, 1, 0.01);
+    grid_marker_array.markers.push_back(grid_marker);
 
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("41"), 0, 0, 0, p41, 1, 0.01);
-    GridMarkerArray.markers.push_back(GridMarker);
+    LidarTag::assignMarker(grid_marker, visualization_msgs::msg::Marker::CUBE,
+      "Grid_" + string("31"), 0, 0, 0, p31, 1, 0.01);
+    grid_marker_array.markers.push_back(grid_marker);
+
+    LidarTag::assignMarker(grid_marker, visualization_msgs::msg::Marker::CUBE,
+    "Grid_" + string("41"), 0, 0, 0, p41, 1, 0.01);
+    grid_marker_array.markers.push_back(grid_marker);
   }
 
   // Find the second large
   for (int i = 0; i < payload_boundary_ptr.size(); ++i) {
     PointXYZRI point = payload_boundary_ptr[i]->point;
-    if (point.z < p11.z && point.z >= p12.z) p12 = point;
-    if (point.y < p21.y && point.y >= p22.y) p22 = point;
 
-    if (point.z > p31.z && point.z <= p32.z) p32 = point;
-    if (point.y > p41.y && point.y <= p42.y) p42 = point;
+    if (point.z < p11.z && point.z >= p12.z) {
+      p12 = point;
+    }
+
+    if (point.y < p21.y && point.y >= p22.y) {
+      p22 = point;
+    }
+
+    if (point.z > p31.z && point.z <= p32.z) {
+      p32 = point;
+    }
+
+    if (point.y > p41.y && point.y <= p42.y) {
+      p42 = point;
+    }
   }
 
-  if (_grid_viz) {
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("12"), 0, 0, 0, p12, 1, 0.01);
-    GridMarkerArray.markers.push_back(GridMarker);
+  if (grid_viz_) {
+    LidarTag::assignMarker(grid_marker, visualization_msgs::msg::Marker::CUBE,
+      "Grid_" + string("12"), 0, 0, 0, p12, 1, 0.01);
+    grid_marker_array.markers.push_back(grid_marker);
 
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("22"), 0, 0, 0, p22, 1, 0.01);
-    GridMarkerArray.markers.push_back(GridMarker);
+    LidarTag::assignMarker(grid_marker, visualization_msgs::msg::Marker::CUBE,
+      "Grid_" + string("22"), 0, 0, 0, p22, 1, 0.01);
+    grid_marker_array.markers.push_back(grid_marker);
 
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("32"), 0, 0, 0, p32, 1, 0.01);
-    GridMarkerArray.markers.push_back(GridMarker);
+    LidarTag::assignMarker(grid_marker, visualization_msgs::msg::Marker::CUBE,
+      "Grid_" + string("32"), 0, 0, 0, p32, 1, 0.01);
+    grid_marker_array.markers.push_back(grid_marker);
 
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("42"), 0, 0, 0, p42, 1, 0.01);
-    GridMarkerArray.markers.push_back(GridMarker);
+    LidarTag::assignMarker(grid_marker, visualization_msgs::msg::Marker::CUBE,
+      "Grid_" + string("42"), 0, 0, 0, p42, 1, 0.01);
+    grid_marker_array.markers.push_back(grid_marker);
   }
 
   PointXYZRI p1 = utils::pointsAddDivide(p11, p12, 2);
@@ -291,7 +312,7 @@ int LidarTag::_getCodeWeightedGaussian(
   // if corners are not between certain angle or distance,
   // consider the tag is up right =>
   // change way of detection
-  int status = utils::checkCorners(_payload_size, p1, p2, p3, p4);
+  int status = utils::checkCorners(payload_size_, p1, p2, p3, p4);
   if (status != 0) {
     // the tag is up right
     p1 = {0, 0, -1000, 0};
@@ -311,31 +332,31 @@ int LidarTag::_getCodeWeightedGaussian(
     }
   }
 
-  if (_grid_viz) {
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("1"), 1, 1, 1, p1, 1, 0.01);
-    GridMarkerArray.markers.push_back(GridMarker);
+  if (grid_viz_) {
+    LidarTag::assignMarker(grid_marker, visualization_msgs::msg::Marker::CUBE,
+      "Grid_" + string("1"), 1, 1, 1, p1, 1, 0.01);
+    grid_marker_array.markers.push_back(grid_marker);
 
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("2"), 1, 1, 1, p2, 1, 0.01);
-    GridMarkerArray.markers.push_back(GridMarker);
+    LidarTag::assignMarker(grid_marker, visualization_msgs::msg::Marker::CUBE,
+      "Grid_" + string("2"), 1, 1, 1, p2, 1, 0.01);
+    grid_marker_array.markers.push_back(grid_marker);
 
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("3"), 1, 1, 1, p3, 1, 0.01);
-    GridMarkerArray.markers.push_back(GridMarker);
+    LidarTag::assignMarker(grid_marker, visualization_msgs::msg::Marker::CUBE,
+      "Grid_" + string("3"), 1, 1, 1, p3, 1, 0.01);
+    grid_marker_array.markers.push_back(grid_marker);
 
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Grid_" + string("4"), 1, 1, 1, p4, 1, 0.01);
-    GridMarkerArray.markers.push_back(GridMarker);
+    LidarTag::assignMarker(grid_marker, visualization_msgs::msg::Marker::CUBE,
+      "Grid_" + string("4"), 1, 1, 1, p4, 1, 0.01);
+    grid_marker_array.markers.push_back(grid_marker);
 
-    GridMarkerArray.markers.push_back(GridMarker);
+    grid_marker_array.markers.push_back(grid_marker);
   }
 
-  int d = std::sqrt(_tag_family);
-  Eigen::MatrixXf Vertices = Eigen::MatrixXf::Zero(3, 5);
-  utils::formGrid(Vertices, 0, 0, 0, _payload_size);
+  int d = std::sqrt(tag_family_);
+  Eigen::MatrixXf vertices = Eigen::MatrixXf::Zero(3, 5);
+  utils::formGrid(vertices, 0, 0, 0, payload_size_);
   Eigen::Matrix3f R;
-  // Eigen::MatrixXf VerticesOffset = (Vertices.colwise() -
+  // Eigen::MatrixXf VerticesOffset = (vertices.colwise() -
   // utils::toEigen(average)); cout << "vertice: " << Vertices << endl; cout <<
   // "verticeOffset: " << VerticesOffset << endl; cout << "Average: " <<
   // utils::toEigen(average) << endl;
@@ -344,79 +365,79 @@ int LidarTag::_getCodeWeightedGaussian(
   utils::minus(p3, average);
   utils::minus(p4, average);
 
-  utils::fitGrid(Vertices, R, p1, p2, p3, p4);
-  Eigen::Vector3f Angle = utils::rotationMatrixToEulerAngles(R);
+  utils::fitGrid(vertices, R, p1, p2, p3, p4);
+  Eigen::Vector3f angle = utils::rotationMatrixToEulerAngles(R);
 
-  if (_grid_viz) {
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Model_" + string("1"), 0, 1, 0,
-      utils::toVelodyne(Vertices.col(1)), 1, 0.01);
+  if (grid_viz_) {
+    LidarTag::assignMarker(
+      grid_marker, visualization_msgs::msg::Marker::CUBE, "Model_" + string("1"), 0, 1, 0,
+      utils::toVelodyne(vertices.col(1)), 1, 0.01);
 
-    GridMarkerArray.markers.push_back(GridMarker);
+    grid_marker_array.markers.push_back(grid_marker);
 
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Model_" + string("2"), 0, 1, 0,
-      utils::toVelodyne(Vertices.col(2)), 1, 0.01);
+    LidarTag::assignMarker(
+      grid_marker, visualization_msgs::msg::Marker::CUBE, "Model_" + string("2"), 0, 1, 0,
+      utils::toVelodyne(vertices.col(2)), 1, 0.01);
 
-    GridMarkerArray.markers.push_back(GridMarker);
+    grid_marker_array.markers.push_back(grid_marker);
 
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Model_" + string("3"), 0, 1, 0,
-      utils::toVelodyne(Vertices.col(3)), 1, 0.01);
+    LidarTag::assignMarker(
+      grid_marker, visualization_msgs::msg::Marker::CUBE, "Model_" + string("3"), 0, 1, 0,
+      utils::toVelodyne(vertices.col(3)), 1, 0.01);
 
-    GridMarkerArray.markers.push_back(GridMarker);
+    grid_marker_array.markers.push_back(grid_marker);
 
-    LidarTag::_assignMarker(
-      GridMarker, visualization_msgs::msg::Marker::CUBE, "Model_" + string("4"), 0, 1, 0,
-      utils::toVelodyne(Vertices.col(4)), 1, 0.01);
+    LidarTag::assignMarker(
+      grid_marker, visualization_msgs::msg::Marker::CUBE, "Model_" + string("4"), 0, 1, 0,
+      utils::toVelodyne(vertices.col(4)), 1, 0.01);
 
-    GridMarkerArray.markers.push_back(GridMarker);
+    grid_marker_array.markers.push_back(grid_marker);
 
     geometry_msgs::msg::Point p;
-    p.x = Vertices(0, 1);
-    p.y = Vertices(1, 1);
-    p.z = Vertices(2, 1);
-    LineStrip.points.push_back(p);
-    p.x = Vertices(0, 2);
-    p.y = Vertices(1, 2);
-    p.z = Vertices(2, 2);
-    LineStrip.points.push_back(p);
-    p.x = Vertices(0, 3);
-    p.y = Vertices(1, 3);
-    p.z = Vertices(2, 3);
-    LineStrip.points.push_back(p);
-    p.x = Vertices(0, 4);
-    p.y = Vertices(1, 4);
-    p.z = Vertices(2, 4);
-    LineStrip.points.push_back(p);
-    p.x = Vertices(0, 1);
-    p.y = Vertices(1, 1);
-    p.z = Vertices(2, 1);
-    LineStrip.points.push_back(p);
+    p.x = vertices(0, 1);
+    p.y = vertices(1, 1);
+    p.z = vertices(2, 1);
+    line_strip.points.push_back(p);
+    p.x = vertices(0, 2);
+    p.y = vertices(1, 2);
+    p.z = vertices(2, 2);
+    line_strip.points.push_back(p);
+    p.x = vertices(0, 3);
+    p.y = vertices(1, 3);
+    p.z = vertices(2, 3);
+    line_strip.points.push_back(p);
+    p.x = vertices(0, 4);
+    p.y = vertices(1, 4);
+    p.z = vertices(2, 4);
+    line_strip.points.push_back(p);
+    p.x = vertices(0, 1);
+    p.y = vertices(1, 1);
+    p.z = vertices(2, 1);
+    line_strip.points.push_back(p);
   }
 
   // Calcutate Average intensity for thresholding
-  float AveIntensity = 0;
+  float avg_intensity = 0;
   for (int i = 0; i < payload.size(); ++i) {
-    AveIntensity += payload[i]->point.intensity;
+    avg_intensity += payload[i]->point.intensity;
   }
 
-  AveIntensity /= payload.size();
+  avg_intensity /= payload.size();
 
   vector<PayloadVoting_t> Votes(payload.size());
-  vector<float> vR(std::pow((d + 2 * _black_border), 2));
-  vector<float> vG(std::pow((d + 2 * _black_border), 2));
-  vector<float> vB(std::pow((d + 2 * _black_border), 2));
+  vector<float> v_r(std::pow((d + 2 * black_border_), 2));
+  vector<float> v_g(std::pow((d + 2 * black_border_), 2));
+  vector<float> v_b(std::pow((d + 2 * black_border_), 2));
 
   // pick a random color for each cell
-  if (_grid_viz) {
-    for (int i = 0; i < vR.size(); ++i) {
+  if (grid_viz_) {
+    for (int i = 0; i < v_r.size(); ++i) {
       float r = (double)rand() / RAND_MAX;
       float g = (double)rand() / RAND_MAX;
       float b = (double)rand() / RAND_MAX;
-      vR[i] = r;
-      vG[i] = g;
-      vB[i] = b;
+      v_r[i] = r;
+      v_g[i] = g;
+      v_b[i] = b;
     }
   }
 
@@ -424,90 +445,90 @@ int LidarTag::_getCodeWeightedGaussian(
   for (int i = 0; i < payload.size(); ++i) {
     float t14, t12;
     Eigen::Vector2f v14, v12;
-    PointXYZRI * pointPtr = &(payload[i]->point);
-    utils::getProjection(p1, p4, *pointPtr, t14, v14);
-    utils::getProjection(p1, p2, *pointPtr, t12, v12);
-    Votes[i].p = pointPtr;
+    PointXYZRI * point_ptr = &(payload[i]->point);
+    utils::getProjection(p1, p4, *point_ptr, t14, v14);
+    utils::getProjection(p1, p2, *point_ptr, t12, v12);
+    Votes[i].p = point_ptr;
     PointXYZRI p;  // for visualization
-    utils::assignCellIndex(_payload_size, R, p, average, d + 2 * _black_border, Votes[i]);
-    if (_grid_viz) {
-      LidarTag::_assignMarker(
-        GridMarker, visualization_msgs::msg::Marker::SPHERE, "TransPoints", vR[Votes[i].cell],
-        vG[Votes[i].cell], vB[Votes[i].cell], p, i, 0.005);
-      GridMarkerArray.markers.push_back(GridMarker);
+    utils::assignCellIndex(payload_size_, R, p, average, d + 2 * black_border_, Votes[i]);
+    if (grid_viz_) {
+      LidarTag::assignMarker(
+        grid_marker, visualization_msgs::msg::Marker::SPHERE, "TransPoints",
+        v_r[Votes[i].cell], v_g[Votes[i].cell], v_b[Votes[i].cell], p, i, 0.005);
+      grid_marker_array.markers.push_back(grid_marker);
     }
 
   }
-  vector<vector<PayloadVoting_t *>> Grid(std::pow((d + 2 * _black_border), 2));
-  utils::sortPointsToGrid(Grid, Votes);
-  int TooLessReturn = 0;
-  int PayloadPointCount = 0;
-  for (int i = (d + 2 * _black_border) * _black_border + _black_border;
-       i < (d + 2 * _black_border) * (_black_border + d) - _black_border; ++i) {
+  vector<vector<PayloadVoting_t *>> grid(std::pow((d + 2 * black_border_), 2));
+  utils::sortPointsToGrid(grid, Votes);
+  int too_less_return = 0;
+  int payload_point_count = 0;
+  for (int i = (d + 2 * black_border_) * black_border_ + black_border_;
+       i < (d + 2 * black_border_) * (black_border_ + d) - black_border_; ++i) {
     if (
-      (i % (d + 2 * _black_border) < _black_border) ||
-      (i % (d + 2 * _black_border) > (d + _black_border - 1)))
+      (i % (d + 2 * black_border_) < black_border_) ||
+      (i % (d + 2 * black_border_) > (d + black_border_ - 1)))
       continue;
 
-    if (Grid[i].size() < _min_returns_per_grid) TooLessReturn++;
-    if (TooLessReturn > _max_decode_hamming) return -1;
+    if (grid[i].size() < min_returns_per_grid_) too_less_return++;
+    if (too_less_return > max_decode_hamming_) return -1;
 
-    float WeightedProb = 0;
-    float WeightSum = 0;
-    float minIntensity = 10000.;
-    float maxIntensity = -1.;
+    float weighted_prob = 0;
+    float weight_sum = 0;
+    float min_intensity = 10000.;
+    float max_intensity = -1.;
     double r;
     double g;
     double b;
 
     // pick a random color for each cell
-    if (_grid_viz) {
+    if (grid_viz_) {
       r = (double)rand() / RAND_MAX;
       g = (double)rand() / RAND_MAX;
       b = (double)rand() / RAND_MAX;
     }
 
-    for (int j = 0; j < Grid[i].size(); ++j) {
-      if (_grid_viz) {
-        LidarTag::_assignMarker(
-          GridMarker, visualization_msgs::msg::Marker::SPHERE, "Point" + to_string(i), r, g, b,
-          *(Grid[i][j]->p), j, 0.005);
-        GridMarkerArray.markers.push_back(GridMarker);
+    for (int j = 0; j < grid[i].size(); ++j) {
+      if (grid_viz_) {
+        LidarTag::assignMarker(
+          grid_marker, visualization_msgs::msg::Marker::SPHERE, "Point" + to_string(i), r, g, b,
+          *(grid[i][j]->p), j, 0.005);
+        grid_marker_array.markers.push_back(grid_marker);
 
-        LidarTag::_assignMarker(
-          GridMarker, visualization_msgs::msg::Marker::SPHERE, "Center" + to_string(i), 1, 1, 1,
-          Grid[i][j]->centroid, j, 0.005);
-        GridMarkerArray.markers.push_back(GridMarker);
+        LidarTag::assignMarker(
+          grid_marker, visualization_msgs::msg::Marker::SPHERE, "Center" + to_string(i), 1, 1, 1,
+          grid[i][j]->centroid, j, 0.005);
+        grid_marker_array.markers.push_back(grid_marker);
 
-        LidarTag::_assignMarker(
-          GridMarker, visualization_msgs::msg::Marker::TEXT_VIEW_FACING, "Prob" + to_string(i), 1, 1, 1,
-          *(Grid[i][j]->p), j, 0.003, to_string((Grid[i][j]->p->intensity)));
+        LidarTag::assignMarker(
+          grid_marker, visualization_msgs::msg::Marker::TEXT_VIEW_FACING, "Prob" + to_string(i), 1, 1, 1,
+          *(grid[i][j]->p), j, 0.003, to_string((grid[i][j]->p->intensity)));
 
-        GridMarkerArray.markers.push_back(GridMarker);
+        grid_marker_array.markers.push_back(grid_marker);
       }
-      WeightedProb += Grid[i][j]->weight * Grid[i][j]->p->intensity;
-      WeightSum += Grid[i][j]->weight;
+      weighted_prob += grid[i][j]->weight * grid[i][j]->p->intensity;
+      weight_sum += grid[i][j]->weight;
     }
-    WeightedProb /= WeightSum;
-    PayloadPointCount += Grid[i].size();
+    weighted_prob /= weight_sum;
+    payload_point_count += grid[i].size();
 
-    if (WeightedProb > 0.5)
-      Code += to_string(1);
+    if (weighted_prob > 0.5)
+      code += to_string(1);
     else
-      Code += to_string(0);
+      code += to_string(0);
   }
-  payload_points = PayloadPointCount;
+  payload_points = payload_point_count;
 
-  Code += "UL";
+  code += "UL";
 
-  if (_grid_viz) {
-    _payload_grid_pub->publish(GridMarkerArray);
-    _payload_grid_line_pub->publish(LineStrip);
+  if (grid_viz_) {
+    payload_grid_pub_->publish(grid_marker_array);
+    payload_grid_line_pub_->publish(line_strip);
   }
   return 0;
 }
 
-Eigen::MatrixXf LidarTag::_construct3DShapeMarker(
+Eigen::MatrixXf LidarTag::construct3DShapeMarker(
   RKHSDecoding_t & rkhs_decoding, const double & ell)
 {
   Eigen::VectorXf offset_intensity =
@@ -526,6 +547,7 @@ Eigen::MatrixXf LidarTag::_construct3DShapeMarker(
       neg_indx++;
     }
   }
+
   pos_vec.conservativeResize(pos_indx);
   neg_vec.conservativeResize(neg_indx);
 
@@ -541,20 +563,21 @@ Eigen::MatrixXf LidarTag::_construct3DShapeMarker(
   pos_vec *= ell;
   neg_vec *= ell;
 
-  Eigen::MatrixXf template_points_3D = rkhs_decoding.template_points;
+  Eigen::MatrixXf template_points_3d = rkhs_decoding.template_points;
   pos_indx = 0;
   neg_indx = 0;
+
   for (int i = 0; i < rkhs_decoding.num_points; ++i) {
     if (offset_intensity[i] > 0) {
-      template_points_3D(0, i) = pos_vec[pos_indx];
+      template_points_3d(0, i) = pos_vec[pos_indx];
       pos_indx++;
     } else {
-      template_points_3D(0, i) = neg_vec[neg_indx];
+      template_points_3d(0, i) = neg_vec[neg_indx];
       neg_indx++;
     }
   }
 
-  return template_points_3D;
+  return template_points_3d;
 }
 
 void LidarTag::singleTask(
@@ -567,12 +590,12 @@ void LidarTag::singleTask(
   const Eigen::VectorXf kernel_y = (y_ary - pc1_j(1)).square();
   const Eigen::VectorXf kernel_z = (z_ary - pc1_j(2)).square();
   const Eigen::VectorXf kernel_l = (i_ary - pc1_j(3)).square();
-  Eigen::VectorXf geo_kernel =
-    geo_sig * (-(kernel_x + kernel_y + kernel_z).cwiseSqrt() / (2 * std::pow(geo_ell, 2)))
-                .array()
-                .exp();  // 1Xnum1
-  Eigen::VectorXf feat_kernel =
-    1.0 * (-kernel_l.cwiseSqrt() / (2 * std::pow(feature_ell, 2))).array().exp();  // 1Xnum1
+
+  Eigen::VectorXf geo_kernel = geo_sig * (-(kernel_x + kernel_y + kernel_z).cwiseSqrt()
+    / (2 * std::pow(geo_ell, 2))).array().exp();  // 1Xnum1
+
+  Eigen::VectorXf feat_kernel = 1.0 * (-kernel_l.cwiseSqrt()
+    / (2 * std::pow(feature_ell, 2))).array().exp();  // 1Xnum1
 
   score += geo_kernel.dot(feat_kernel);
 }
@@ -588,12 +611,11 @@ void LidarTag::singleTaskFixedSize(
   Eigen::Matrix<float, 1, 3000> kernel_y = (y_ary - pc1_j(1)).square();
   Eigen::Matrix<float, 1, 3000> kernel_z = (z_ary - pc1_j(2)).square();
   Eigen::Matrix<float, 1, 3000> kernel_l = (i_ary - pc1_j(3)).square();
-  Eigen::VectorXf geo_kernel =
-    geo_sig * (-(kernel_x + kernel_y + kernel_z).cwiseSqrt() / (2 * std::pow(geo_ell, 2)))
-                .array()
-                .exp();  // 1Xnum1
-  Eigen::VectorXf feat_kernel =
-    1.0 * (-kernel_l.cwiseSqrt() / (2 * std::pow(feature_ell, 2))).array().exp();  // 1Xnum1
+  Eigen::VectorXf geo_kernel = geo_sig * (-(kernel_x + kernel_y + kernel_z).cwiseSqrt()
+    / (2 * std::pow(geo_ell, 2))).array().exp();  // 1Xnum1
+
+  Eigen::VectorXf feat_kernel = 1.0 * (-kernel_l.cwiseSqrt()
+    / (2 * std::pow(feature_ell, 2))).array().exp();  // 1Xnum1
 
   score += geo_kernel.dot(feat_kernel);
 }
@@ -656,6 +678,7 @@ void LidarTag::test(
   int num_ary = x_ary.cols();
   Eigen::Matrix<float, 1, pre_set_size> zeros_out_mat =
     Eigen::Matrix<float, 1, pre_set_size>::Ones();
+
   zeros_out_mat.segment(num_ary, pre_set_size - 1).setZero();
   // Eigen::VectorXf kernel_x = Eigen::VectorXf::Zero(num_ary);
   // Eigen::VectorXf kernel_y = Eigen::VectorXf::Zero(num_ary);
@@ -690,12 +713,11 @@ void LidarTag::test(
     if (kernel_l.hasNaN()) {
       cout << "k_l nan" << endl;
     }
-    Eigen::Matrix<float, 1, pre_set_size> geo_kernel_fixed =
-      geo_sig * (-(kernel_x + kernel_y + kernel_z).cwiseSqrt() / (2 * std::pow(geo_ell, 2)))
-                  .array()
-                  .exp();  // 1Xnum1
-    Eigen::Matrix<float, 1, pre_set_size> feat_kernel_fixed =
-      1.0 * (-kernel_l.cwiseSqrt() / (2 * std::pow(feature_ell, 2))).array().exp();  // 1Xnum1
+    Eigen::Matrix<float, 1, pre_set_size> geo_kernel_fixed = geo_sig
+      * (-(kernel_x + kernel_y + kernel_z).cwiseSqrt() / (2 * std::pow(geo_ell, 2))).array().exp();  // 1Xnum1
+
+    Eigen::Matrix<float, 1, pre_set_size> feat_kernel_fixed = 1.0 * (-kernel_l.cwiseSqrt()
+      / (2 * std::pow(feature_ell, 2))).array().exp();  // 1Xnum1
 
     Eigen::Matrix<float, 1, pre_set_size> geo_kernel = geo_kernel_fixed.cwiseProduct(zeros_out_mat);
     Eigen::Matrix<float, 1, pre_set_size> feat_kernel = feat_kernel.cwiseProduct(zeros_out_mat);
@@ -753,19 +775,20 @@ void LidarTag::computeFunctionVectorInnerProductThreading(
   const Eigen::ArrayXf z_ary = pc2.row(2).array();
   const Eigen::ArrayXf i_ary = pc2.row(3).array();
 
-  _thread_vec->reset_counter();
-  const int quotient = num_pc1 / _num_threads;
-  const int remainder = num_pc1 % _num_threads;
-  Eigen::VectorXf score_vec = Eigen::VectorXf::Zero(_num_threads);
+  thread_vec_->reset_counter();
+  const int quotient = num_pc1 / num_threads_;
+  const int remainder = num_pc1 % num_threads_;
+  Eigen::VectorXf score_vec = Eigen::VectorXf::Zero(num_threads_);
   int num_tasks = 0;
   int start_task = 0;
   int num_tasks_tot = 0;
-  for (int i = 0; i < _num_threads; ++i) {
+
+  for (int i = 0; i < num_threads_; ++i) {
     start_task = quotient * i;
-    if (i != _num_threads - 1) {
+    if (i != num_threads_ - 1) {
       num_tasks = quotient;
     } else {
-      num_tasks = num_pc1 - quotient * (_num_threads - 1);
+      num_tasks = num_pc1 - quotient * (num_threads_ - 1);
     }
     // cout << "i: " << i << endl;
     // cout << "size1: " << num_pc1 << endl;
@@ -776,25 +799,25 @@ void LidarTag::computeFunctionVectorInnerProductThreading(
     std::vector<int> indices(num_tasks);
     std::iota(indices.begin(), indices.end(), start_task);
     Eigen::MatrixXf test_mat = pc1(Eigen::all, indices);
-    // _thread_vec->enqueueTask(std::bind(&LidarTag::test, this, pc1));
+    // thread_vec_->enqueueTask(std::bind(&LidarTag::test, this, pc1));
 
-    _thread_vec->enqueueTask(std::bind(
+    thread_vec_->enqueueTask(std::bind(
       &LidarTag::multipleTasks, this, x_ary, y_ary, z_ary, i_ary, test_mat, geo_sig, feature_ell,
       geo_ell, std::ref(score_vec[i])));
 
-    //_thread_vec->enqueueTask(std::bind(&LidarTag::multipleTasks, this,
+    //thread_vec_->enqueueTask(std::bind(&LidarTag::multipleTasks, this,
     //            x_ary, y_ary, z_ary, i_ary,
     //            test_mat,
     //            geo_sig, feature_ell, geo_ell, std::ref(score_vec[i])));
   }
-  _thread_vec->wait_until_finished(_num_threads);
+  thread_vec_->wait_until_finished(num_threads_);
   score = score_vec.sum() / num_pc1 / num_pc2;
 
   // XXX: works fine and results are correct
-  // _thread_vec->reset_counter();
+  // thread_vec_->reset_counter();
   // Eigen::VectorXf score_vec(num_pc1);
   // for (int i = 0; i < num_pc1; ++i) {
-  //     _thread_vec->enqueueTask(
+  //     thread_vec_->enqueueTask(
   //             std::bind(
   //                &LidarTag::singleTask, this,
   //                x_ary, y_ary, z_ary,
@@ -802,49 +825,49 @@ void LidarTag::computeFunctionVectorInnerProductThreading(
   //                geo_sig, feature_ell, geo_ell,
   //                std::ref(score_vec[i])));
   // }
-  // _thread_vec->wait_until_finished(num_pc1);
+  // thread_vec_->wait_until_finished(num_pc1);
   // score = score_vec.sum()/num_pc1/num_pc2;
 
   // XXX: works fine and results are correct
-  // _thread_vec->reset_counter();
+  // thread_vec_->reset_counter();
   // Eigen::VectorXf score_vec = Eigen::VectorXf::Zero(num_pc1);
   // for (int i = 0; i < num_pc1; ++i) {
-  //     _thread_vec->enqueueTask(std::bind(&LidarTag::multipleTasks, this,
+  //     thread_vec_->enqueueTask(std::bind(&LidarTag::multipleTasks, this,
   //                 x_ary, y_ary, z_ary, i_ary, pc1.block(0, i, 4, 1),
   //                 geo_sig, feature_ell, geo_ell, std::ref(score_vec[i])));
   // }
-  // _thread_vec->wait_until_finished(num_pc1);
+  // thread_vec_->wait_until_finished(num_pc1);
   // score = score_vec.sum()/num_pc1/num_pc2;
 
   // XXX: Running testing function
-  // _thread_vec->reset_counter();
+  // thread_vec_->reset_counter();
   // Eigen::VectorXf score_vec = Eigen::VectorXf::Zero(num_pc1);
   // for (int i = 0; i < num_pc1; ++i) {
-  //     _thread_vec->enqueueTask(std::bind(&LidarTag::test, this));
+  //     thread_vec_->enqueueTask(std::bind(&LidarTag::test, this));
   // }
-  // _thread_vec->wait_until_finished(num_pc1);
+  // thread_vec_->wait_until_finished(num_pc1);
   // score = score_vec.sum()/num_pc1/num_pc2;
 
   // XXX: Deosn't work
-  // _thread_vec->reset_counter();
-  // const int quotient = num_pc1 / _num_threads;
-  // const int remainder = num_pc1 % _num_threads;
-  // Eigen::VectorXf score_vec = Eigen::VectorXf::Zero(_num_threads);
+  // thread_vec_->reset_counter();
+  // const int quotient = num_pc1 / num_threads_;
+  // const int remainder = num_pc1 % num_threads_;
+  // Eigen::VectorXf score_vec = Eigen::VectorXf::Zero(num_threads_);
   // int num_tasks = 0;
   // int start_task = 0;
   // int num_tasks_tot = 0;
-  // for (int i = 0; i < _num_threads; ++i) {
+  // for (int i = 0; i < num_threads_; ++i) {
   //     start_task = quotient * i;
-  //     if (i != _num_threads - 1) {
+  //     if (i != num_threads_ - 1) {
   //         num_tasks = quotient;
   //     }
   //     else {
-  //         num_tasks = num_pc1 - quotient * (_num_threads - 1);
+  //         num_tasks = num_pc1 - quotient * (num_threads_ - 1);
   //     }
   //     // multipleTasks(x_ary, y_ary, z_ary, i_ary,
   //     //         pc1.block(0, start_task, 4, num_tasks),
   //     //         geo_sig, feature_ell, geo_ell, std::ref(score_vec[i]));
-  //     // _thread_vec->enqueueTask(std::bind(&LidarTag::test, this));
+  //     // thread_vec_->enqueueTask(std::bind(&LidarTag::test, this));
   //     num_tasks_tot += num_tasks;
   //     // constexpr int tmp = num_tasks;
   //     Eigen::MatrixXf test_mat = pc1.block(0, start_task, 4, num_tasks);
@@ -854,12 +877,12 @@ void LidarTag::computeFunctionVectorInnerProductThreading(
   //     //     test_mat.col(j) = pc1.block<4, 1>(0, start_task);
   //     // }
   //
-  //     // cout << i << "/" << _num_threads << endl;
+  //     // cout << i << "/" << num_threads_ << endl;
   //     // cout << "test_mat: " << test_mat.rows() << "," << test_mat.cols() <<
   //     endl;
   //     // cout << "pc1: " << pc1.rows() << "," << pc1.cols() << endl;
   //     // cout << "start_task, num tasks: " << start_task << "," << num_tasks
-  //     << endl; _thread_vec->enqueueTask(std::bind(&LidarTag::multipleTasks,
+  //     << endl; thread_vec_->enqueueTask(std::bind(&LidarTag::multipleTasks,
   //     this,
   //                 x_ary, y_ary, z_ary, i_ary,
   //                 // std::cref(pc1.block(0, start_task, 4, num_tasks)),
@@ -868,7 +891,7 @@ void LidarTag::computeFunctionVectorInnerProductThreading(
   //                 geo_sig, feature_ell, geo_ell, std::ref(score_vec[i])));
   // }
   // // cout << "wait..." << endl;
-  // _thread_vec->wait_until_finished(_num_threads);
+  // thread_vec_->wait_until_finished(num_threads_);
   // // std::cout << "score_vec: " << score_vec << endl;
   // score = score_vec.sum()/num_pc1/num_pc2;
   // // cout << "num_tasks_tot/total tasks: " << num_tasks_tot << "/" << num_pc1
@@ -877,18 +900,18 @@ void LidarTag::computeFunctionVectorInnerProductThreading(
   // // cout << "==============================" << endl;
 
   // XXX: sometimes work, sometimes do not
-  // _thread_vec->reset_counter();
+  // thread_vec_->reset_counter();
   // constexpr int points_per_task = 2;
   // int num_tasks = std::floor(num_pc1 / points_per_task);
   // Eigen::VectorXf score_vec = Eigen::VectorXf::Zero(num_tasks);
   // for (int task = 0; task < num_tasks; ++task) {
   //     int start_task = task * points_per_task;
-  //     _thread_vec->enqueueTask(std::bind(&LidarTag::multipleTasks, this,
+  //     thread_vec_->enqueueTask(std::bind(&LidarTag::multipleTasks, this,
   //                 x_ary, y_ary, z_ary, i_ary,
   //                 pc1.block<4, points_per_task>(0, start_task),
   //                 geo_sig, feature_ell, geo_ell, std::ref(score_vec[task])));
   // }
-  // _thread_vec->wait_until_finished(num_tasks);
+  // thread_vec_->wait_until_finished(num_tasks);
   // score = score_vec.sum()/num_pc1/num_pc2;
 }
 
@@ -899,7 +922,7 @@ void LidarTag::computeFunctionOriginalInnerProductTBB(
 {
   Eigen::MatrixXf inner_prod = Eigen::MatrixXf::Zero(num_pc1, num_pc2);
   tbb::parallel_for(
-    tbb::blocked_range2d<size_t>(0, num_pc1, _num_threads, 0, num_pc2, _num_threads),
+    tbb::blocked_range2d<size_t>(0, num_pc1, num_threads_, 0, num_pc2, num_threads_),
     [&inner_prod, &pc1, &pc2, &feature_ell, &geo_sig,
      geo_ell](const tbb::blocked_range2d<size_t> & r) {
       for (auto i = r.rows().begin(); i < r.rows().end(); ++i) {
@@ -934,20 +957,20 @@ void LidarTag::computeFunctionVectorInnerProductTBBThreadingManualScheduling(
   const Eigen::ArrayXf z_ary = pc2.row(2).array();
   const Eigen::ArrayXf i_ary = pc2.row(3).array();
 
-  int num_total_tasks = _num_threads * 1;
+  int num_total_tasks = num_threads_ * 1;
   const int quotient = num_pc1 / num_total_tasks;
   const int remainder = num_pc1 % num_total_tasks;
   Eigen::VectorXf score_vec = Eigen::VectorXf::Zero(num_total_tasks);
   int num_tasks = 0;
   int start_task = 0;
   int num_tasks_tot = 0;
-  // for (int i = 0; i < _num_threads; ++i) {
+  // for (int i = 0; i < num_threads_; ++i) {
   tbb::parallel_for(int(0), num_total_tasks, [&](int i) {
     start_task = quotient * i;
-    if (i != _num_threads - 1) {
+    if (i != num_threads_ - 1) {
       num_tasks = quotient;
     } else {
-      num_tasks = num_pc1 - quotient * (_num_threads - 1);
+      num_tasks = num_pc1 - quotient * (num_threads_ - 1);
     }
     std::vector<int> indices(num_tasks);
     std::iota(indices.begin(), indices.end(), start_task);
@@ -1046,12 +1069,12 @@ void LidarTag::computeFunctionVectorInnerProduct(
     const Eigen::VectorXf kernel_y = (y_ary - pc1(1, j)).square();
     const Eigen::VectorXf kernel_z = (z_ary - pc1(2, j)).square();
     const Eigen::VectorXf kernel_l = (i_ary - pc1(3, j)).square();
-    Eigen::VectorXf geo_kernel =
-      geo_sig * (-(kernel_x + kernel_y + kernel_z).cwiseSqrt() / (2 * std::pow(geo_ell, 2)))
-                  .array()
-                  .exp();  // 1Xnum1
-    Eigen::VectorXf feat_kernel =
-      1.0 * (-kernel_l.cwiseSqrt() / (2 * std::pow(feature_ell, 2))).array().exp();  // 1Xnum1
+
+    Eigen::VectorXf geo_kernel = geo_sig * (-(kernel_x + kernel_y + kernel_z).cwiseSqrt()
+      / (2 * std::pow(geo_ell, 2))).array().exp();  // 1Xnum1
+
+    Eigen::VectorXf feat_kernel = 1.0 * (-kernel_l.cwiseSqrt()
+      / (2 * std::pow(feature_ell, 2))).array().exp();  // 1Xnum1
 
     inner_prod_sum += geo_kernel.dot(feat_kernel);
   }
@@ -1070,17 +1093,14 @@ void LidarTag::computeFunctionMatrixInnerProduct(
   geo_dummy << 1, 1, 1, 0;
   feat_dummy << 0, 0, 0, 1;
   Eigen::MatrixXf inner_prod = Eigen::MatrixXf::Zero(num_pc1, num_pc2);
+
   for (int j = 0; j < num_pc1; ++j) {
     Eigen::MatrixXf repmat = pc1.col(j) * ones;
     Eigen::MatrixXf kernel = (pc2 - repmat).array().square().matrix();  // 4xnum1
-    Eigen::MatrixXf geo_kernel =
-      geo_sig * (-(geo_dummy.transpose() * kernel).array().sqrt() / (2 * std::pow(geo_ell, 2)))
-                  .array()
-                  .exp();  // 1Xnum1
-    Eigen::MatrixXf feat_kernel =
-      1.0 * (-(feat_dummy.transpose() * kernel).array().sqrt() / (2 * std::pow(feature_ell, 2)))
-              .array()
-              .exp();  // 1Xnum1
+    Eigen::MatrixXf geo_kernel = geo_sig * (-(geo_dummy.transpose() * kernel).array().sqrt()
+      / (2 * std::pow(geo_ell, 2))).array().exp();  // 1Xnum1
+    Eigen::MatrixXf feat_kernel = 1.0 * (-(feat_dummy.transpose() * kernel).array().sqrt()
+      / (2 * std::pow(feature_ell, 2))).array().exp();  // 1Xnum1
     inner_prod.row(j) = (geo_kernel.array() * feat_kernel.array()).matrix();
   }
 
@@ -1145,6 +1165,7 @@ void LidarTag::computeFunctionOriginalInnerProductKDTree(
       mat_index.index->radiusSearch(&query_vec[0], search_radius_tmp, ret_matches, params);
     // cout << "num_matches/total: " << n_matches << " / " << num_pc2 << endl;
     float feature1 = pc1(3, i);
+
     for (size_t j = 0; j < n_matches; ++j) {
       int idx = ret_matches[j].first;
       float dis_squared = ret_matches[j].second;
@@ -1253,35 +1274,37 @@ float LidarTag::computeFunctionInnerProduct(
   int num_pc1 = pc1.cols();
   int num_pc2 = pc2.cols();
   float score = 0;
+
   std::chrono::duration<double> duration;
+
   if (num_pc1 < num_pc2) {
-    if (!_debug_decoding_time) {
+    if (!debug_decoding_time_) {
       computeFunctionInnerProductModes(
-        _decode_mode, pc1, num_pc1, pc2, num_pc2, geo_sig, feature_ell, geo_ell, score);
+        decode_mode_, pc1, num_pc1, pc2, num_pc2, geo_sig, feature_ell, geo_ell, score);
     } else {
-      _time_decoding.timing = std::chrono::steady_clock::now();
+      time_decoding_.timing = std::chrono::steady_clock::now();
       computeFunctionOriginalInnerProduct(
         pc1, num_pc1, pc2, num_pc2, geo_sig, feature_ell, geo_ell, score);
-      _time_decoding.original +=
-        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _time_decoding.timing);
-      duration = std::chrono::steady_clock::now() - _time_decoding.timing;
+      time_decoding_.original +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), time_decoding_.timing);
+      duration = std::chrono::steady_clock::now() - time_decoding_.timing;
       // cout << "Original : " << 1.0 / duration.count() << " [Hz]" << endl;
 
-      _time_decoding.timing = std::chrono::steady_clock::now();
+      time_decoding_.timing = std::chrono::steady_clock::now();
       computeFunctionMatrixInnerProduct(
         pc1, num_pc1, pc2, num_pc2, geo_sig, feature_ell, geo_ell, score);
-      _time_decoding.matrix +=
-        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _time_decoding.timing);
-      duration = std::chrono::steady_clock::now() - _time_decoding.timing;
+      time_decoding_.matrix +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), time_decoding_.timing);
+      duration = std::chrono::steady_clock::now() - time_decoding_.timing;
       // cout << "Matrix : " << 1.0 / duration.count() << " [Hz]" << endl;
 
       // single thread
-      _time_decoding.timing = std::chrono::steady_clock::now();
+      time_decoding_.timing = std::chrono::steady_clock::now();
       computeFunctionVectorInnerProduct(
         pc1, num_pc1, pc2, num_pc2, geo_sig, feature_ell, geo_ell, score);
-      _time_decoding.vectorization +=
-        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _time_decoding.timing);
-      duration = std::chrono::steady_clock::now() - _time_decoding.timing;
+      time_decoding_.vectorization +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), time_decoding_.timing);
+      duration = std::chrono::steady_clock::now() - time_decoding_.timing;
       // cout << "Vectorization : " << 1.0 / duration.count() << " [Hz]" <<
       // endl;
 
@@ -1291,21 +1314,21 @@ float LidarTag::computeFunctionInnerProduct(
       //         pc1, num_pc1, pc2, num_pc2,
       //         geo_sig, feature_ell, geo_ell, score);
 
-      _time_decoding.timing = std::chrono::steady_clock::now();
+      time_decoding_.timing = std::chrono::steady_clock::now();
       computeFunctionVectorInnerProductTBBThreadingNoScheduling(
         pc1, num_pc1, pc2, num_pc2, geo_sig, feature_ell, geo_ell, score);
-      _time_decoding.tbb_vectorization +=
-        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _time_decoding.timing);
-      duration = std::chrono::steady_clock::now() - _time_decoding.timing;
+      time_decoding_.tbb_vectorization +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), time_decoding_.timing);
+      duration = std::chrono::steady_clock::now() - time_decoding_.timing;
       // cout << "No Scheduling TBB Vectorization : " << 1.0 / duration.count()
       // << " [Hz]" << endl;
 
-      _time_decoding.timing = std::chrono::steady_clock::now();
+      time_decoding_.timing = std::chrono::steady_clock::now();
       computeFunctionOriginalInnerProductTBB(
         pc1, num_pc1, pc2, num_pc2, geo_sig, feature_ell, geo_ell, score);
-      _time_decoding.tbb_original +=
-        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _time_decoding.timing);
-      duration = std::chrono::steady_clock::now() - _time_decoding.timing;
+      time_decoding_.tbb_original +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), time_decoding_.timing);
+      duration = std::chrono::steady_clock::now() - time_decoding_.timing;
       // cout << "TBB Original : " << 1.0 / duration.count() << " [Hz]" << endl;
 
       // c_start = std::clock();
@@ -1329,44 +1352,44 @@ float LidarTag::computeFunctionInnerProduct(
       // utils::printSpendHz(std::clock(), c_start, "TBB Scheduling TBB
       // Vectorization: ");
 
-      _time_decoding.timing = std::chrono::steady_clock::now();
+      time_decoding_.timing = std::chrono::steady_clock::now();
       computeFunctionOriginalInnerProductKDTree(
         pc1, num_pc1, pc2, num_pc2, geo_sig, feature_ell, geo_ell, score);
-      _time_decoding.tbb_kd_tree +=
-        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _time_decoding.timing);
-      duration = std::chrono::steady_clock::now() - _time_decoding.timing;
+      time_decoding_.tbb_kd_tree +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), time_decoding_.timing);
+      duration = std::chrono::steady_clock::now() - time_decoding_.timing;
       // cout << "TBB KDTree : " << 1.0 / duration.count() << " [Hz]" << endl;
       // std::cout << "===================================" << endl;
     }
 
   } else {
-    if (!_debug_decoding_time) {
+    if (!debug_decoding_time_) {
       computeFunctionInnerProductModes(
-        _decode_mode, pc2, num_pc2, pc1, num_pc1, geo_sig, feature_ell, geo_ell, score);
+        decode_mode_, pc2, num_pc2, pc1, num_pc1, geo_sig, feature_ell, geo_ell, score);
     } else {
-      _time_decoding.timing = std::chrono::steady_clock::now();
+      time_decoding_.timing = std::chrono::steady_clock::now();
       computeFunctionOriginalInnerProduct(
         pc2, num_pc2, pc1, num_pc1, geo_sig, feature_ell, geo_ell, score);
-      _time_decoding.original +=
-        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _time_decoding.timing);
-      duration = std::chrono::steady_clock::now() - _time_decoding.timing;
+      time_decoding_.original +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), time_decoding_.timing);
+      duration = std::chrono::steady_clock::now() - time_decoding_.timing;
       // cout << "Original : " << 1.0 / duration.count() << " [Hz]" << endl;
 
-      _time_decoding.timing = std::chrono::steady_clock::now();
+      time_decoding_.timing = std::chrono::steady_clock::now();
       computeFunctionMatrixInnerProduct(
         pc2, num_pc2, pc1, num_pc1, geo_sig, feature_ell, geo_ell, score);
-      _time_decoding.matrix +=
-        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _time_decoding.timing);
-      duration = std::chrono::steady_clock::now() - _time_decoding.timing;
+      time_decoding_.matrix +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), time_decoding_.timing);
+      duration = std::chrono::steady_clock::now() - time_decoding_.timing;
       // cout << "Matrix : " << 1.0 / duration.count() << " [Hz]" << endl;
 
       // single thread
-      _time_decoding.timing = std::chrono::steady_clock::now();
+      time_decoding_.timing = std::chrono::steady_clock::now();
       computeFunctionVectorInnerProduct(
         pc2, num_pc2, pc1, num_pc1, geo_sig, feature_ell, geo_ell, score);
-      _time_decoding.vectorization +=
-        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _time_decoding.timing);
-      duration = std::chrono::steady_clock::now() - _time_decoding.timing;
+      time_decoding_.vectorization +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), time_decoding_.timing);
+      duration = std::chrono::steady_clock::now() - time_decoding_.timing;
       // cout << "Vectorization : " << 1.0 / duration.count() << " [Hz]" <<
       // endl;
 
@@ -1376,21 +1399,21 @@ float LidarTag::computeFunctionInnerProduct(
       //         pc2, num_pc2, pc1, num_pc1,
       //         geo_sig, feature_ell, geo_ell, score);
 
-      _time_decoding.timing = std::chrono::steady_clock::now();
+      time_decoding_.timing = std::chrono::steady_clock::now();
       computeFunctionVectorInnerProductTBBThreadingNoScheduling(
         pc2, num_pc2, pc1, num_pc1, geo_sig, feature_ell, geo_ell, score);
-      _time_decoding.tbb_vectorization +=
-        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _time_decoding.timing);
-      duration = std::chrono::steady_clock::now() - _time_decoding.timing;
+      time_decoding_.tbb_vectorization +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), time_decoding_.timing);
+      duration = std::chrono::steady_clock::now() - time_decoding_.timing;
       // cout << "No Scheduling TBB Vectorization : " << 1.0 / duration.count()
       // << " [Hz]" << endl;
 
-      _time_decoding.timing = std::chrono::steady_clock::now();
+      time_decoding_.timing = std::chrono::steady_clock::now();
       computeFunctionOriginalInnerProductTBB(
         pc2, num_pc2, pc1, num_pc1, geo_sig, feature_ell, geo_ell, score);
-      _time_decoding.tbb_original +=
-        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _time_decoding.timing);
-      duration = std::chrono::steady_clock::now() - _time_decoding.timing;
+      time_decoding_.tbb_original +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), time_decoding_.timing);
+      duration = std::chrono::steady_clock::now() - time_decoding_.timing;
       // cout << "TBB Original : " << 1.0 / duration.count() << " [Hz]" << endl;
 
       // clock_start = std::chrono::steady_clock::now();
@@ -1408,12 +1431,12 @@ float LidarTag::computeFunctionInnerProduct(
       // duration = std::chrono::steady_clock::now() - clock_start;
       // cout << "Original : " << 1.0 / duration.count() << " [Hz]" << endl;
 
-      _time_decoding.timing = std::chrono::steady_clock::now();
+      time_decoding_.timing = std::chrono::steady_clock::now();
       computeFunctionOriginalInnerProductKDTree(
         pc2, num_pc2, pc1, num_pc1, geo_sig, feature_ell, geo_ell, score);
-      _time_decoding.tbb_kd_tree +=
-        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), _time_decoding.timing);
-      duration = std::chrono::steady_clock::now() - _time_decoding.timing;
+      time_decoding_.tbb_kd_tree +=
+        utils::spendElapsedTimeMilli(std::chrono::steady_clock::now(), time_decoding_.timing);
+      duration = std::chrono::steady_clock::now() - time_decoding_.timing;
       // cout << "TBB KDTree : " << 1.0 / duration.count() << " [Hz]" << endl;
       // std::cout << "===================================" << endl;
     }
@@ -1579,13 +1602,13 @@ float LidarTag::computeFunctionInnerProduct(
 }
 
 // return 0 if sucessfully or -1 if score is too low
-int LidarTag::_getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_size)
+int LidarTag::getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_size)
 {
   int status;
   int size_num = rkhs_decoding.size_num;
-  int num_codes = _function_dic[size_num].size();
-  rkhs_decoding.ell = tag_size / (std::sqrt(_tag_family) + 4 * _black_border) / 2;
-  rkhs_decoding.template_points_3d = _construct3DShapeMarker(rkhs_decoding, rkhs_decoding.ell);
+  int num_codes = function_dic_[size_num].size();
+  rkhs_decoding.ell = tag_size / (std::sqrt(tag_family_) + 4 * black_border_) / 2;
+  rkhs_decoding.template_points_3d = construct3DShapeMarker(rkhs_decoding, rkhs_decoding.ell);
   rkhs_decoding.score = std::vector<float>(num_codes * 4);
   float area = tag_size * tag_size;
   float id_score = -1;
@@ -1594,7 +1617,7 @@ int LidarTag::_getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_si
   float cur_score = 0;
   for (int i = 0; i < num_codes; ++i) {
     cur_score = computeFunctionInnerProduct(
-                  rkhs_decoding.template_points_3d, _function_dic[size_num][i], rkhs_decoding.ell) /
+                  rkhs_decoding.template_points_3d, function_dic_[size_num][i], rkhs_decoding.ell) /
                 area;
     // rkhs_decoding.score[i] = computeFunctionInnerProduct(
     //         rkhs_decoding.template_points_3d,
@@ -1610,7 +1633,7 @@ int LidarTag::_getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_si
       // rkhs_decoding.id_score = rkhs_decoding.score[i];
       rkhs_decoding.id_score = cur_score;
       id_score = rkhs_decoding.id_score;
-      rkhs_decoding.associated_pattern_3d = &_function_dic[size_num][i];
+      rkhs_decoding.associated_pattern_3d = &function_dic_[size_num][i];
     }
   }
   // utils::printSpendHz(std::clock(), c_start, "A cluster decoding: ");
@@ -1622,15 +1645,15 @@ int LidarTag::_getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_si
   //     // cout << "id_score:" << rkhs_decoding.id_score << endl;
   //     cout << "id_score:" << id_score << endl;
   //     cout << "rotation:" << rkhs_decoding.rotation_angle << endl;
-  //     cout << "File:" << _rkhs_function_name_list[size_num][rkhs_decoding.id]
+  //     cout << "File:" << rkhs_function_name_list_[size_num][rkhs_decoding.id]
   //     << endl;
   // }
 
   // utils::printVector(utils::convertEigenToSTDVector(rkhs_decoding.score));
   if (id_score < 12) {
     status = 0;
-    if (_debug_info) {
-      RCLCPP_WARN_STREAM(get_logger(), "==== _getCodeRKHS ====");
+    if (debug_info_) {
+      RCLCPP_WARN_STREAM(get_logger(), "==== getCodeRKHS ====");
       RCLCPP_WARN_STREAM(get_logger(), "Size number: " << size_num);
       RCLCPP_WARN_STREAM(get_logger(), "Score is too small: " << id_score);
       RCLCPP_WARN_STREAM(get_logger(), "Status: " << status);
@@ -1638,14 +1661,14 @@ int LidarTag::_getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_si
     }
   } else {
     status = 1;
-    if (_debug_info) {
-      RCLCPP_DEBUG_STREAM(get_logger(), "==== _getCodeRKHS ====");
+    if (debug_info_) {
+      RCLCPP_DEBUG_STREAM(get_logger(), "==== getCodeRKHS ====");
       RCLCPP_DEBUG_STREAM(get_logger(), "Size number: " << size_num);
       RCLCPP_DEBUG_STREAM(get_logger(), "num_points: " << rkhs_decoding.template_points_3d.cols());
       RCLCPP_DEBUG_STREAM(get_logger(), "id: " << rkhs_decoding.id);
       RCLCPP_DEBUG_STREAM(get_logger(), "id_score: " << rkhs_decoding.id_score);
       RCLCPP_DEBUG_STREAM(get_logger(), "rotation: " << rkhs_decoding.rotation_angle);
-      RCLCPP_DEBUG_STREAM(get_logger(), "file: " << _rkhs_function_name_list[size_num][rkhs_decoding.id]);
+      RCLCPP_DEBUG_STREAM(get_logger(), "file: " << rkhs_function_name_list_[size_num][rkhs_decoding.id]);
       RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << status);
       RCLCPP_DEBUG_STREAM(get_logger(), "========================");
     }
@@ -1662,58 +1685,58 @@ int LidarTag::_getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_si
  * 3: Deep learning
  * 4: ?!
  */
-bool LidarTag::_decodePayload(ClusterFamily_t & Cluster)
+bool LidarTag::decodePayload(ClusterFamily_t & cluster)
 {
-  string Code("");
+  string code("");
   bool valid_tag = true;
-  string Msg;
-  if (_decode_method == 0) {  // Naive decoder
-    LidarTag::_getCodeNaive(Code, Cluster.payload);
-  } else if (_decode_method == 1) {  // Weighted Gaussian
-    int status = LidarTag::_getCodeWeightedGaussian(
-      Code, Cluster.pose_tag_to_lidar,
-      Cluster.payload_without_boundary,  // size of actual payload
-      Cluster.average, Cluster.payload, Cluster.payload_boundary_ptr);
+  string msg;
+  if (decode_method_ == 0) {  // Naive decoder
+    LidarTag::getCodeNaive(code, cluster.payload);
+  } else if (decode_method_ == 1) {  // Weighted Gaussian
+    int status = LidarTag::getCodeWeightedGaussian(
+      code, cluster.pose_tag_to_lidar,
+      cluster.payload_without_boundary,  // size of actual payload
+      cluster.average, cluster.payload, cluster.payload_boundary_ptr);
     if (status == -1) {
       valid_tag = false;
-      _result_statistics.cluster_removal.decoder_not_return++;
-      Cluster.valid = 0;
-      Msg = "Not enough return";
+      result_statistics_.cluster_removal.decoder_not_return++;
+      cluster.valid = 0;
+      msg = "Not enough return";
     } else if (status == -2) {
       valid_tag = false;
-      _result_statistics.cluster_removal.decoder_fail_corner++;
-      Cluster.valid = 0;
-      Msg = "Fail corner detection";
+      result_statistics_.cluster_removal.decoder_fail_corner++;
+      cluster.valid = 0;
+      msg = "Fail corner detection";
     }
-  } else if (_decode_method == 2) {  // RKHS
-    int status = LidarTag::_getCodeRKHS(Cluster.rkhs_decoding, Cluster.tag_size);
+  } else if (decode_method_ == 2) {  // RKHS
+    int status = LidarTag::getCodeRKHS(cluster.rkhs_decoding, cluster.tag_size);
     if (status == 1) {
-      Cluster.cluster_id = Cluster.rkhs_decoding.id;
+      cluster.cluster_id = cluster.rkhs_decoding.id;
     } else {
       valid_tag = false;
-      Cluster.valid = 0;
-      _result_statistics.cluster_removal.decoding_failure++;
+      cluster.valid = 0;
+      result_statistics_.cluster_removal.decoding_failure++;
     }
   }
 
-  if (_decode_method == 0 || _decode_method == 1) {
+  if (decode_method_ == 0 || decode_method_ == 1) {
     if (valid_tag) {
-      uint64_t Rcode = stoull(Code, nullptr, 2);
-      BipedAprilLab::QuickDecodeCodeword(tf, Rcode, &Cluster.entry);
-      Cluster.cluster_id = Cluster.entry.id;
-      RCLCPP_INFO_STREAM(get_logger(), "id: " << Cluster.entry.id);
-      RCLCPP_DEBUG_STREAM(get_logger(), "hamming: " << Cluster.entry.hamming);
-      RCLCPP_DEBUG_STREAM(get_logger(), "rotation: " << Cluster.entry.rotation);
+      uint64_t r_code = stoull(code, nullptr, 2);
+      BipedAprilLab::QuickDecodeCodeword(tf, r_code, &cluster.entry);
+      cluster.cluster_id = cluster.entry.id;
+      RCLCPP_INFO_STREAM(get_logger(), "id: " << cluster.entry.id);
+      RCLCPP_DEBUG_STREAM(get_logger(), "hamming: " << cluster.entry.hamming);
+      RCLCPP_DEBUG_STREAM(get_logger(), "rotation: " << cluster.entry.rotation);
     } else {
       // too big, return as an invalid tag
-      Code = "1111111111111111UL";
-      RCLCPP_DEBUG_STREAM(get_logger(), "\nCODE: " << Code);
-      uint64_t Rcode = stoull(Code, nullptr, 2);
-      BipedAprilLab::QuickDecodeCodeword(tf, Rcode, &Cluster.entry);
-      Cluster.cluster_id = 8888;
-      RCLCPP_DEBUG_STREAM(get_logger(), "id: " << Cluster.cluster_id);
-      RCLCPP_DEBUG_STREAM(get_logger(), "hamming: " << Cluster.entry.hamming);
-      RCLCPP_DEBUG_STREAM(get_logger(), "rotation: " << Cluster.entry.rotation);
+      code = "1111111111111111UL";
+      RCLCPP_DEBUG_STREAM(get_logger(), "\nCODE: " << code);
+      uint64_t r_code = stoull(code, nullptr, 2);
+      BipedAprilLab::QuickDecodeCodeword(tf, r_code, &cluster.entry);
+      cluster.cluster_id = 8888;
+      RCLCPP_DEBUG_STREAM(get_logger(), "id: " << cluster.cluster_id);
+      RCLCPP_DEBUG_STREAM(get_logger(), "hamming: " << cluster.entry.hamming);
+      RCLCPP_DEBUG_STREAM(get_logger(), "rotation: " << cluster.entry.rotation);
     }
   }
 
@@ -1723,7 +1746,7 @@ bool LidarTag::_decodePayload(ClusterFamily_t & Cluster)
 /* [Function Decoder]
  * A function to load continuous functions from a pre-computed point cloud
  */
-void LidarTag::_initFunctionDecoder()
+void LidarTag::initFunctionDecoder()
 {
   // prepare to rotate functions
   Eigen::Vector3f trans_v = Eigen::Vector3f::Zero(3);
@@ -1741,21 +1764,21 @@ void LidarTag::_initFunctionDecoder()
   rot_v3 << 270, 0, 0;
   Eigen::Matrix4f H3 = utils::computeTransformation(rot_v3, trans_v);
   // cout << "H3: \n" << H3 << endl;
-  _function_dic.resize(_num_tag_sizes);
-  _rkhs_function_name_list.resize(_num_tag_sizes);
+  function_dic_.resize(num_tag_sizes_);
+  rkhs_function_name_list_.resize(num_tag_sizes_);
   std::vector<std::string> test;
 
-  for (int tag_size = 0; tag_size < _num_tag_sizes; ++tag_size) {
-    // cout << "path:" << _library_path +  std::to_string(tag_size) + "/"
+  for (int tag_size = 0; tag_size < num_tag_sizes_; ++tag_size) {
+    // cout << "path:" << library_path_ +  std::to_string(tag_size) + "/"
     //     << endl;
-    std::string cur_path = _library_path + std::to_string(tag_size) + "/";
-    utils::readDirectory(cur_path, _rkhs_function_name_list[tag_size]);
-    // utils::printVector(_rkhs_function_name_list[tag_size]);
+    std::string cur_path = library_path_ + std::to_string(tag_size) + "/";
+    utils::readDirectory(cur_path, rkhs_function_name_list_[tag_size]);
+    // utils::printVector(rkhs_function_name_list_[tag_size]);
     // utils::readDirectory(
-    //         _library_path +  std::to_string(tag_size) + "/", test);
+    //         library_path_ +  std::to_string(tag_size) + "/", test);
     // utils::printVector(test);
     // consider four rotations
-    int num_codes = std::min((int)_rkhs_function_name_list[tag_size].size(), _num_codes);
+    int num_codes = std::min((int) rkhs_function_name_list_[tag_size].size(), num_codes_);
     std::vector<Eigen::MatrixXf> function_dic(num_codes * 4);
     // std::vector<Eigen::MatrixXf> function_dic_xyz(num_codes * 4);
     // std::vector<Eigen::MatrixXf> function_dic_feat(num_codes * 4);
@@ -1763,7 +1786,7 @@ void LidarTag::_initFunctionDecoder()
     for (int i = 0, func_ind = 0; i < num_codes * 4; i += 4, ++func_ind) {
       // cout << "(i, ind) = (" << i << ", " << func_ind << ")" << endl;
       function_dic[i] =
-        utils::loadCSV<Eigen::MatrixXf>(cur_path + _rkhs_function_name_list[tag_size][func_ind]);
+        utils::loadCSV<Eigen::MatrixXf>(cur_path + rkhs_function_name_list_[tag_size][func_ind]);
       // rotate 90
       function_dic[i + 1] = H1 * utils::convertXYZIToHomogeneous(function_dic[i]);
 
@@ -1776,7 +1799,7 @@ void LidarTag::_initFunctionDecoder()
       // split points and features for kdtree
       // _function_dic_xyz[i] = function_dic[i].topRows
 
-      cout << "function loaded--" << cur_path + _rkhs_function_name_list[tag_size][func_ind]
+      cout << "function loaded--" << cur_path + rkhs_function_name_list_[tag_size][func_ind]
            << endl;
 
       // if (i == 0) {
@@ -1787,16 +1810,16 @@ void LidarTag::_initFunctionDecoder()
       //     utils::convertXYZIToHomogeneous(function_dic[i]) << endl;
       // }
     }
-    _function_dic[tag_size] = function_dic;
-    cout << "size: " << _function_dic[tag_size].size() << endl;
+    function_dic_[tag_size] = function_dic;
+    cout << "size: " << function_dic_[tag_size].size() << endl;
   }
-  // _function_dic.resize(_num_codes); // consider four rotations
-  // for (int i = 0, func_ind = 0; i < _num_codes ; ++i) {
+  // _function_dic.resize(num_codes_); // consider four rotations
+  // for (int i = 0, func_ind = 0; i < num_codes_ ; ++i) {
   //     // cout << "(i, ind) = (" << i << ", " << func_ind << ")" << endl;
   //     _function_dic[i] = utils::loadCSV<Eigen::MatrixXf>(
-  //             _library_path + _rkhs_function_name_list[i]);
+  //             library_path_ + rkhs_function_name_list_[i]);
   //     cout << "function loaded--"
-  //          << _library_path + _rkhs_function_name_list[i] << endl;
+  //          << library_path_ + rkhs_function_name_list_[i] << endl;
   //     // if (i == 0) {
   //     //     cout << "tag0: \n" << _function_dic[i] << endl;
   //     //     cout << "tag_h: \n" <<
@@ -1810,9 +1833,9 @@ void LidarTag::_initFunctionDecoder()
 /* [Decoder]
  * Create hash table of chosen tag family
  */
-void LidarTag::_initDecoder()
+void LidarTag::initDecoder()
 {
-  string famname = "tag" + to_string(_tag_family) + "h" + to_string(_tag_hamming_distance);
+  string famname = "tag" + to_string(tag_family_) + "h" + to_string(tag_hamming_distance_);
   if (famname == "tag49h14")
     tf = tag49h14_create();
   else if (famname == "tag16h5")
@@ -1824,19 +1847,19 @@ void LidarTag::_initDecoder()
          << ")" << endl;
     exit(0);
   }
-  tf->black_border = _black_border;
+  tf->black_border = black_border_;
   cout << "Preparing for tags: " << famname << endl;
-  if (_decode_method == 0 || _decode_method == 1) {
-    BipedAprilLab::QuickDecodeInit(tf, _max_decode_hamming);
-  } else if (_decode_method == 2) {
-    LidarTag::_initFunctionDecoder();
+  if (decode_method_ == 0 || decode_method_ == 1) {
+    BipedAprilLab::QuickDecodeInit(tf, max_decode_hamming_);
+  } else if (decode_method_ == 2) {
+    LidarTag::initFunctionDecoder();
   }
 }
 
 /*
  *
  */
-void LidarTag::_testInitDecoder()
+void LidarTag::testInitDecoder()
 {
   uint64_t rcode = 0x0001f019cf1cc653UL;
   QuickDecodeEntry_t entry;

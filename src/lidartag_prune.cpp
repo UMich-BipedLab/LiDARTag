@@ -29,6 +29,9 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
+#include "lidartag.h"
+#include "ultra_puck.h"
+
 #include <pcl/ModelCoefficients.h>
 #include <pcl/point_types.h>
 #include <pcl/sample_consensus/method_types.h>
@@ -38,10 +41,6 @@
 #include <velodyne_pointcloud/pointcloudXYZIR.h>
 
 #include <fstream>
-#include "rclcpp/rclcpp.hpp" // package
-
-#include "ultra_puck.h"
-#include "lidartag.h"
 
 #define SQRT2 1.41421356237
 
@@ -55,22 +54,15 @@ namespace BipedLab
  * the points on the tag is too less, which means it is not a valid tag where it
  * might just a shadow of a valid tag
  */
-bool LidarTag::_clusterPointsCheck(ClusterFamily_t & Cluster)
+bool LidarTag::clusterPointsCheck(ClusterFamily_t & cluster)
 {
-  auto distance = sqrt(pow(Cluster.average.x, 2) + pow(Cluster.average.y, 2));
-  // cout << "distance: " << distance << "X: " << Cluster.average.x << "Y: " <<
-  // Cluster.average.y << endl;
-  int maxPoints = LidarTag::_areaPoints(distance, _payload_size * SQRT2, _payload_size * SQRT2);
-  int minPoints = LidarTag::_areaPoints(distance, _payload_size / SQRT2, _payload_size / SQRT2);
-  // cout << "Cluster Size: " << Cluster.data.size() << " Max Points: " <<
-  // maxPoints << " Min Points: " << minPoints << endl;
-  // cout << "Data: " << Cluster.data.size() << endl;
-  // return true;
-  // if (Cluster.data.size() < floor(points/ _points_threshold_factor)) return
-  // false; else return true;
+  auto distance = sqrt(pow(cluster.average.x, 2) + pow(cluster.average.y, 2));
 
-  if (Cluster.data.size() < minPoints) {  // Cluster.data.size() > maxPoints) { // ||
-                                          // Cluster.data.size() < minPoints) {
+  int max_points = LidarTag::areaPoints(distance, payload_size_ * SQRT2, payload_size_ * SQRT2);
+  int min_points = LidarTag::areaPoints(distance, payload_size_ / SQRT2, payload_size_ / SQRT2);
+
+  if (cluster.data.size() < min_points) {  // cluster.data.size() > maxPoints) { // ||
+                                          // cluster.data.size() < minPoints) {
     return false;
   } else {
     return true;
@@ -80,104 +72,83 @@ bool LidarTag::_clusterPointsCheck(ClusterFamily_t & Cluster)
 /*
  * A function to get a number of points on a given-distance tag or object
  */
-int LidarTag::_areaPoints(
-  const double & Distance, const double & ObjWidth, const double & ObjHeight)
+int LidarTag::areaPoints(
+  const double & distance, const double & obj_width, const double & obj_height)
 {
-  // double WAngle = ObjWidth * (1 + SQRT2) / abs(Distance);
+  // double WAngle = obj_width * (1 + SQRT2) / abs(distance);
 
   // if (WAngle>=1) return (int) 1e6; // return big number to reject the cluster
 
-  // double HAngle = ObjHeight * (1 + SQRT2) / abs(Distance);
+  // double HAngle = obj_height * (1 + SQRT2) / abs(distance);
   // if (HAngle>=1) return (int) 1e6; // return big number to reject the cluster
 
   // double HorizontalAngle = asin(WAngle); // in radian
   // double VerticalAngle = asin(HAngle); // in radian
-  // int NumOfVerticalRing = floor(VerticalAngle *
-  // _LiDAR_system.beam_per_vertical_radian); int NumOfHorizontalPoints =
-  // floor(HorizontalAngle * _LiDAR_system.point_per_horizontal_radian);
+  // int num_of_vertical_ring = floor(VerticalAngle *
+  // lidar_system_.beam_per_vertical_radian); int num_of_horizontal_points =
+  // floor(HorizontalAngle * lidar_system_.point_per_horizontal_radian);
 
   // // use 3 instead of 2 becasue of we assume the tag would be put in the
   // dense
   // // region of LiDAR (LiDAR is denser in the middle)
-  // int Area = floor(3 * (NumOfVerticalRing * NumOfHorizontalPoints) / (1 +
+  // int Area = floor(3 * (num_of_vertical_ring * num_of_horizontal_points) / (1 +
   // SQRT2));
 
-  // cout << "distance: " << Distance << endl;
+  // cout << "distance: " << distance << endl;
   // //cout << "HorizontalAngle: " << HorizontalAngle << endl;
   // //cout << "VerticalAngle: " << VerticalAngle << endl;
 
-  int NumOfHorizontalPoints = ceil(ObjWidth / (Distance * tan(0.1 * M_PI / 180)));
+  int num_of_horizontal_points = ceil(obj_width / (distance * tan(0.1 * M_PI / 180)));
 
-  // int NumOfHorizontalPoints = 2 * atan((ObjWidth / 2) / abs(Distance)) *
-  //    _LiDAR_system.point_per_horizontal_radian;
-  double HalfVerticalAngle = atan((ObjHeight / 2) / abs(Distance)) * 180 / M_PI;
+  // int num_of_horizontal_points = 2 * atan((obj_width / 2) / abs(distance)) *
+  //    lidar_system_.point_per_horizontal_radian;
+  double half_vertical_angle = atan((obj_height / 2) / abs(distance)) * 180 / M_PI;
 
-  int NumOfVerticalRing = 0;
+  int num_of_vertical_ring = 0;
   for (int i = 0; i < UltraPuckV2::beams; ++i) {
-    if (HalfVerticalAngle > abs(UltraPuckV2::el[i])) {
-      NumOfVerticalRing++;
+    if (half_vertical_angle > abs(UltraPuckV2::el[i])) {
+      num_of_vertical_ring++;
     }
   }
-  int Area = NumOfVerticalRing * NumOfHorizontalPoints;
+  int area = num_of_vertical_ring * num_of_horizontal_points;
 
-  // cout << "NumOfVerticalRing: " << NumOfVerticalRing << endl;
-  // cout << "NumOfHorizontalPoints: " << NumOfHorizontalPoints << endl;
+  // cout << "num_of_vertical_ring: " << num_of_vertical_ring << endl;
+  // cout << "num_of_horizontal_points: " << num_of_horizontal_points << endl;
   // cout << "Area: " << Area << endl;
-  // cout << "Points / Radian: " << _LiDAR_system.point_per_horizontal_radian <<
+  // cout << "Points / Radian: " << lidar_system_.point_per_horizontal_radian <<
   // endl;
 
-  return Area;
+  return area;
 }
 
 /*
  * A function to calculate the upper bound of points that can exist in a cluster
  * based on the payload size
  */
-int LidarTag::_maxPointsCheck(ClusterFamily_t & cluster)
+int LidarTag::maxPointsCheck(ClusterFamily_t & cluster)
 {
-  int ring = std::round(_beam_num / 2);
+  int ring = std::round(beam_num_ / 2);
   int longer_side_ring = std::round((cluster.top_ring + cluster.bottom_ring) / 2);
-  double point_resolution = 2 * M_PI / _LiDAR_system.ring_average_table[longer_side_ring].average;
+  double point_resolution = 2 * M_PI / lidar_system_.ring_average_table[longer_side_ring].average;
   auto distance =
     std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.y, 2) + pow(cluster.average.z, 2));
-  float payload_w = SQRT2 * _payload_size;
+  float payload_w = SQRT2 * payload_size_;
   int num_horizontal_points = std::ceil(payload_w / (distance * std::sin(point_resolution)));
   int num_vertical_ring = std::abs(cluster.top_ring - cluster.bottom_ring) + 1;
-
-  // float point_resolution = 0.1 * M_PI/180;
-  // auto distance = sqrt(pow(cluster.average.x,2) + pow(cluster.average.y,2));
-  // // auto payload_w = 2*SQRT2*_payload_size;
-  // // auto payload_h = 2*SQRT2*_payload_size;
-  // auto payload_w = SQRT2 * _payload_size;
-  // auto payload_h = SQRT2 * _payload_size;
-  //
-  // int num_horizontal_points =
-  //     std::ceil(payload_w / (distance * tan(point_resolution)));
-  // double HalfVerticalAngle  =
-  //     std::atan((payload_h / 2) / abs(distance)) * 180 / M_PI;
-
-  // int num_vertical_ring = 0;
-  // for (int i = 0; i < UltraPuckV2::beams; ++i)
-  // {
-  //     if (HalfVerticalAngle > abs(UltraPuckV2::el[i]))
-  //     {
-  //         num_vertical_ring++;
-  //     }
-  // }
-
   int expected_points = num_vertical_ring * num_horizontal_points;
 
   if ((cluster.data.size() + cluster.edge_points.size()) > expected_points + 700) {
-    _result_statistics.cluster_removal.maximum_return++;
-    _result_statistics.remaining_cluster_size--;
-    if (_mark_cluster_validity) {
+    result_statistics_.cluster_removal.maximum_return++;
+    result_statistics_.remaining_cluster_size--;
+
+    if (mark_cluster_validity_) {
       cluster.valid = false;
       cluster.detail_valid = 2;
     }
   }
 
-  if (_debug_info) {
-    RCLCPP_DEBUG_STREAM(get_logger(), "==== _maxPointsCheck ====");
+  if (debug_info_) {
+    RCLCPP_DEBUG_STREAM(get_logger(), "==== maxPointsCheck ====");
     RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance << ", num_horizontal_points: " << num_horizontal_points);
     RCLCPP_DEBUG_STREAM(get_logger(), "Expected Points: " << expected_points);
     RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
@@ -193,18 +164,20 @@ int LidarTag::_maxPointsCheck(ClusterFamily_t & cluster)
  * Fit a plane to a cluster. Returns false if unable to estimate a plane.
  * Otherwise, returns the number of inliers and the coefficients of the plane.
  */
-bool LidarTag::_rejectWithPlanarCheck(
+bool LidarTag::rejectWithPlanarCheck(
   ClusterFamily_t & cluster, pcl::PointIndices::Ptr inliers,
   pcl::ModelCoefficients::Ptr coefficients, std::ostream & fplanefit)
 {
   // Convert cluster family into pcl point cloud
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
   cloud->points.resize(cluster.data.size() + cluster.edge_points.size());
+
   for (std::size_t i = 0; i < cluster.edge_points.size(); ++i) {
     cloud->points[i].x = cluster.edge_points[i].point.x;
     cloud->points[i].y = cluster.edge_points[i].point.y;
     cloud->points[i].z = cluster.edge_points[i].point.z;
   }
+
   for (std::size_t i = cluster.edge_points.size(); i < cloud->points.size(); ++i) {
     cloud->points[i].x = cluster.data[i - cluster.edge_points.size()].point.x;
     cloud->points[i].y = cluster.data[i - cluster.edge_points.size()].point.y;
@@ -219,13 +192,13 @@ bool LidarTag::_rejectWithPlanarCheck(
   // Mandatory
   seg.setModelType(pcl::SACMODEL_PLANE);
   seg.setMethodType(pcl::SAC_RANSAC);
-  seg.setDistanceThreshold(_lidartag_params.distance_to_plane_threshold);
+  seg.setDistanceThreshold(params_.distance_to_plane_threshold);
 
   seg.setInputCloud(cloud);
   seg.segment(*inliers, *coefficients);
   cluster.inliers = inliers->indices.size();
-  if (_debug_info) {
-    RCLCPP_DEBUG_STREAM(get_logger(), "==== _rejectWithPlanarCheck ====");
+  if (debug_info_) {
+    RCLCPP_DEBUG_STREAM(get_logger(), "==== rejectWithPlanarCheck ====");
     float distance =
       std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.y, 2) + pow(cluster.average.z, 2));
     RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance);
@@ -234,19 +207,19 @@ bool LidarTag::_rejectWithPlanarCheck(
     RCLCPP_DEBUG_STREAM(get_logger(), "Outliers    : " << cluster.data.size() - inliers->indices.size());
   }
   if (inliers->indices.size() == 0) {
-    if (_debug_info) {
+    if (debug_info_) {
       RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << false);
       RCLCPP_WARN_STREAM(get_logger(), "Failed to fit a plane model to the cluster.");
     }
-    _result_statistics.cluster_removal.plane_fitting++;
-    _result_statistics.remaining_cluster_size--;
+    result_statistics_.cluster_removal.plane_fitting++;
+    result_statistics_.remaining_cluster_size--;
 
     return false;
   }
 
-  if (_debug_info)
+  if (debug_info_)
     RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << true);
-  if (_log_data) {
+  if (log_data_) {
     fplanefit << "-----------------begining--------------------" << endl;
     fplanefit << "Successfully fit plane!" << endl;
     fplanefit << "Cluster Size: " << cluster.data.size() << endl;
