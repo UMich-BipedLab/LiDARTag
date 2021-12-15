@@ -182,6 +182,18 @@ typedef struct RKHSDecoding {
   float id_score;
 } RKHSDecoding_t;
 
+typedef struct {
+  float x;
+  float y;
+  float z;
+} point;
+typedef struct {
+  point top;
+  point down;
+  point left;
+  point right;
+} corners;
+
 typedef struct ClusterFamily {
   // EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   int cluster_id;
@@ -270,6 +282,11 @@ typedef struct ClusterFamily {
   int detail_valid;
   int pose_estimation_status;
   int expected_points;
+
+  corners tag_corners; // KL: adding here for now
+  corners tag_boundary_corners;
+  std::vector<point> corner_offset_array;
+
 } ClusterFamily_t;
 
 typedef struct GrizTagFamily {
@@ -380,19 +397,6 @@ typedef struct PathLeafString {
     return entry.path().leaf().string();
   }
 } PathLeafString_t;
-
-typedef struct {
-  float x;
-  float y;
-  float z;
-} point;
-
-typedef struct {
-  point top;
-  point down;
-  point left;
-  point right;
-} corners;
 
 typedef nanoflann::KDTreeEigenMatrixAdaptor<
     Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>, -1,

@@ -550,10 +550,10 @@ void LidarTag::clusterToPclVectorAndMarkerPublisher(
       }
     }
     if (id_decoding_) {
-      addCorners(tag_corners_, cluster[key]);
+      addCorners(cluster[key].tag_corners, cluster[key]);
       
       getBoundaryCorners(cluster[key], boundary_pts);
-      addBoundaryCorners(tag_boundary_corners_, cluster[key]);
+      addBoundaryCorners(cluster[key].tag_boundary_corners, cluster[key]);
     }
     // Publish to a lidartag channel
     detectionArrayPublisher(cluster[key]);
@@ -585,7 +585,7 @@ void LidarTag::clusterToPclVectorAndMarkerPublisher(
   LidarTag::publishLidartagCluster(cluster);
 }
 
-void LidarTag::publishClusterInfo(const ClusterFamily_t cluster)
+/*void LidarTag::publishClusterInfo(const ClusterFamily_t cluster)
 {
   jsk_msgs::msg::OverlayText detail_valid_text;
   std::string output_str;
@@ -685,7 +685,7 @@ void LidarTag::publishClusterInfo(const ClusterFamily_t cluster)
 
   detail_valid_text.text = output_str;
   detail_valid_text_pub_->publish(detail_valid_text);
-} 
+} */
 
 void LidarTag::getBoundaryCorners(
   ClusterFamily_t cluster, pcl::PointCloud<PointXYZRI>::Ptr boundaryPts)
@@ -786,16 +786,16 @@ void LidarTag::getBoundaryCorners(
 
   Eigen::MatrixXf::Index col;
   payload_vertices.row(1).minCoeff(&col);
-  utils::eigen2Corners(payload_vertices.col(col), tag_boundary_corners_.right);
+  utils::eigen2Corners(payload_vertices.col(col), cluster.tag_boundary_corners.right);
 
   payload_vertices.row(1).maxCoeff(&col);
-  utils::eigen2Corners(payload_vertices.col(col), tag_boundary_corners_.left);
+  utils::eigen2Corners(payload_vertices.col(col), cluster.tag_boundary_corners.left);
 
   payload_vertices.row(2).minCoeff(&col);
-  utils::eigen2Corners(payload_vertices.col(col), tag_boundary_corners_.down);
+  utils::eigen2Corners(payload_vertices.col(col), cluster.tag_boundary_corners.down);
 
   payload_vertices.row(2).maxCoeff(&col);
-  utils::eigen2Corners(payload_vertices.col(col), tag_boundary_corners_.top);
+  utils::eigen2Corners(payload_vertices.col(col), cluster.tag_boundary_corners.top);
 }
 
 void LidarTag::addCorners(corners tag_corners, ClusterFamily_t cluster)
@@ -864,10 +864,18 @@ void LidarTag::addCorners(corners tag_corners, ClusterFamily_t cluster)
   pub_corners.rotation = cluster.rkhs_decoding.rotation_angle;
   pub_corners.corners.resize(4);
 
-  pub_corners.corners[(0 - pub_corners.rotation) % 4] = pub_corners.down;
-  pub_corners.corners[(1 - pub_corners.rotation) % 4] = pub_corners.left;
-  pub_corners.corners[(2 - pub_corners.rotation) % 4] = pub_corners.top;
-  pub_corners.corners[(3 - pub_corners.rotation) % 4] = pub_corners.right;
+  for(int i = 0; i < 4; i++) {
+    geometry_msgs::msg::Point p;
+    p.x = cluster.corner_offset_array[i].x + cluster.average.x;
+    p.y = cluster.corner_offset_array[i].y + cluster.average.y;
+    p.z = cluster.corner_offset_array[i].z + cluster.average.z;
+    pub_corners.corners[i] = p;
+  }
+
+  //pub_corners.corners[(0 - pub_corners.rotation) % 4] = pub_corners.down;
+  //pub_corners.corners[(1 - pub_corners.rotation) % 4] = pub_corners.left;
+  //pub_corners.corners[(2 - pub_corners.rotation) % 4] = pub_corners.top;
+  //pub_corners.corners[(3 - pub_corners.rotation) % 4] = pub_corners.right;
 
   //RCLCPP_WARN_STREAM(get_logger(), "Check the matching: id: " << pub_corners.id);
   //RCLCPP_WARN_STREAM(get_logger(), "bottom id: " << ((0 - pub_corners.rotation) % 4));
@@ -942,6 +950,14 @@ void LidarTag::addBoundaryCorners(corners tag_corners, ClusterFamily_t cluster)
 
   pub_corners.rotation = cluster.rkhs_decoding.rotation_angle;
   pub_corners.corners.resize(4);
+
+  //for(int i = 0; i < 4; i++) {
+  //  geometry_msgs::msg::Point p;
+  //  p.x = cluster.offs[i].x + cluster.average.x;
+  //  p.y = cluster.corner_offset_array[i].y + cluster.average.y;
+  //  p.z = cluster.corner_offset_array[i].z + cluster.average.z;
+  //  pub_corners.corners[i] = p;
+  //}
 
   pub_corners.corners[(0 - pub_corners.rotation) % 4] = pub_corners.down;
   pub_corners.corners[(1 - pub_corners.rotation) % 4] = pub_corners.left;

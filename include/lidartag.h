@@ -50,7 +50,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
-#include <jsk_msgs/msg/overlay_text.hpp>
+//#include <jsk_msgs/msg/overlay_text.hpp>
 
 // threadings
 #include <boost/thread.hpp>
@@ -207,7 +207,7 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr lidartag_cluster_edge_points_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr lidartag_cluster_transformed_edge_points_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr detail_valid_marker_array_pub_;
-  rclcpp::Publisher<jsk_msgs::msg::OverlayText>::SharedPtr detail_valid_text_pub_;
+  //rclcpp::Publisher<jsk_msgs::msg::OverlayText>::SharedPtr detail_valid_text_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr intersection_marker_array_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr transformed_edge_pc_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr average_point_pub_;
@@ -297,8 +297,8 @@ private:
   double coa_tunable_;
   double tagsize_tunable_;
   int min_returns_per_grid_;
-  corners tag_corners_;
-  corners tag_boundary_corners_;
+  //corners tag_corners_; // using global vars like this lead to errors -> delete
+  //corners tag_boundary_corners_;
 
   GrizTagFamily_t * tf;
   lidartag_msgs::msg::LidarTagDetectionArray lidartag_pose_array_; // an array of apriltags
@@ -819,7 +819,7 @@ private:
   void visualiseClusterBuff(std::vector<ClusterFamily_t> & cluster_buff);
   void keyboardEventOccurred(const pcl::visualization::KeyboardEvent &event, void * nothing);
   void publishLidartagCluster(const std::vector<ClusterFamily_t> & cluster_buff);
-  void publishClusterInfo(const ClusterFamily_t cluster);
+  //void publishClusterInfo(const ClusterFamily_t cluster); jsk packages are missing
   void publishIntersections(const std::vector<Eigen::VectorXf> intersection_list);
   void printClusterResult(const std::vector<ClusterFamily_t> & cluster_buff);
   void addCorners(corners tag_corners, ClusterFamily_t cluster);

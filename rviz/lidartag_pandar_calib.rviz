@@ -862,9 +862,22 @@ Visualization Manager:
         Points of Interest: true
         Raw Pointcloud: true
         Tag Frame: true
+        Tag calib markers: true
         Template: true
         Value: true
       Zoom Factor: 1
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Tag calib markers
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /dummy_sensor_kit/pandar/camera_optical_link/image_projections
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48

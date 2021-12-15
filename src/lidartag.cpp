@@ -167,8 +167,8 @@ LidarTag::LidarTag(const rclcpp::NodeOptions & options) :
     "lidartag_cluster_trasformed_edge_points", 10);
   detail_valid_marker_array_pub_ =
     this->create_publisher<visualization_msgs::msg::MarkerArray>("detail_valid_marker", 10);
-  detail_valid_text_pub_ =
-    this->create_publisher<jsk_msgs::msg::OverlayText>("detail_valid_text", 10);
+  //detail_valid_text_pub_ =
+  //  this->create_publisher<jsk_msgs::msg::OverlayText>("detail_valid_text", 10);
   intersection_marker_array_pub_ =
     this->create_publisher<visualization_msgs::msg::MarkerArray>("intesection_markers", 10);
   transformed_edge_pc_pub_ =
@@ -2379,16 +2379,18 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
   Eigen::MatrixXf::Index col;
 
   ordered_payload_vertices.row(1).minCoeff(&col);
-  utils::eigen2Corners(ordered_payload_vertices.col(col), tag_corners_.right);
+  utils::eigen2Corners(ordered_payload_vertices.col(col), cluster.tag_corners.right);
 
   ordered_payload_vertices.row(1).maxCoeff(&col);
-  utils::eigen2Corners(ordered_payload_vertices.col(col), tag_corners_.left);
+  utils::eigen2Corners(ordered_payload_vertices.col(col), cluster.tag_corners.left);
 
   ordered_payload_vertices.row(2).minCoeff(&col);
-  utils::eigen2Corners(ordered_payload_vertices.col(col), tag_corners_.down);
+  utils::eigen2Corners(ordered_payload_vertices.col(col), cluster.tag_corners.down);
 
   ordered_payload_vertices.row(2).maxCoeff(&col);
-  utils::eigen2Corners(ordered_payload_vertices.col(col), tag_corners_.top);
+  utils::eigen2Corners(ordered_payload_vertices.col(col), cluster.tag_corners.top);
+
+  point p_corner;
 
   for (int i = 0; i < 4; ++i) {
     showpoint.intensity = 50;
@@ -2396,11 +2398,17 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
     showpoint.y = ordered_payload_vertices.col(i)(1);
     showpoint.z = ordered_payload_vertices.col(i)(2);
 
+    p_corner.x = ordered_payload_vertices.col(i)(0);
+    p_corner.y = ordered_payload_vertices.col(i)(1);
+    p_corner.z = ordered_payload_vertices.col(i)(2);
+
     showpoint_tag.x = showpoint.x + cluster.average.x;
     showpoint_tag.y = showpoint.y + cluster.average.y;
     showpoint_tag.z = showpoint.z + cluster.average.z;
     TransformedPC->push_back(showpoint);
     TransformedPCTag->push_back(showpoint_tag);
+
+    cluster.corner_offset_array.push_back(p_corner);
   }
 
   LidarTag::publishPointcloud(TransformedPC, pub_frame_, string("transpts"));
@@ -3212,7 +3220,7 @@ void LidarTag::publishLidartagCluster(const vector<ClusterFamily_t> & cluster_bu
     lidartag_cluster_edge_points_pub_->publish(output_ep_msg);
     lidartag_cluster_transformed_edge_points_pub_->publish(output_tr_ep_msg);
     average_point_pub_->publish(point);
-    publishClusterInfo(cluster_buff[index_num]);
+    //publishClusterInfo(cluster_buff[index_num]); Disabled due to the absence of jsk packages in ros2
     index_num++;
   }
   cluster_pc->clear();
