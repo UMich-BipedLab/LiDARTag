@@ -2159,13 +2159,13 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud3(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud4(new pcl::PointCloud<pcl::PointXYZ>);
 
-  pcl::PointCloud<PointXYZRI>::Ptr TransformedPC(new pcl::PointCloud<PointXYZRI>);
-  TransformedPC->reserve(point_cloud_size_);
-  TransformedPC->clear();
+  pcl::PointCloud<PointXYZRI>::Ptr transformed_pc(new pcl::PointCloud<PointXYZRI>);
+  transformed_pc->reserve(point_cloud_size_);
+  transformed_pc->clear();
 
-  pcl::PointCloud<PointXYZRI>::Ptr TransformedPCTag(new pcl::PointCloud<PointXYZRI>);
-  TransformedPCTag->reserve(point_cloud_size_);
-  TransformedPCTag->clear();
+  pcl::PointCloud<PointXYZRI>::Ptr transformed_pc_tag(new pcl::PointCloud<PointXYZRI>);
+  transformed_pc_tag->reserve(point_cloud_size_);
+  transformed_pc_tag->clear();
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_edge_pc(new pcl::PointCloud<pcl::PointXYZ>);
   transformed_edge_pc->reserve(point_cloud_size_);
@@ -2405,14 +2405,14 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
     showpoint_tag.x = showpoint.x + cluster.average.x;
     showpoint_tag.y = showpoint.y + cluster.average.y;
     showpoint_tag.z = showpoint.z + cluster.average.z;
-    TransformedPC->push_back(showpoint);
-    TransformedPCTag->push_back(showpoint_tag);
+    transformed_pc->push_back(showpoint);
+    transformed_pc_tag->push_back(showpoint_tag);
 
     cluster.corner_offset_array.push_back(p_corner);
   }
 
-  LidarTag::publishPointcloud(TransformedPC, pub_frame_, string("transpts"));
-  LidarTag::publishPointcloud(TransformedPCTag, pub_frame_, string("transptstag"));
+  LidarTag::publishPointcloud(transformed_pc, pub_frame_, string("transpts"));
+  LidarTag::publishPointcloud(transformed_pc_tag, pub_frame_, string("transptstag"));
 
   // save initial lidar to tag pose matrix
   cluster.initial_pose.rotation = R;

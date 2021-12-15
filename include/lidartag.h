@@ -735,7 +735,7 @@ private:
    * A function to prepare for visualization results in rviz
    */
   void clusterToPclVectorAndMarkerPublisher(
-    const std::vector<ClusterFamily_t> & t_cluster,
+    std::vector<ClusterFamily_t> & t_cluster,
     pcl::PointCloud<PointXYZRI>::Ptr t_out_cluster,
     pcl::PointCloud<PointXYZRI>::Ptr t_out_edge_cluster,
     pcl::PointCloud<PointXYZRI>::Ptr t_out_payload,
@@ -822,9 +822,9 @@ private:
   //void publishClusterInfo(const ClusterFamily_t cluster); jsk packages are missing
   void publishIntersections(const std::vector<Eigen::VectorXf> intersection_list);
   void printClusterResult(const std::vector<ClusterFamily_t> & cluster_buff);
-  void addCorners(corners tag_corners, ClusterFamily_t cluster);
-  void addBoundaryCorners(corners tag_boundary_corners, ClusterFamily_t cluster);
-  void getBoundaryCorners(ClusterFamily_t cluster, pcl::PointCloud<PointXYZRI>::Ptr boundaryPts);
+  void addCorners(corners tag_corners, const ClusterFamily_t & cluster);
+  void addBoundaryCorners(corners tag_boundary_corners, const ClusterFamily_t & cluster);
+  void getBoundaryCorners(ClusterFamily_t & cluster, pcl::PointCloud<PointXYZRI>::Ptr boundaryPts);
   void colorClusters(const std::vector<ClusterFamily_t> & cluster);
   void displayClusterPointSize(const std::vector<ClusterFamily_t> & cluster_buff);
   void displayClusterIndexNumber(const std::vector<ClusterFamily_t> & cluster_buff);

@@ -248,8 +248,9 @@ visualization_msgs::msg::Marker LidarTag::visualizeVector(
 /*
  * A function to prepare for displaying results in rviz
  */
-void LidarTag::clusterToPclVectorAndMarkerPublisher(
-  const std::vector<ClusterFamily_t> & cluster, pcl::PointCloud<PointXYZRI>::Ptr out_cluster,
+void LidarTag::
+clusterToPclVectorAndMarkerPublisher(
+  std::vector<ClusterFamily_t> & cluster, pcl::PointCloud<PointXYZRI>::Ptr out_cluster,
   pcl::PointCloud<PointXYZRI>::Ptr out_edge_cluster, pcl::PointCloud<PointXYZRI>::Ptr out_payload,
   pcl::PointCloud<PointXYZRI>::Ptr out_payload_3d, pcl::PointCloud<PointXYZRI>::Ptr out_target,
   pcl::PointCloud<PointXYZRI>::Ptr out_initial_target, pcl::PointCloud<PointXYZRI>::Ptr edge_group_1,
@@ -688,7 +689,7 @@ void LidarTag::clusterToPclVectorAndMarkerPublisher(
 } */
 
 void LidarTag::getBoundaryCorners(
-  ClusterFamily_t cluster, pcl::PointCloud<PointXYZRI>::Ptr boundaryPts)
+  ClusterFamily_t & cluster, pcl::PointCloud<PointXYZRI>::Ptr boundaryPts)
 {
   Eigen::Vector4f line1;
   Eigen::Vector4f line2;
@@ -796,9 +797,19 @@ void LidarTag::getBoundaryCorners(
 
   payload_vertices.row(2).maxCoeff(&col);
   utils::eigen2Corners(payload_vertices.col(col), cluster.tag_boundary_corners.top);
+
+  point p_corner;
+  for (int i = 0; i < 4; ++i) {
+    
+    p_corner.x = ordered_payload_vertices.col(i)(0);
+    p_corner.y = ordered_payload_vertices.col(i)(1);
+    p_corner.z = ordered_payload_vertices.col(i)(2);
+
+    cluster.boundary_corner_offset_array.push_back(p_corner);
+  }
 }
 
-void LidarTag::addCorners(corners tag_corners, ClusterFamily_t cluster)
+void LidarTag::addCorners(corners tag_corners, const ClusterFamily_t & cluster)
 {
   visualization_msgs::msg::Marker marker, left_marker, right_marker, top_marker, down_marker;
   lidartag_msgs::msg::Corners pub_corners;
@@ -886,7 +897,7 @@ void LidarTag::addCorners(corners tag_corners, ClusterFamily_t cluster)
   pub_corners_array_.corners.push_back(pub_corners);
 }
 
-void LidarTag::addBoundaryCorners(corners tag_corners, ClusterFamily_t cluster)
+void LidarTag::addBoundaryCorners(corners tag_corners, const ClusterFamily_t & cluster)
 {
   visualization_msgs::msg::Marker marker, left_marker, right_marker, top_marker, down_marker;
   lidartag_msgs::msg::Corners pub_corners;
@@ -951,18 +962,18 @@ void LidarTag::addBoundaryCorners(corners tag_corners, ClusterFamily_t cluster)
   pub_corners.rotation = cluster.rkhs_decoding.rotation_angle;
   pub_corners.corners.resize(4);
 
-  //for(int i = 0; i < 4; i++) {
-  //  geometry_msgs::msg::Point p;
-  //  p.x = cluster.offs[i].x + cluster.average.x;
-  //  p.y = cluster.corner_offset_array[i].y + cluster.average.y;
-  //  p.z = cluster.corner_offset_array[i].z + cluster.average.z;
-  //  pub_corners.corners[i] = p;
-  //}
+  for(int i = 0; i < 4; i++) {
+    geometry_msgs::msg::Point p;
+    p.x = cluster.boundary_corner_offset_array[i].x + cluster.average.x;
+    p.y = cluster.boundary_corner_offset_array[i].y + cluster.average.y;
+    p.z = cluster.boundary_corner_offset_array[i].z + cluster.average.z;
+    pub_corners.corners[i] = p;
+  }
 
-  pub_corners.corners[(0 - pub_corners.rotation) % 4] = pub_corners.down;
-  pub_corners.corners[(1 - pub_corners.rotation) % 4] = pub_corners.left;
-  pub_corners.corners[(2 - pub_corners.rotation) % 4] = pub_corners.top;
-  pub_corners.corners[(3 - pub_corners.rotation) % 4] = pub_corners.right;
+  //pub_corners.corners[(0 - pub_corners.rotation) % 4] = pub_corners.down;
+  //pub_corners.corners[(1 - pub_corners.rotation) % 4] = pub_corners.left;
+  //pub_corners.corners[(2 - pub_corners.rotation) % 4] = pub_corners.top;
+  //pub_corners.corners[(3 - pub_corners.rotation) % 4] = pub_corners.right;
 
   boundary_corners_array_.corners.push_back(pub_corners);
 }
