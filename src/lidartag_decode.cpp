@@ -1617,8 +1617,9 @@ int LidarTag::getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_siz
   float cur_score = 0;
   for (int i = 0; i < num_codes; ++i) {
     cur_score = computeFunctionInnerProduct(
-                  rkhs_decoding.template_points_3d, function_dic_[size_num][i], rkhs_decoding.ell) /
-                area;
+      rkhs_decoding.template_points_3d, function_dic_[size_num][i], rkhs_decoding.ell) / area;
+
+    rkhs_decoding.score[i] = cur_score;
     // rkhs_decoding.score[i] = computeFunctionInnerProduct(
     //         rkhs_decoding.template_points_3d,
     //         _function_dic[size_num][i],

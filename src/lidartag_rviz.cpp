@@ -551,6 +551,7 @@ void LidarTag::clusterToPclVectorAndMarkerPublisher(
     }
     if (id_decoding_) {
       addCorners(tag_corners_, cluster[key]);
+      
       getBoundaryCorners(cluster[key], boundary_pts);
       addBoundaryCorners(tag_boundary_corners_, cluster[key]);
     }
@@ -777,11 +778,11 @@ void LidarTag::getBoundaryCorners(
   payload_vertices.col(3) = cluster.principal_axes * intersection4;
 
   Eigen::MatrixXf ordered_payload_vertices = getOrderedCorners(payload_vertices, cluster);
-  Eigen::MatrixXf Vertices = Eigen::MatrixXf::Zero(3, 5);
-  utils::formGrid(Vertices, 0, 0, 0, cluster.tag_size);
+  Eigen::MatrixXf vertices = Eigen::MatrixXf::Zero(3, 5);
+  utils::formGrid(vertices, 0, 0, 0, cluster.tag_size);
   Eigen::Matrix3f R;
   std::vector<Eigen::MatrixXf> mats;
-  mats = utils::fitGridNew(Vertices, R, ordered_payload_vertices);
+  mats = utils::fitGridNew(vertices, R, ordered_payload_vertices);
 
   Eigen::MatrixXf::Index col;
   payload_vertices.row(1).minCoeff(&col);
@@ -860,6 +861,20 @@ void LidarTag::addCorners(corners tag_corners, ClusterFamily_t cluster)
   top_marker.color.b = 1.0;
   top_corners_pub_->publish(top_marker);
 
+  pub_corners.rotation = cluster.rkhs_decoding.rotation_angle;
+  pub_corners.corners.resize(4);
+
+  pub_corners.corners[(0 - pub_corners.rotation) % 4] = pub_corners.down;
+  pub_corners.corners[(1 - pub_corners.rotation) % 4] = pub_corners.left;
+  pub_corners.corners[(2 - pub_corners.rotation) % 4] = pub_corners.top;
+  pub_corners.corners[(3 - pub_corners.rotation) % 4] = pub_corners.right;
+
+  //RCLCPP_WARN_STREAM(get_logger(), "Check the matching: id: " << pub_corners.id);
+  //RCLCPP_WARN_STREAM(get_logger(), "bottom id: " << ((0 - pub_corners.rotation) % 4));
+  //RCLCPP_WARN_STREAM(get_logger(), "right id: " << ((1 - pub_corners.rotation) % 4));
+  //RCLCPP_WARN_STREAM(get_logger(), "top id: " << ((2 - pub_corners.rotation) % 4));
+  //RCLCPP_WARN_STREAM(get_logger(), "left id: " << ((3 - pub_corners.rotation) % 4));
+  
   pub_corners_array_.corners.push_back(pub_corners);
 }
 
@@ -924,6 +939,14 @@ void LidarTag::addBoundaryCorners(corners tag_corners, ClusterFamily_t cluster)
   top_marker.color.g = 0.0;
   top_marker.color.b = 1.0;
   top_boundary_corners_pub_->publish(top_marker);
+
+  pub_corners.rotation = cluster.rkhs_decoding.rotation_angle;
+  pub_corners.corners.resize(4);
+
+  pub_corners.corners[(0 - pub_corners.rotation) % 4] = pub_corners.down;
+  pub_corners.corners[(1 - pub_corners.rotation) % 4] = pub_corners.left;
+  pub_corners.corners[(2 - pub_corners.rotation) % 4] = pub_corners.top;
+  pub_corners.corners[(3 - pub_corners.rotation) % 4] = pub_corners.right;
 
   boundary_corners_array_.corners.push_back(pub_corners);
 }
