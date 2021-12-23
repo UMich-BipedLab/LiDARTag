@@ -30,7 +30,7 @@
 -->
 
 <launch>
-    <arg name="library_path" default="$(find lidartag)/lib/tag_calib/" />
+    <arg name="library_path" default="$(find lidartag)/lib/tag_calibrator/" />
     <include file="$(find lidartag)/launch/lidartag_master.launch">
         <arg name="library_path" value="$(arg library_path)" />
     </include>

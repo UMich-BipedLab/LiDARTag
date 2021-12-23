@@ -29,13 +29,12 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#pragma once
 #ifndef LIDARTAG_H
 #define LIDARTAG_H
 
 #include <fstream>
 #include <memory>
-#include <queue> // std::queue
+#include <queue>
 #include <string>
 #include <vector>
 
@@ -52,13 +51,13 @@
 #include <visualization_msgs/msg/marker_array.hpp>
 //#include <jsk_msgs/msg/overlay_text.hpp>
 
-// threadings
+// threading
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/lock_guard.hpp>
 #include <tbb/tbb.h>
 
-// To trasnform to pcl format
+// To transform to pcl format
 #include <pcl/ModelCoefficients.h>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/features/normal_3d.h>
@@ -81,10 +80,6 @@
 #include "utils.h"
 
 #include "apriltag_utils.h"
-
-// #include "mat.h"
-// #include "matrix.h"
-// #include "tensorflow_ros_test/lib.h"
 
 namespace BipedLab {
 class LidarTag: public rclcpp::Node {
@@ -155,19 +150,6 @@ private:
   int iter_;             // iterations of frame
   double clearance_;
 
-  Eigen::Vector3f intersection1_;
-  Eigen::Vector3f intersection2_;
-  Eigen::Vector3f intersection3_;
-  Eigen::Vector3f intersection4_;
-  Eigen::MatrixXf ordered_payload_vertices_;
-  Eigen::MatrixXf vertices_ = Eigen::MatrixXf::Zero(3, 5);
-  Eigen::Matrix<float, 3, 3, Eigen::DontAlign> R_;
-  Eigen::Matrix<float, 3, 3, Eigen::DontAlign> U_;
-  Eigen::Matrix<float, 3, 3, Eigen::DontAlign> V_;
-  Eigen::Matrix<float, 3, 3, Eigen::DontAlign> r_;
-
-  Eigen::MatrixXf payload_vertices_ = Eigen::MatrixXf::Zero(3, 4);
-
   std::unique_ptr<boost::thread> extraction_thread_;
 
   // ROS
@@ -213,15 +195,9 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr average_point_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr beforetransformed_edge_pc_pub_;
   rclcpp::Publisher<lidartag_msgs::msg::CornersArray>::SharedPtr corners_array_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr left_corners_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr right_corners_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr down_corners_pub;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr top_corners_pub_;
   rclcpp::Publisher<lidartag_msgs::msg::CornersArray>::SharedPtr boundary_corners_array_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr left_boundary_corners_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr right_boundary_corners_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr down_boundary_corners_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr top_boundary_corners_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr corners_markers_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr boundary_corners_markers_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr boundary_points_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr colored_cluster_buff_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr ps_cluster_buff_pub_;
@@ -231,14 +207,6 @@ private:
   int point_cloud_received_; // check if a scan of point cloud has received or
                              // not
   int stop_; // Just a switch for exiting this program while using valgrind
-
-  // rclcpp::Publisher<> DebugPointCheckPub_; // Debug
-  // rclcpp::Publisher<> DebugBoundaryPointPub_; // Debug
-  // rclcpp::Publisher<> DebugNoEdgePub_; // Debug
-  // rclcpp::Publisher<> DebugExtractPayloadPub_; // Debug
-
-  //rclcpp::Publisher<> TextPub_; // publish text
-  // visualization_msgs::MarkerArray _markers;
 
   // Queue for pc data
   std::queue<sensor_msgs::msg::PointCloud2::SharedPtr> point_cloud1_queue_;
@@ -297,15 +265,10 @@ private:
   double coa_tunable_;
   double tagsize_tunable_;
   int min_returns_per_grid_;
-  //corners tag_corners_; // using global vars like this lead to errors -> delete
-  //corners tag_boundary_corners_;
 
   GrizTagFamily_t * tf;
-  lidartag_msgs::msg::LidarTagDetectionArray lidartag_pose_array_; // an array of apriltags
-  lidartag_msgs::msg::LidarTagDetectionArray detectionsToPub;
-  lidartag_msgs::msg::CornersArray pub_corners_array_;
-  lidartag_msgs::msg::CornersArray boundary_corners_array_;
-  // threadings
+
+  // threading
   int num_threads_;
   std::shared_ptr<ThreadPool> thread_vec_;
 
@@ -598,7 +561,8 @@ private:
    * A function to publish pose of tag to the robot
    */
   [[maybe_unused]] void tagToRobot(const int & t_cluster_id, const Eigen::Vector3f & t_normal_vec,
-    Homogeneous_t & t_pose, tf2::Transform & t_transform, const PointXYZRI & t_ave);
+    Homogeneous_t & t_pose, tf2::Transform & t_transform, const PointXYZRI & t_ave,
+    lidartag_msgs::msg::LidarTagDetectionArray & lidartag_pose_array);
 
   /* [Payload decoding]
    * A function to decode payload with different means
@@ -769,7 +733,8 @@ private:
   // matData);
 
             // [A function to put clusterFamily to LidarTagDetectionArray]
-  void detectionArrayPublisher(const ClusterFamily_t & cluster);
+  void detectionArrayPublisher(
+    const ClusterFamily_t & cluster, lidartag_msgs::msg::LidarTagDetectionArray & detections_array);
 
   /* [Drawing]
    * A function to draw lines in rviz
@@ -822,9 +787,20 @@ private:
   //void publishClusterInfo(const ClusterFamily_t cluster); jsk packages are missing
   void publishIntersections(const std::vector<Eigen::VectorXf> intersection_list);
   void printClusterResult(const std::vector<ClusterFamily_t> & cluster_buff);
-  void addCorners(corners tag_corners, const ClusterFamily_t & cluster);
-  void addBoundaryCorners(corners tag_boundary_corners, const ClusterFamily_t & cluster);
-  void getBoundaryCorners(ClusterFamily_t & cluster, pcl::PointCloud<PointXYZRI>::Ptr boundaryPts);
+  void addCorners(
+    const ClusterFamily_t & cluster,
+    lidartag_msgs::msg::CornersArray & corners_array_msg,
+    visualization_msgs::msg::MarkerArray & corners_markers_msg);
+  void addBoundaryCorners(
+    const ClusterFamily_t & cluster,
+    lidartag_msgs::msg::CornersArray & corners_array_msg,
+    visualization_msgs::msg::MarkerArray & corners_markers_msg);
+  void addCornersAux(
+    const ClusterFamily_t & cluster,
+    const std::vector<geometry_msgs::msg::Point> & vertex_msg,
+    lidartag_msgs::msg::CornersArray & corners_array_msg,
+    visualization_msgs::msg::MarkerArray & corners_markers_msg);
+  //bool getBoundaryCorners(ClusterFamily_t & cluster, pcl::PointCloud<PointXYZRI>::Ptr boundaryPts); deprecated
   void colorClusters(const std::vector<ClusterFamily_t> & cluster);
   void displayClusterPointSize(const std::vector<ClusterFamily_t> & cluster_buff);
   void displayClusterIndexNumber(const std::vector<ClusterFamily_t> & cluster_buff);

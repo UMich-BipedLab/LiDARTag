@@ -179,20 +179,28 @@ LidarTag::LidarTag(const rclcpp::NodeOptions & options) :
     this->create_publisher<sensor_msgs::msg::PointCloud2>("before_transformed_edge_pc", 10);
   corners_array_pub_ =
     this->create_publisher<lidartag_msgs::msg::CornersArray>(corners_array_topic_, 10);
-  left_corners_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("left_corner", 10);
-  right_corners_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("right_corner", 10);
-  down_corners_pub = this->create_publisher<visualization_msgs::msg::Marker>("down_corner", 10);
-  top_corners_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("top_corner", 10);
+
+  corners_markers_pub_ =
+    this->create_publisher<visualization_msgs::msg::MarkerArray>("corners_markers", 10);
+
+  //left_corners_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("left_corner", 10);
+  //right_corners_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("right_corner", 10);
+  //down_corners_pub = this->create_publisher<visualization_msgs::msg::Marker>("down_corner", 10);
+  //top_corners_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("top_corner", 10);
+
   boundary_corners_array_pub_ =
     this->create_publisher<lidartag_msgs::msg::CornersArray>("boundary_corners_array", 10);
-  left_boundary_corners_pub_ =
-    this->create_publisher<visualization_msgs::msg::Marker>("left_boundary_corner", 10);
-  right_boundary_corners_pub_ =
-    this->create_publisher<visualization_msgs::msg::Marker>("right_boundary_corner", 10);
-  down_boundary_corners_pub_ =
-    this->create_publisher<visualization_msgs::msg::Marker>("down_boundary_corner", 10);
-  top_boundary_corners_pub_ =
-    this->create_publisher<visualization_msgs::msg::Marker>("top_boundary_corner", 10);
+  boundary_corners_markers_pub_ =
+    this->create_publisher<visualization_msgs::msg::MarkerArray>("boundary_corners_markers", 10);
+  //left_boundary_corners_pub_ =
+  //  this->create_publisher<visualization_msgs::msg::Marker>("left_boundary_corner", 10);
+  //right_boundary_corners_pub_ =
+  //  this->create_publisher<visualization_msgs::msg::Marker>("right_boundary_corner", 10);
+  //down_boundary_corners_pub_ =
+  //  this->create_publisher<visualization_msgs::msg::Marker>("down_boundary_corner", 10);
+  //top_boundary_corners_pub_ =
+  //  this->create_publisher<visualization_msgs::msg::Marker>("top_boundary_corner", 10);
+
   colored_cluster_buff_pub_ =
     this->create_publisher<sensor_msgs::msg::PointCloud2>("colored_cluster_buff", 10);
   ps_cluster_buff_pub_ =this->create_publisher<visualization_msgs::msg::MarkerArray>(
@@ -303,11 +311,6 @@ void LidarTag::mainLoop()
   std::vector<std::vector<LidarPoints_t>> ordered_buff(beam_num_);
 
   while (rclcpp::ok()) {
-    lidartag_pose_array_.detections.clear();
-    detectionsToPub.detections.clear();
-    pub_corners_array_.corners.clear();
-    boundary_corners_array_.corners.clear();
-
     if (debug_time_) {
       timing_ = {
         std::chrono::steady_clock::now(), std::chrono::steady_clock::now(),
@@ -384,9 +387,6 @@ void LidarTag::mainLoop()
     LidarTag::clusterToPclVectorAndMarkerPublisher(
       clusterbuff, clusterpc, clusteredgepc, payloadpc, payload3dpc, tagpc, ini_tagpc, edge_group1,
       edge_group2, edge_group3, edge_group4, boundarypc, cluster_markers);
-
-    // publish lidartag poses
-    lidartag_pose_pub_->publish(lidartag_pose_array_);
 
     // publish lidartag corners
     // publish results for rviz
@@ -1685,7 +1685,8 @@ void LidarTag::storeTemplatePts(ClusterFamily_t & cluster)
  */
 void LidarTag::tagToRobot(
   const int & cluster_id, const Eigen::Vector3f & normal_vec, Homogeneous_t & pose,
-  tf2::Transform & transform, const PointXYZRI & ave)
+  tf2::Transform & transform, const PointXYZRI & ave,
+  lidartag_msgs::msg::LidarTagDetectionArray & lidartag_pose_array)
 {
   Eigen::Vector3f x(1, 0, 0);
   Eigen::Vector3f y(0, 1, 0);
@@ -1754,11 +1755,10 @@ void LidarTag::tagToRobot(
   lidartag_msg.pose.orientation = geo_q;
   lidartag_msg.header = point_cloud_header_;
   lidartag_msg.header.frame_id = std::string("lidartag_") + to_string(cluster_id);
-  lidartag_msg.frame_index = 0;
 
-  lidartag_pose_array_.header = point_cloud_header_;
-  lidartag_pose_array_.frame_index = 0;
-  lidartag_pose_array_.detections.push_back(lidartag_msg);
+  lidartag_pose_array.header = point_cloud_header_;
+  lidartag_pose_array.frame_index = 0;
+  lidartag_pose_array.detections.push_back(lidartag_msg);
 }
 
 /* <A cluster>
@@ -2317,6 +2317,13 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
   Eigen::Vector3f intersection2 = getintersec(line2, line3);
   Eigen::Vector3f intersection3 = getintersec(line3, line4);
   Eigen::Vector3f intersection4 = getintersec(line1, line4);
+
+  Eigen::MatrixXf intersection_matrix;
+  intersection_matrix.col(0) = intersection1;
+  intersection_matrix.col(1) = intersection2;
+  intersection_matrix.col(2) = intersection3;
+  intersection_matrix.col(3) = intersection4;
+
   if (!estimateTargetSize(cluster, intersection1, intersection2, intersection3, intersection4)) {
     cluster.detail_valid = 12;
     return false;
@@ -2332,10 +2339,11 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
     intersection1, intersection2, intersection3, intersection4};
 
   publishIntersections(intersection_list);
-  intersection1_ = intersection1;
-  intersection2_ = intersection2;
-  intersection3_ = intersection3;
-  intersection4_ = intersection4;
+  //intersection1_ = intersection1; deprecated
+  //intersection2_ = intersection2; deprecated
+  //intersection3_ = intersection3; deprecated
+  //intersection4_ = intersection4; deprecated
+
   // associate four intersections with four coners of the template
   Eigen::MatrixXf payload_vertices(3, 4);
   payload_vertices.col(0) = cluster.principal_axes * intersection1;
@@ -2348,47 +2356,50 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
   //       0.0829155;
 
   Eigen::MatrixXf ordered_payload_vertices = getOrderedCorners(payload_vertices, cluster);
-  Eigen::MatrixXf Vertices = Eigen::MatrixXf::Zero(3, 5);
+  Eigen::MatrixXf vertices = Eigen::MatrixXf::Zero(3, 5);
+
   //   ordered_payload_vertices << -0.0151639, -0.629135, 0.0127609, 0.624599,
   //       -0.178287, -0.325841, 0.167202, 0.319495, 0.728342, -0.0662743,
   //       -0.686448, 0.0829155;
   // Vertices << 0, 0, 0, 0, 0,
   //             0, 0.515, 0.515, -0.515, -0.515,
   //             0, 0.515, -0.515, -0.515, 0.515;
-  utils::formGrid(Vertices, 0, 0, 0, cluster.tag_size);
+
+  utils::formGrid(vertices, 0, 0, 0, cluster.tag_size);
+
   Eigen::Matrix3f R;
   std::vector<Eigen::MatrixXf> mats;
-  mats = utils::fitGridNew(Vertices, R, ordered_payload_vertices);
-  U_ = mats.front();
-  mats.erase(mats.begin());
-  V_ = mats.front();
-  mats.erase(mats.begin());
-  r_ = mats.front();
-  mats.erase(mats.begin());
-  mats.clear();
+  mats = utils::fitGridNew(vertices, R, ordered_payload_vertices);
+  //U_ = mats.front(); deprecated
+  //mats.erase(mats.begin());
+  // V_ = mats.front(); deprecated
+  //mats.erase(mats.begin());
+  // r_ = mats.front(); deprecated
+  //mats.erase(mats.begin());
+  //mats.clear();
   // R << -0.467, 0.861, 0.201
   //    , -0.632, -0.484, 0.606
   //     , 0.619, 0.156, 0.767;
-  payload_vertices_ = ordered_payload_vertices;
-  vertices_ = Vertices;
-  ordered_payload_vertices_ = ordered_payload_vertices;
-  R_ = R;
+  //payload_vertices_ = ordered_payload_vertices; deprecated
+  //vertices_ = vertices; // deprecated
+  //ordered_payload_vertices_ = ordered_payload_vertices; deprecated
+  //R_ = R; deprecated
   // used for visualization for corner points
   PointXYZRI showpoint;
   PointXYZRI showpoint_tag;
   Eigen::MatrixXf::Index col;
 
-  ordered_payload_vertices.row(1).minCoeff(&col);
-  utils::eigen2Corners(ordered_payload_vertices.col(col), cluster.tag_corners.right);
+  //ordered_payload_vertices.row(1).minCoeff(&col); deprecated
+  //utils::eigen2Corners(ordered_payload_vertices.col(col), cluster.tag_corners.right);
 
-  ordered_payload_vertices.row(1).maxCoeff(&col);
-  utils::eigen2Corners(ordered_payload_vertices.col(col), cluster.tag_corners.left);
+  //ordered_payload_vertices.row(1).maxCoeff(&col);
+  //utils::eigen2Corners(ordered_payload_vertices.col(col), cluster.tag_corners.left);
 
-  ordered_payload_vertices.row(2).minCoeff(&col);
-  utils::eigen2Corners(ordered_payload_vertices.col(col), cluster.tag_corners.down);
+  //ordered_payload_vertices.row(2).minCoeff(&col);
+  //utils::eigen2Corners(ordered_payload_vertices.col(col), cluster.tag_corners.down);
 
-  ordered_payload_vertices.row(2).maxCoeff(&col);
-  utils::eigen2Corners(ordered_payload_vertices.col(col), cluster.tag_corners.top);
+  //ordered_payload_vertices.row(2).maxCoeff(&col);
+  //utils::eigen2Corners(ordered_payload_vertices.col(col), cluster.tag_corners.top);
 
   point p_corner;
 
@@ -2449,10 +2460,27 @@ bool LidarTag::getLines(
   seg.setOptimizeCoefficients(true);
   seg.setModelType(pcl::SACMODEL_LINE);
   seg.setMethodType(pcl::SAC_RANSAC);
-  seg.setDistanceThreshold(0.02);
+  seg.setDistanceThreshold(0.01);
+  seg.setMaxIterations(100);
 
   seg.setInputCloud(cloud);
   seg.segment(*inliers, *coefficients);
+
+  pcl::ModelCoefficients::Ptr coefficients_debug(new pcl::ModelCoefficients);
+  pcl::PointIndices::Ptr inliers_debug(new pcl::PointIndices);
+  pcl::SACSegmentation<pcl::PointXYZ> seg_debug;
+  pcl::ExtractIndices<pcl::PointXYZ> extract_debug;
+
+  seg_debug.setOptimizeCoefficients(true);
+  seg_debug.setModelType(pcl::SACMODEL_LINE);
+  seg_debug.setMethodType(pcl::SAC_RANSAC);
+  seg_debug.setDistanceThreshold(0.02); // 0.015 ok
+  seg_debug.setMaxIterations(500);
+
+  seg_debug.setInputCloud(cloud);
+  seg_debug.segment(*inliers_debug, *coefficients_debug);
+
+
 
   if (debug_info_) {
     RCLCPP_DEBUG_STREAM(get_logger(), "Inliers size: " << inliers->indices.size());
@@ -2472,6 +2500,14 @@ bool LidarTag::getLines(
   extract.filter(*line_cloud);
   line << coefficients->values[0], coefficients->values[1], coefficients->values[3],
     coefficients->values[4];
+
+  if (std::abs(line.x()) > 2.f) {
+    int x = 0;
+  }
+
+  if (std::abs(coefficients_debug->values[0]) > 2.f) {
+    int x = 0;
+  }
 
   return true;
 }
@@ -3026,13 +3062,11 @@ std::vector<int> LidarTag::getValidClusters(const std::vector<ClusterFamily_t> &
   return valid_clusters;
 }
 
-void LidarTag::detectionArrayPublisher(const ClusterFamily_t & cluster)
+void LidarTag::detectionArrayPublisher(
+  const ClusterFamily_t & cluster, lidartag_msgs::msg::LidarTagDetectionArray & detections_array)
 {
-  // if(cluster.average.x < 0) return;
-
   lidartag_msgs::msg::LidarTagDetection detection;
   detection.header = point_cloud_header_;
-  detection.frame_index = 0 /* point_cloud_header_.seq deprecated */;
 
   // TODO: here we can only assign the id and tag size according to the
   // distance.
@@ -3058,9 +3092,7 @@ void LidarTag::detectionArrayPublisher(const ClusterFamily_t & cluster)
   sensor_msgs::msg::PointCloud2 pcs_waited_to_pub;
   pcl::toROSMsg(*clusterPC, pcs_waited_to_pub);
   detection.points = pcs_waited_to_pub;
-  detectionsToPub.detections.push_back(detection);
-  // if (detectionsToPub.detections.size() > 2)
-  // ROS_INFO_STREAM("LidarTag Got wrong tags");
+  detections_array.detections.push_back(detection);
 }
 void LidarTag::keyboardEventOccurred(
   const pcl::visualization::KeyboardEvent & event, void * nothing)

@@ -67,5 +67,5 @@
   </include>
 
 
-  <!--node pkg="rviz2" exec="rviz2" name="rviz" args="-d $(find-pkg-share lidartag)/rviz/tag_calib.rviz" respawn="true" /-->
+  <!--node pkg="rviz2" exec="rviz2" name="rviz" args="-d $(find-pkg-share lidartag)/rviz/tag_calibrator.rviz" respawn="true" /-->
 </launch>

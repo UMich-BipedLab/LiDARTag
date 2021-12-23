@@ -666,25 +666,26 @@ Eigen::Matrix3d qToR(const T & t_pose)
   return R;
 }
 
-Eigen::Matrix3d qToR(const Eigen::Vector3f &t_pose){
-    Eigen::Matrix3d R = Eigen::Matrix3d::Identity();
-    double a = 0; // w
-    double b = t_pose(0); // x
-    double c = t_pose(1); // y
-    double d = t_pose(2); // z
-    R(0, 0) = std::pow(a, 2) + std::pow(b, 2) - std::pow(c, 2) - std::pow(d, 2);
-    R(0, 1) = 2*(b*c - a*d);
-    R(0, 2) = 2*(b*d + a*c);
+Eigen::Matrix3d qToR(const Eigen::Vector3f &t_pose)
+{
+  Eigen::Matrix3d R = Eigen::Matrix3d::Identity();
+  double a = 0; // w
+  double b = t_pose(0); // x
+  double c = t_pose(1); // y
+  double d = t_pose(2); // z
+  R(0, 0) = std::pow(a, 2) + std::pow(b, 2) - std::pow(c, 2) - std::pow(d, 2);
+  R(0, 1) = 2*(b*c - a*d);
+  R(0, 2) = 2*(b*d + a*c);
 
-    R(1, 0) = 2*(b*c + a*d);
-    R(1, 1) = std::pow(a, 2) - std::pow(b, 2) + std::pow(c, 2) - std::pow(d, 2);
-    R(1, 2) = 2*(c*d - a*b);
+  R(1, 0) = 2*(b*c + a*d);
+  R(1, 1) = std::pow(a, 2) - std::pow(b, 2) + std::pow(c, 2) - std::pow(d, 2);
+  R(1, 2) = 2*(c*d - a*b);
 
-    R(2, 0) = 2*(b*d - a*c);
-    R(2, 1) = 2*(c*d + a*b);
-    R(2, 2) = std::pow(a, 2) - std::pow(b, 2) - std::pow(c, 2) + std::pow(d, 2);
+  R(2, 0) = 2*(b*d - a*c);
+  R(2, 1) = 2*(c*d + a*b);
+  R(2, 2) = std::pow(a, 2) - std::pow(b, 2) - std::pow(c, 2) + std::pow(d, 2);
 
-    return R;
+  return R;
 }
 
 Eigen::Matrix3d qMultiplication(
