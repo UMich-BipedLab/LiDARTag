@@ -1167,7 +1167,7 @@ int LidarTag::optimizePose(ClusterFamily_t & cluster)
   data << cluster.merged_data_h, template_bound;
 
   // XXX: tolerance and timeout
-  float x_tol = 1e-5;
+  float x_tol = 1e-8;
   double max_time = 1.0 / 15;  // 15 Hz
   double minf;
 

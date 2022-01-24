@@ -120,7 +120,7 @@
 
 
       <!-- Solvers for Pose Optimizatin-->
-      <param name="optimization_solver" value="8" />
+      <param name="optimization_solver" value="3" /> <!--8-->
       <param name="euler_derivative" value="true" />
       <param name="optimize_up_bound" value="0.8" />
       <param name="optimize_low_bound" value="0.8" />

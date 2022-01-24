@@ -165,8 +165,8 @@ LidarTag::LidarTag(const rclcpp::NodeOptions & options) :
   lidartag_cluster_transformed_edge_points_pub_ =
     this->create_publisher<sensor_msgs::msg::PointCloud2>(
     "lidartag_cluster_trasformed_edge_points", 10);
-  detail_valid_marker_array_pub_ =
-    this->create_publisher<visualization_msgs::msg::MarkerArray>("detail_valid_marker", 10);
+  //detail_valid_marker_array_pub_ =
+  //  this->create_publisher<visualization_msgs::msg::MarkerArray>("detail_valid_marker", 10);
   //detail_valid_text_pub_ =
   //  this->create_publisher<jsk_msgs::msg::OverlayText>("detail_valid_text", 10);
   intersection_marker_array_pub_ =
@@ -393,7 +393,7 @@ void LidarTag::mainLoop()
     LidarTag::plotIdealFrame();
     LidarTag::publishPointcloud(extracted_poi_pc, pub_frame_, string("wholeedge"));
     LidarTag::publishPointcloud(clusteredgepc, pub_frame_, string("clusteredgepc"));
-    LidarTag::publishPointcloud(clusterpc, pub_frame_, string("Cluster"));
+    LidarTag::publishPointcloud(clusterpc, pub_frame_, string("cluster"));
     LidarTag::publishPointcloud(edge_group1, pub_frame_, string("edgegroup1"));
     LidarTag::publishPointcloud(edge_group2, pub_frame_, string("edgegroup2"));
     LidarTag::publishPointcloud(edge_group3, pub_frame_, string("edgegroup3"));
@@ -402,19 +402,19 @@ void LidarTag::mainLoop()
 
     if (collect_dataset_) {
       if (result_statistics_.remaining_cluster_size == 1) {
-        LidarTag::publishPointcloud(payloadpc, pub_frame_, string("Payload"));
-        LidarTag::publishPointcloud(payload3dpc, pub_frame_, string("Payload3D"));
-        LidarTag::publishPointcloud(tagpc, pub_frame_, string("Target"));
-        LidarTag::publishPointcloud(ini_tagpc, pub_frame_, string("InitialTarget"));
+        LidarTag::publishPointcloud(payloadpc, pub_frame_, string("payload"));
+        LidarTag::publishPointcloud(payload3dpc, pub_frame_, string("payload3d"));
+        LidarTag::publishPointcloud(tagpc, pub_frame_, string("target"));
+        LidarTag::publishPointcloud(ini_tagpc, pub_frame_, string("initialtarget"));
       } else if (result_statistics_.remaining_cluster_size > 1)
         cout << "More than one!! " << endl;
       else
         cout << "Zero!! " << endl;
     } else {
-      LidarTag::publishPointcloud(payloadpc, pub_frame_, string("Payload"));
-      LidarTag::publishPointcloud(payload3dpc, pub_frame_, string("Payload3D"));
-      LidarTag::publishPointcloud(tagpc, pub_frame_, string("Target"));
-      LidarTag::publishPointcloud(ini_tagpc, pub_frame_, string("InitialTarget"));
+      LidarTag::publishPointcloud(payloadpc, pub_frame_, string("payload"));
+      LidarTag::publishPointcloud(payload3dpc, pub_frame_, string("payload3d"));
+      LidarTag::publishPointcloud(tagpc, pub_frame_, string("target"));
+      LidarTag::publishPointcloud(ini_tagpc, pub_frame_, string("initialtarget"));
     }
 
     if (sleep_to_display_) {
