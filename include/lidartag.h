@@ -188,8 +188,6 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr lidartag_cluster_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr lidartag_cluster_edge_points_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr lidartag_cluster_transformed_edge_points_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr detail_valid_marker_array_pub_;
-  //rclcpp::Publisher<jsk_msgs::msg::OverlayText>::SharedPtr detail_valid_text_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr intersection_marker_array_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr transformed_edge_pc_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr average_point_pub_;
