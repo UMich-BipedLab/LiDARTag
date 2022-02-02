@@ -6,6 +6,25 @@
 
 using namespace std;
 
+const char *result_to_string(nlopt_result result)
+{
+  switch(result)
+  {
+    case NLOPT_FAILURE: return "FAILURE";
+    case NLOPT_INVALID_ARGS: return "INVALID_ARGS";
+    case NLOPT_OUT_OF_MEMORY: return "OUT_OF_MEMORY";
+    case NLOPT_ROUNDOFF_LIMITED: return "ROUNDOFF_LIMITED";
+    case NLOPT_FORCED_STOP: return "FORCED_STOP";
+    case NLOPT_SUCCESS: return "SUCCESS";
+    case NLOPT_STOPVAL_REACHED: return "STOPVAL_REACHED";
+    case NLOPT_FTOL_REACHED: return "FTOL_REACHED";
+    case NLOPT_XTOL_REACHED: return "XTOL_REACHED";
+    case NLOPT_MAXEVAL_REACHED: return "MAXEVAL_REACHED";
+    case NLOPT_MAXTIME_REACHED: return "MAXTIME_REACHED";
+    default: return NULL;
+  }
+}
+
 namespace BipedLab
 {
 double checkCost(double point, double cons1, double cons2)
@@ -1268,7 +1287,7 @@ int LidarTag::optimizePose(ClusterFamily_t & cluster)
 
     if (debug_info_) {
       nlopt_result results_nlopt = static_cast<nlopt_result>(result);
-      RCLCPP_DEBUG_STREAM(get_logger(), "Optimization result: " << std::string(nlopt_result_to_string(results_nlopt)));
+      RCLCPP_DEBUG_STREAM(get_logger(), "Optimization result: " << std::string(result_to_string(results_nlopt)));
       RCLCPP_DEBUG_STREAM(get_logger(), "Optimized cost is: " << std::setprecision(3) << minf);
       RCLCPP_DEBUG_STREAM(get_logger(), "Found minimum at \n" << homogeneous);
     }
