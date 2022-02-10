@@ -106,6 +106,7 @@
       <param name="pointcloud_topic" value="$(var pointcloud_topic)" />
       <param name="lidartag_detections_topic" value="$(var lidartag_detections_topic)" />
       <param name="corners_array_topic" value="$(var corners_array_topic)" />
+      <param name="max_queue_size" value="5" />
       <param name="beam_number" value="40" />
       <param name="vertical_fov" value="40.0" />
       <param name="num_accumulation" value="1" />

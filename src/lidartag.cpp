@@ -467,6 +467,7 @@ void LidarTag::getParameters() {
   this->declare_parameter<int>("adaptive_thresholding");
   this->declare_parameter<int>("collect_data");
   this->declare_parameter<std::string>("pointcloud_topic");
+  this->declare_parameter<int>("max_queue_size");
   this->declare_parameter<int>("beam_number");
   this->declare_parameter<int>("tag_family");
   this->declare_parameter<int>("tag_hamming_distance");
@@ -547,6 +548,7 @@ void LidarTag::getParameters() {
     this->get_parameter("adaptive_thresholding", adaptive_thresholding_);
   bool GotCollectData = this->get_parameter("collect_data", collect_dataset_);
   bool GotLidarTopic = this->get_parameter("pointcloud_topic", pointcloud_topic_);
+  bool GotMaxQueueSize = this->get_parameter("max_queue_size", max_queue_size_);
   bool GotBeamNum = this->get_parameter("beam_number", beam_num_);
   bool GotSize = this->get_parameter("tag_size", payload_size_);
 
@@ -625,8 +627,8 @@ void LidarTag::getParameters() {
   tag_size_list_.assign( std::istream_iterator<double>( is ), std::istream_iterator<double>() );
 
   bool pass = utils::checkParameters(
-    {GotSensorQOS, GotPubFrame, GotFakeTag, GotLidarTopic, GotBeamNum, GotOptPose, GotDecodeId,
-    GotPlaneFitting, GotOutPutPath, GotDistanceBound,
+    {GotSensorQOS, GotPubFrame, GotFakeTag, GotLidarTopic, GotMaxQueueSize, GotBeamNum, GotOptPose,
+    GotDecodeId, GotPlaneFitting, GotOutPutPath, GotDistanceBound,
     GotDepthBound, GotTagFamily, GotTagHamming, GotMaxDecodeHamming, GotFineClusterThreshold,
     GotVerticalFOV, GotFillInGapThreshold, GotMaxOutlierRatio, GotPointsThresholdFactor,
     GotDistanceToPlaneThreshold, GotAdaptiveThresholding, GotCollectData,
@@ -1001,6 +1003,9 @@ void LidarTag::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr
   point_cloud_header_ = pc->header;
 
   point_cloud1_queue_lock_.lock();
+
+  while (point_cloud1_queue_.size() > max_queue_size_)
+    point_cloud1_queue_.pop();
 
   if (params_.debug_single_pointcloud) {
     point_cloud1_queue_.push(debug_pc_);

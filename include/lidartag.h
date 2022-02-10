@@ -218,6 +218,7 @@ private:
   std::string corners_array_topic_;
   // Overall LiDAR system parameters
   LiDARSystem_t lidar_system_;
+  int max_queue_size_;
   int beam_num_;
   double vertical_fov_;
 
