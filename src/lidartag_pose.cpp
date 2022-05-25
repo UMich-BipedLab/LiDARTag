@@ -1,7 +1,7 @@
-#include <nlopt.hpp>
-#include "lidartag.h"
-#include "utils.h"
+#include <lidartag/lidartag.hpp>
+#include <lidartag/utils.hpp>
 
+#include <nlopt.hpp>
 #include <iostream>
 
 using namespace std;

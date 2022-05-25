@@ -28,7 +28,7 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include "tag49h14.h"
+#include <lidartag/tag49h14.hpp>
 #include <stdlib.h>
 
 BipedLab::GrizTagFamily_t * tag49h14_create()

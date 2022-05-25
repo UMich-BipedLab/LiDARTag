@@ -71,7 +71,8 @@ ament_auto_add_executable(lidartag_main
     src/tag16h5.cpp
     src/lidartag_rviz.cpp
     src/lidartag_cluster.cpp
-    src/lidartag_prune.cpp)
+    src/lidartag_prune.cpp
+    src/rectangle_estimator.cpp)
 
 target_link_libraries(lidartag_main
     ${PCL_LIBRARIES}
@@ -81,10 +82,30 @@ target_link_libraries(lidartag_main
     Boost::thread
 )
 
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  ament_lint_auto_find_test_dependencies()
-endif()
+#if(BUILD_TESTING)
+#  find_package(ament_cmake_gtest REQUIRED)
+#
+#  include_directories(
+#    include
+#  )
+#
+#  # Unit tests
+#  set(TEST_SOURCES
+#    test/test_rectangle_estimation.cpp
+#    src/rectangle_estimator.cpp
+#    #test/test_pid.cpp
+#  )
+#
+#  #set(TEST_VELOCITY_CONTROLLER test_velocity_controller)
+#  ament_add_gtest(sometest_name ${TEST_SOURCES})
+#  #target_link_libraries(${TEST_VELOCITY_CONTROLLER} velocity_controller_core)
+#
+#  target_link_libraries(sometest_name
+#    ${PCL_LIBRARIES}
+#)
+#
+#endif()
+
 
 ament_auto_package(
   INSTALL_TO_SHARE

@@ -29,8 +29,8 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include "lidartag.h"
-#include "ultra_puck.h"
+#include <lidartag/lidartag.hpp>
+#include <lidartag/ultra_puck.hpp>
 
 #include <pcl/ModelCoefficients.h>
 #include <pcl/point_types.h>
@@ -143,15 +143,18 @@ int LidarTag::maxPointsCheck(ClusterFamily_t & cluster)
 
     if (mark_cluster_validity_) {
       cluster.valid = false;
-      cluster.detail_valid = 2;
+      cluster.detail_valid = LidartagErrorCode::ClusterMinPointsCriteria2;
     }
   }
 
   if (debug_info_) {
     RCLCPP_DEBUG_STREAM(get_logger(), "==== maxPointsCheck ====");
-    RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance << ", num_horizontal_points: " << num_horizontal_points);
+    RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance << ", num_horizontal_points: "
+      << num_horizontal_points);
     RCLCPP_DEBUG_STREAM(get_logger(), "Expected Points: " << expected_points);
-    RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
+    RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: "
+      << cluster.data.size() + cluster.edge_points.size());
+
     if ((cluster.data.size() + cluster.edge_points.size()) > expected_points)
       RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << false);
     else
@@ -202,15 +205,19 @@ bool LidarTag::rejectWithPlanarCheck(
     float distance =
       std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.y, 2) + pow(cluster.average.z, 2));
     RCLCPP_DEBUG_STREAM(get_logger(), "Distance : " << distance);
-    RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
+    RCLCPP_DEBUG_STREAM(get_logger(), "Actual Points: "
+      << cluster.data.size() + cluster.edge_points.size());
     RCLCPP_DEBUG_STREAM(get_logger(), "Inliers     : " << inliers->indices.size());
-    RCLCPP_DEBUG_STREAM(get_logger(), "Outliers    : " << cluster.data.size() - inliers->indices.size());
+    RCLCPP_DEBUG_STREAM(get_logger(), "Outliers    : "
+      << cluster.data.size() - inliers->indices.size());
   }
   if (inliers->indices.size() == 0) {
     if (debug_info_) {
       RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << false);
-      RCLCPP_WARN_STREAM(get_logger(), "Failed to fit a plane model to the cluster.");
+      RCLCPP_WARN_STREAM(get_logger(), "Failed to fit a plane model to the cluster id="
+        << cluster.cluster_id);
     }
+
     result_statistics_.cluster_removal.plane_fitting++;
     result_statistics_.remaining_cluster_size--;
 

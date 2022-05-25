@@ -29,12 +29,13 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include "utils.h"
+#include <lidartag/lidartag.hpp>
+#include <lidartag/utils.hpp>
+
 #include <math.h>
 #include <algorithm>  // std::sort, std::stable_sort
 #include <iostream>
 #include <numeric>  // std::iota
-#include "lidartag.h"
 
 namespace BipedLab
 {

@@ -29,11 +29,11 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include "lidartag.h"
-#include "apriltag_utils.h"
-#include "tag16h5.h"
-#include "tag49h14.h"
-#include "utils.h"
+#include <lidartag/lidartag.hpp>
+#include <lidartag/apriltag_utils.hpp>
+#include <lidartag/tag16h5.hpp>
+#include <lidartag/tag49h14.hpp>
+#include <lidartag/utils.hpp>
 
 #include <functional>
 #include <numeric>
@@ -204,7 +204,7 @@ int LidarTag::getCodeWeightedGaussian(
   visualization_msgs::msg::Marker grid_marker;
 
   visualization_msgs::msg::Marker line_strip;
-  line_strip.header.frame_id = pub_frame_;
+  line_strip.header.frame_id = lidar_frame_;
   line_strip.header.stamp = current_scan_time_;
   line_strip.ns = "boundary";
   line_strip.action = visualization_msgs::msg::Marker::ADD;
@@ -1651,7 +1651,7 @@ int LidarTag::getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_siz
   // }
 
   // utils::printVector(utils::convertEigenToSTDVector(rkhs_decoding.score));
-  if (id_score < 12) {
+  if (id_score < params_.min_rkhs_score) {
     status = 0;
     if (debug_info_) {
       RCLCPP_WARN_STREAM(get_logger(), "==== getCodeRKHS ====");
@@ -1716,6 +1716,7 @@ bool LidarTag::decodePayload(ClusterFamily_t & cluster)
     } else {
       valid_tag = false;
       cluster.valid = 0;
+      cluster.cluster_id = -1;
       result_statistics_.cluster_removal.decoding_failure++;
     }
   }

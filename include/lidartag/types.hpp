@@ -28,6 +28,9 @@
  * AUTHOR: Bruce JK Huang (bjhuang@umich.edu)
  * WEBSITE: https://www.brucerobot.com/
  */
+
+#pragma once
+
 #include "nanoflann.hpp"
 #include <Eigen/Core>
 #include <Eigen/Sparse>
@@ -194,6 +197,26 @@ typedef struct {
   point right;
 } corners;
 
+enum class LidartagErrorCode //C++11 scoped enum
+{
+  NoError = 0,
+  ClusterMinPointsCriteria = 1,
+  ClusterMinPointsCriteria2 = 2,
+  PlanarCheckCriteria = 3,
+  PlanarOutliersCriteria = 4,
+  DecodingPointsCriteria = 5,
+  DecodingRingsCriteria = 6,
+  CornerEstimationMinPointsCriteria = 7,
+  Line1EstimationCriteria = 8,
+  Line2EstimationCriteria = 9,
+  Line3EstimationCriteria = 10,
+  Line4EstimationCriteria = 11,
+  RectangleEstimationCirteria = 12,
+  TagSizeEstimationCriteria = 13,
+  OptimizationErrorCriteria = 14,
+  DecodingErrorCriteria = 15
+};
+
 typedef struct ClusterFamily {
   // EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   int cluster_id;
@@ -215,6 +238,7 @@ typedef struct ClusterFamily {
   pcl::PointCloud<LidarPoints_t> data; // data doesn't have edge points
   pcl::PointCloud<LidarPoints_t> edge_points;
   pcl::PointCloud<LidarPoints_t> transformed_edge_points;
+  pcl::PointCloud<PointXYZRI> initial_corners;
 
   // If the first point of the ring is the cluster.
   // If so, the the indices fo the two sides will be far away
@@ -279,14 +303,9 @@ typedef struct ClusterFamily {
    */
   std::vector<Eigen::VectorXf>
       line_coeff; // Upper, left, bottom, right line (count-clockwise)
-  int detail_valid;
+  LidartagErrorCode detail_valid;
   int pose_estimation_status;
   int expected_points;
-
-  corners tag_corners; // KL: adding here for now
-  corners tag_boundary_corners;
-  std::vector<point> corner_offset_array;
-  std::vector<point> boundary_corner_offset_array;
 
 } ClusterFamily_t;
 

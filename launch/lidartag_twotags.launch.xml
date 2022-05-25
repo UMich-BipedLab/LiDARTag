@@ -35,7 +35,6 @@
   <include file="$(find-pkg-share lidartag)/launch/lidartag_master.launch.xml">
     <arg name="mark_cluster_validity" value="true" />
     <!-- list for marker sizes -->
-    <arg name="sensor_qos" value="false"/>
     <arg name="tag_size_list" value="0.61 0.8051" />
 
     <!-- Tunable for PoI clustering -->

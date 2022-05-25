@@ -28,7 +28,7 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include "tag16h5.h"
+#include <lidartag/tag16h5.hpp>
 #include <stdlib.h>
 
 BipedLab::GrizTagFamily_t * tag16h5_create()

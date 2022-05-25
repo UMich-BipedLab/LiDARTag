@@ -33,7 +33,6 @@
 <launch>
 
   <!-- Common parameters to be set externally -->
-  <arg name="sensor_qos" default="true"/>
   <arg name="tag_size_list" />
 
   <!-- Default value corresponds to sqrt(2)/4 -> Geometrical meaning. Added as a debug variable -->>
@@ -187,7 +186,6 @@
 
       <!-- Common parameters to be set externally -->
       <!--param name="tag_size_list" value="$(var tag_size_list)"/-->
-      <param name="sensor_qos" value="$(var sensor_qos)" />
       <param name="tag_size_list" value="$(var tag_size_list)"/>
       <!--param name="tag_size_list" value="0.61, 0.8051" value-sep=", "/-->
       <!--param name="tag_size_list" value="false"/-->

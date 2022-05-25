@@ -71,7 +71,7 @@
  Michigan.
  */
 
-#include "apriltag_utils.h"
+#include <lidartag/apriltag_utils.hpp>
 
 // Adapted/modified from apriltags code
 namespace BipedAprilLab

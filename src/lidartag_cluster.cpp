@@ -28,8 +28,8 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#include "lidartag.h"
-#include "ultra_puck.h"
+#include <lidartag/lidartag.hpp>
+#include <lidartag/ultra_puck.hpp>
 
 #include <iostream>
 
@@ -114,6 +114,14 @@ void LidarTag::clusterClassifier(
     //cout << "\033[1;31m============== \033[0m\n";
     //cout << "cluster_buff size: " << cluster_buff.size() << endl;
     for (int i = 0; i < cluster_buff.size(); ++i) {
+
+      /*if (cluster_buff[i].cluster_id == params_.debug_cluster_id &&
+        point.index == params_.debug_scan_id &&
+        debug_current_ring == params_.debug_ring_id)
+      {
+        int x = 0;
+      } */
+
       updateCluster(point, cluster_buff[i], new_cluster);
 
       if (!(new_cluster->flag)) {
@@ -197,6 +205,13 @@ void LidarTag::updateCluster(
 
   // This point is inside this cluster
   if (!new_cluster->flag) {
+
+    /*if (old_cluster.cluster_id == params_.debug_cluster_id &&
+      point.point.ring == params_.debug_ring_id - 1)
+    {
+      int x = 0;
+    } */
+
     // update the boundary of the old cluster
     if (point.point.ring < old_cluster.bottom_ring) {
       old_cluster.bottom_ring = point.point.ring;
@@ -264,5 +279,170 @@ bool LidarTag::isWithinClusterHorizon(
          (point.point.y < cluster.left_most_point.y + threshold) &&
          (cluster.right_most_point.y - params_.linkage_threshold < point.point.y);
 }
+
+  void LidarTag::fixClusters(
+    const std::vector<std::vector<LidarPoints_t>> & edge_buff,
+    std::vector<ClusterFamily_t> & cluster_buff)
+  {
+    for(ClusterFamily_t & cluster : cluster_buff)
+    {
+      for(int ring_id = 0; ring_id < cluster.max_min_index_of_each_ring.size(); ring_id++) {
+
+        /*if (cluster.cluster_id == params_.debug_cluster_id &&
+          ring_id == params_.debug_ring_id)
+        {
+          int x = 0;
+        } */
+
+        const auto minmax = cluster.max_min_index_of_each_ring[ring_id];
+
+        if (minmax.min != minmax.max) {
+          continue;
+        }
+
+        // find the id KL: this needs to be refactored and we need to put a binary search or something faster !
+        const std::vector<LidarPoints_t> & ring_edges = edge_buff[ring_id];
+        int edge_id = -1;
+        for (int j = 0; j < ring_edges.size(); j++) {
+          if (minmax.min == ring_edges[j].index) {
+            edge_id = j;
+          }
+        }
+
+        assert(edge_id >= 0);
+        const auto & point_aux = ring_edges[edge_id];
+
+        for (int j = edge_id + 1; j < ring_edges.size(); j++) {
+          // check if it is outside or not from the
+          const LidarPoints_t & point = ring_edges[j];
+
+          if (point.index == point_aux.index) {
+            continue;
+          }
+          else if (!isWithinClusterHorizon(point, cluster, params_.linkage_threshold) ||
+            (point.point.getVector3fMap() - point_aux.point.getVector3fMap()).norm() > 1.5)
+          {
+            break;
+          }
+
+          // update the boundary of the old cluster
+          if (point.point.ring < cluster.bottom_ring) {
+            cluster.bottom_ring = point.point.ring;
+          }
+          if (point.point.ring > cluster.top_ring) {
+            cluster.top_ring = point.point.ring;
+          }
+          if (point.point.x + params_.linkage_threshold > cluster.front_most_point.x) {
+            cluster.front_most_point = point.point;
+            cluster.front_most_point.x += params_.linkage_threshold;
+          }
+          if (point.point.x - params_.linkage_threshold < cluster.back_most_point.x) {
+            cluster.back_most_point = point.point;
+            cluster.back_most_point.x -= params_.linkage_threshold;
+          }
+
+          if (point.point.y + params_.linkage_threshold > cluster.left_most_point.y) {
+            cluster.left_most_point = point.point;
+            cluster.left_most_point.y += params_.linkage_threshold;
+          }
+          if (point.point.y - params_.linkage_threshold < cluster.right_most_point.y) {
+            cluster.right_most_point = point.point;
+            cluster.right_most_point.y -= params_.linkage_threshold;
+          }
+
+          if (point.point.z + params_.linkage_threshold > cluster.top_most_point.z) {
+            cluster.top_most_point = point.point;
+            cluster.top_most_point.z += params_.linkage_threshold;
+          }
+          if (point.point.z - params_.linkage_threshold < cluster.bottom_most_point.z) {
+            cluster.bottom_most_point = point.point;
+            cluster.bottom_most_point.z -= params_.linkage_threshold;
+          }
+
+          // update the max/min index of each ring in this cluster
+          if (cluster.max_min_index_of_each_ring[point.point.ring].max < point.index)
+            cluster.max_min_index_of_each_ring[point.point.ring].max = point.index;
+
+          if (cluster.max_min_index_of_each_ring[point.point.ring].min > point.index)
+            cluster.max_min_index_of_each_ring[point.point.ring].min = point.index;
+
+          // update the max/min intensity of this cluster
+          if (cluster.max_intensity.intensity < point.point.intensity)
+            cluster.max_intensity = point.point;
+
+          if (cluster.min_intensity.intensity > point.point.intensity)
+            cluster.min_intensity = point.point;
+
+          cluster.edge_points.push_back(point);
+        }
+
+        for (int j = edge_id - 1; j >= 0; j--) {
+          // check if it is outside or not from the
+          const LidarPoints_t & point = ring_edges[j];
+
+          if (point.index == point_aux.index) {
+            continue;
+          }
+          else if (!isWithinClusterHorizon(point, cluster, params_.linkage_threshold) ||
+            (point.point.getVector3fMap() - point_aux.point.getVector3fMap()).norm() > 1.5)
+          {
+            break;
+          }
+
+          // update the boundary of the old cluster
+          if (point.point.ring < cluster.bottom_ring) {
+            cluster.bottom_ring = point.point.ring;
+          }
+          if (point.point.ring > cluster.top_ring) {
+            cluster.top_ring = point.point.ring;
+          }
+          if (point.point.x + params_.linkage_threshold > cluster.front_most_point.x) {
+            cluster.front_most_point = point.point;
+            cluster.front_most_point.x += params_.linkage_threshold;
+          }
+          if (point.point.x - params_.linkage_threshold < cluster.back_most_point.x) {
+            cluster.back_most_point = point.point;
+            cluster.back_most_point.x -= params_.linkage_threshold;
+          }
+
+          if (point.point.y + params_.linkage_threshold > cluster.left_most_point.y) {
+            cluster.left_most_point = point.point;
+            cluster.left_most_point.y += params_.linkage_threshold;
+          }
+          if (point.point.y - params_.linkage_threshold < cluster.right_most_point.y) {
+            cluster.right_most_point = point.point;
+            cluster.right_most_point.y -= params_.linkage_threshold;
+          }
+
+          if (point.point.z + params_.linkage_threshold > cluster.top_most_point.z) {
+            cluster.top_most_point = point.point;
+            cluster.top_most_point.z += params_.linkage_threshold;
+          }
+          if (point.point.z - params_.linkage_threshold < cluster.bottom_most_point.z) {
+            cluster.bottom_most_point = point.point;
+            cluster.bottom_most_point.z -= params_.linkage_threshold;
+          }
+
+          // update the max/min index of each ring in this cluster
+          if (cluster.max_min_index_of_each_ring[point.point.ring].max < point.index)
+            cluster.max_min_index_of_each_ring[point.point.ring].max = point.index;
+
+          if (cluster.max_min_index_of_each_ring[point.point.ring].min > point.index)
+            cluster.max_min_index_of_each_ring[point.point.ring].min = point.index;
+
+          // update the max/min intensity of this cluster
+          if (cluster.max_intensity.intensity < point.point.intensity)
+            cluster.max_intensity = point.point;
+
+          if (cluster.min_intensity.intensity > point.point.intensity)
+            cluster.min_intensity = point.point;
+
+          cluster.edge_points.push_back(point);
+        }
+
+      }
+    }
+
+  }
 
 }  // namespace BipedLab

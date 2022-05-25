@@ -28,9 +28,8 @@
  * WEBSITE: https://www.brucerobot.com/
  */
 
-#pragma once
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
 #include <math.h>
 #include <stdarg.h>   // for variadic functions
@@ -43,7 +42,7 @@
 
 #include <velodyne_pointcloud/point_types.h>
 #include <velodyne_pointcloud/pointcloudXYZIR.h>
-#include "lidartag.h"
+#include <lidartag/lidartag.hpp>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/core/eigen.hpp>

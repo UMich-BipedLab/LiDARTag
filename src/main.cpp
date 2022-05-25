@@ -29,7 +29,7 @@
  */
 
 
-#include <lidartag.h>
+#include <lidartag/lidartag.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 using namespace std;
@@ -42,8 +42,6 @@ int main(int argc, char **argv){
 
     rclcpp::spin(node);
     rclcpp::shutdown();
-
-    cout << "Done!" << endl;
 
     return 0;
 }
