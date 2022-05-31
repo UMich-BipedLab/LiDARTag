@@ -1026,7 +1026,9 @@ int LidarTag::optimizePose(ClusterFamily_t & cluster)
 
   if (initial_cost > optimization_percent_ * cluster.inliers / 100) {
     status = -1;
-    RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << status);
+    if(debug_info_) {
+      RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << status);
+    }
 
     return status;
   }
@@ -1310,7 +1312,6 @@ int LidarTag::optimizePose(ClusterFamily_t & cluster)
     RCLCPP_DEBUG_STREAM(get_logger(), "Status: " << status);
   }
 
-  RCLCPP_INFO_STREAM(get_logger(), "status: " << status);
   // ROS_INFO_STREAM("Optimized Cost too large: "
   //         << std::setprecision(3) << minf);
   // ROS_INFO_STREAM("Inital Cost: " << initial_cost);

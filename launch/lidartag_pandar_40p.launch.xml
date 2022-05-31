@@ -33,14 +33,17 @@
 <launch>
 
   <arg name="pointcloud_topic" default="/pointcloud_raw" />
+  <arg name="use_intensity_channel" default="true" />
   <arg name="launch_pandar_driver" default="false" />
 
   <include file="$(find-pkg-share lidartag)/launch/lidartag_master_pandar.launch.xml" >
 
     <arg name="pointcloud_topic" value="$(var pointcloud_topic)" />
-    <arg name="mark_cluster_validity" value="true" />
+    <arg name="use_intensity_channel" value="$(var use_intensity_channel)" />
+    <arg name="beam_number" value="40" />
+
     <!-- list for marker sizes -->
-    <arg name="tag_size_list" value="0.8 1.03" />
+    <arg name="tag_size_list" value="[0.8]" />
 
     <!-- Tunable for PoI clustering -->
     <arg name="nearby_factor" value="4.0" />

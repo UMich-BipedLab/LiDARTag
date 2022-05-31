@@ -116,6 +116,8 @@ private:
     float rectangle_model_max_error;
     bool rectangle_fix_point_groups;
     bool refine_cluster_with_intersections;
+    bool use_intensity_channel;
+    bool use_borders_as_corners;
     bool debug_single_pointcloud;
     double debug_point_x;
     double debug_point_y;
@@ -761,7 +763,8 @@ private:
 
             // [A function to put clusterFamily to LidarTagDetectionArray]
   void detectionArrayPublisher(
-    const ClusterFamily_t & cluster, lidartag_msgs::msg::LidarTagDetectionArray & detections_array);
+    const ClusterFamily_t & cluster,
+    lidartag_msgs::msg::LidarTagDetectionArray & detections_array);
 
   /* [Drawing]
    * A function to draw lines in rviz

@@ -1691,7 +1691,10 @@ bool LidarTag::decodePayload(ClusterFamily_t & cluster)
   string code("");
   bool valid_tag = true;
   string msg;
-  if (decode_method_ == 0) {  // Naive decoder
+  if (!params_.use_intensity_channel) {
+    cluster.cluster_id = -1;
+  }
+  else if (decode_method_ == 0) {  // Naive decoder
     LidarTag::getCodeNaive(code, cluster.payload);
   } else if (decode_method_ == 1) {  // Weighted Gaussian
     int status = LidarTag::getCodeWeightedGaussian(
@@ -1721,7 +1724,7 @@ bool LidarTag::decodePayload(ClusterFamily_t & cluster)
     }
   }
 
-  if (decode_method_ == 0 || decode_method_ == 1) {
+  if (params_.use_intensity_channel && (decode_method_ == 0 || decode_method_ == 1)) {
     if (valid_tag) {
       uint64_t r_code = stoull(code, nullptr, 2);
       BipedAprilLab::QuickDecodeCodeword(tf, r_code, &cluster.entry);

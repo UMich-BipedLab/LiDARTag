@@ -526,7 +526,7 @@ void LidarTag::clusterToPclVectorAndMarkerPublisher(
         intensity, intensity, cluster.data[i].point, i, 0.01);
       cluster_array.markers.push_back(marker);
     }
-    if (mark_cluster_validity_) {
+    if (mark_cluster_validity_ && params_.use_intensity_channel) {
       
       for (int ring = 0; ring < beam_num_; ++ring) {
         if (cluster.payload_right_boundary_ptr[ring] != 0) {
@@ -538,7 +538,7 @@ void LidarTag::clusterToPclVectorAndMarkerPublisher(
       }
     }
 
-    if (id_decoding_) {
+    if (id_decoding_ && params_.use_intensity_channel) {
       for (int i = 0; i < cluster.rkhs_decoding.associated_pattern_3d->cols(); ++i) {
         PointXYZRI point;
         point.x = cluster.rkhs_decoding.associated_pattern_3d->col(i)(0);
@@ -562,7 +562,7 @@ void LidarTag::clusterToPclVectorAndMarkerPublisher(
         out_payload_3d->push_back(point);
       }
     }
-    if (mark_cluster_validity_) {
+    if (mark_cluster_validity_ && params_.use_intensity_channel) {
       for (int i = 0; i < cluster.rkhs_decoding.initial_template_points.cols(); ++i) {
         PointXYZRI point;
         point.x = cluster.rkhs_decoding.initial_template_points.col(i)(0);
@@ -765,6 +765,11 @@ void LidarTag::colorClusters(const std::vector<ClusterFamily_t> & clusters)
   srand(100);
 
   for (int key = 0; key < clusters.size(); ++key) {
+
+    if (params_.debug_cluster_id != -1 && params_.debug_cluster_id != key) {
+      continue;
+    }
+
     const ClusterFamily_t & cluster = clusters[key];
     if (cluster.valid != 1) {
       r = rand() % 255;
@@ -825,7 +830,7 @@ void LidarTag::displayClusterPointSize(const std::vector<ClusterFamily_t> & clus
   for (std::size_t i = 0; i < cluster_buff.size(); ++i) {
     points_size = cluster_buff[i].data.size() + cluster_buff[i].edge_points.size();
     
-    if (points_size > 50) {
+    if (points_size > 50 || cluster_buff[i].cluster_id == params_.debug_cluster_id) {
       marker.header.stamp = clock_->now();
       marker.id = cluster_buff[i].cluster_id;
       marker.text = to_string(marker.id) + "/" + to_string(points_size);
@@ -865,7 +870,7 @@ void LidarTag::displayClusterIndexNumber(const std::vector<ClusterFamily_t> & cl
   for (std::size_t i = 0; i < cluster_buff.size(); ++i) {
     points_size = cluster_buff[i].data.size() + cluster_buff[i].edge_points.size();
     
-    if (points_size > 50) {
+    if (points_size > 50 || cluster_buff[i].cluster_id == params_.debug_cluster_id) {
       marker.header.stamp = clock_->now();
       marker.id = cluster_buff[i].cluster_id;
       marker.text = to_string(i) + "/" + to_string(static_cast<int>(cluster_buff[i].detail_valid));

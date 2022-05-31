@@ -34,11 +34,16 @@
 
   <!-- Common parameters to be set externally -->
   <arg name="pointcloud_topic" default="/pointcloud_raw" />
-
+  <arg name="lidartag_detections_topic" default="/lidartag/detection_array" />
+  <arg name="corners_array_topic" default="/lidartag/corners_array" />
+  <arg name="beam_number" default="40" />
   <arg name="tag_size_list" />
 
-  <!-- Default value corresponds to sqrt(2)/4 -> Geometrical meaning. Added as a debug variable -->>
+  <!-- Default value corresponds to sqrt(2)/4 -> Geometrical meaning. Added as a debug variable -->
   <arg name="clearance" default="0.35355339059" />
+
+  <arg name="optimize_percentage" default="10.0" /> <!-- Regulates how much it can deviate from the initial solution -->
+  <arg name="distance_to_plane_threshold" default="0.05" /> <!-- Determines outliers for the plane ransac -->
 
   <!-- Tunable for PoI clustering -->
   <arg name="nearby_factor" />
@@ -60,6 +65,8 @@
     <node pkg="lidartag" exec="lidartag_main" name="lidartag_main" output="screen" >
 
       <remap from="pointcloud_input" to="$(var pointcloud_topic)" />
+      <param name="use_intensity_channel" value="$(var use_intensity_channel)" />
+      <param name="use_borders_as_corners" value="$(var use_borders_as_corners)" />
 
       <!-- ========= General Parameters ========= -->
       <!-- Path for Analysis Files -->
@@ -86,8 +93,8 @@
       <!--  LiDAR System  -->
       <param name="pointcloud_topic" value="$(var pointcloud_topic)" />
       <param name="max_queue_size" value="1" />
-      <param name="beam_number" value="40" />
-      <param name="vertical_fov" value="40.0" />
+      <param name="beam_number" value="$(var beam_number)" />
+      <param name="vertical_fov" value="40.0" /> <!-- unused -->
       <param name="num_accumulation" value="1" />
       <param name="has_ring" value="true" />
       <param name="estimate_ring" value="true" />
@@ -125,10 +132,10 @@
       <!-- Tunable for cluster validation -->
       <!--  2*16 in this case, stands for expects 2 points for each cell  -->
       <param name="min_retrun_per_grid" value="0" />
-      <param name="optimize_percentage" value="10.0" />
+      <param name="optimize_percentage" value="$(var optimize_percentage)" /> <!-- 10.0 -->
       <param name="payload_intensity_threshold" value="1.0" />
       <param name="points_threshold_factor" value="1.5" />
-      <param name="distance_to_plane_threshold" value="0.05" />
+      <param name="distance_to_plane_threshold" value="$(var distance_to_plane_threshold)" /> <!--0.05 -->
       <param name="minimum_ring_boundary_points" value="1" />
       <param name="tagsize_tunable" value="0.1" />
       <param name="coa_tunable" value="0.75" />

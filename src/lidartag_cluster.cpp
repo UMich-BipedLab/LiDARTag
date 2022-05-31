@@ -115,12 +115,13 @@ void LidarTag::clusterClassifier(
     //cout << "cluster_buff size: " << cluster_buff.size() << endl;
     for (int i = 0; i < cluster_buff.size(); ++i) {
 
+      // TODO: delete this when the lidartag development finishes. Is is used to pinpoint the reasons why some pointclouds are not detected
       /*if (cluster_buff[i].cluster_id == params_.debug_cluster_id &&
         point.index == params_.debug_scan_id &&
-        debug_current_ring == params_.debug_ring_id)
+        point.point.ring == params_.debug_ring_id)
       {
         int x = 0;
-      } */
+      }*/
 
       updateCluster(point, cluster_buff[i], new_cluster);
 
@@ -132,10 +133,19 @@ void LidarTag::clusterClassifier(
 
     // Add a new cluster
     if (new_cluster->flag) {
+
       //cout << "new cluster added" << endl;
       int new_cluster_id = cluster_buff.size();
       int top_ring = point.point.ring;
       int bottom_ring = point.point.ring;
+
+      // TODO: delete this when the lidartag development finishes. Is is used to pinpoint the reasons why some pointclouds are not detected
+      /*if (new_cluster_id == params_.debug_cluster_id &&
+        point.index == params_.debug_scan_id &&
+        point.point.ring == params_.debug_ring_id)
+      {
+        int x = 0;
+      }*/
 
       PointXYZRI top_most_point = point.point;
       top_most_point.z += params_.linkage_threshold;
@@ -206,6 +216,7 @@ void LidarTag::updateCluster(
   // This point is inside this cluster
   if (!new_cluster->flag) {
 
+    // TODO: delete this when the lidartag development finishes. Is is used to pinpoint the reasons why some pointclouds are not detected
     /*if (old_cluster.cluster_id == params_.debug_cluster_id &&
       point.point.ring == params_.debug_ring_id - 1)
     {
@@ -288,6 +299,7 @@ bool LidarTag::isWithinClusterHorizon(
     {
       for(int ring_id = 0; ring_id < cluster.max_min_index_of_each_ring.size(); ring_id++) {
 
+        // TODO: delete this when the lidartag development finishes. Is is used to pinpoint the reasons why some pointclouds are not detected
         /*if (cluster.cluster_id == params_.debug_cluster_id &&
           ring_id == params_.debug_ring_id)
         {
