@@ -454,32 +454,61 @@ void fitGrid(
   H = R;  // H: payload -> ref
 }
 
-std::vector<Eigen::MatrixXf> fitGridNew(
+void fitGridNew(
   const Eigen::MatrixXf & grid_vertices, Eigen::Matrix3f & H,
   const Eigen::MatrixXf & payload_vertices)
 {
-  std::vector<Eigen::MatrixXf> mats;
+
   Eigen::Matrix3f M = grid_vertices.rightCols(4) * payload_vertices.transpose();
   Eigen::Matrix<float, 3, 3, Eigen::DontAlign> R;
-  //   Eigen::JacobiSVD<Eigen::MatrixXf> svd(M, Eigen::ComputeFullU |
-  //                                                Eigen::ComputeFullV);
-  //   R = svd.matrixU() * svd.matrixV().transpose();
-  Eigen::Matrix3f r, U, V;
+
+  Eigen::Matrix3f r, U, Vt;
   cv::Mat cv_A, cv_W, cv_U, cv_Vt;
   cv::eigen2cv(M, cv_A);
   cv::SVD::compute(cv_A, cv_W, cv_U, cv_Vt);
   cv::cv2eigen(cv_W, r);
   cv::cv2eigen(cv_U, U);
-  cv::cv2eigen(cv_Vt, V);
-  //   r = svd.singularValues();
-  //   U = svd.matrixU();
-  //   V = svd.matrixV();
-  R = U * V;
-  mats.push_back(U);
-  mats.push_back(V);
-  mats.push_back(r);
+  cv::cv2eigen(cv_Vt, Vt);
+
+  R = U * Vt;
+  double determinant = R.determinant();
+
+  assert(std::abs(std::abs(determinant) - 1) < 0.01);
+
+  if (determinant < 0.0) {
+    Vt.row(2) *= -1;
+    R = U * Vt;
+    determinant = R.determinant();
+  }
+
+  assert(std::abs(determinant - 1) < 0.01);
+
   H = R;  // H: payload -> ref
-  return mats;
+
+
+  /** Eigen Version -> Replaced by OpenCV since sgk-000 reported numerical unstability (unconfirmed)
+  Eigen::Matrix3f M =
+      grid_vertices.rightCols(4)*payload_vertices.transpose();
+  Eigen::JacobiSVD<Eigen::MatrixXf> svd(
+          M, Eigen::ComputeFullU | Eigen::ComputeFullV);
+  Eigen::Matrix<float,3,3,Eigen::DontAlign> R =
+      svd.matrixU()*svd.matrixV().transpose();
+
+  double determinant = R.determinant();
+
+  assert(std::abs(std::abs(determinant) - 1) < 0.01);
+
+  if (determinant < 0.0) {
+    Eigen::MatrixXf V = svd.matrixV();
+    V.col(2) *= -1;
+    R = svd.matrixU()*V.transpose();
+    determinant = R.determinant();
+  }
+
+  assert(std::abs(determinant - 1) < 0.01);
+
+  H = R;  // H: payload -> ref
+  */
 }
 velodyne_pointcloud::PointXYZIR toVelodyne(const Eigen::Vector3f & t_p)
 {

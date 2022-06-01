@@ -179,7 +179,9 @@ bool RectangleEstimator::estimate_ransac()
   eigen_to_pointcloud(inliers3, points3);
   eigen_to_pointcloud(inliers4, points4);
 
+
   status = estimate_imlp(points1, points2, points3, points4, estimated_n, estimated_c);
+
 
   return status;
 }

@@ -278,17 +278,18 @@ void LidarTag::updateCluster(
 bool LidarTag::isWithinCluster(const LidarPoints_t & point, ClusterFamily_t & cluster)
 {
   return (point.point.ring == cluster.bottom_ring ||
-          point.point.ring == (cluster.bottom_ring - 1)) &&
-         isWithinClusterHorizon(point, cluster, params_.linkage_threshold);
+    (cluster.bottom_ring > point.point.ring &&
+    cluster.bottom_ring - point.point.ring <= params_.linkage_ring_max_dist)) &&
+    isWithinClusterHorizon(point, cluster, params_.linkage_threshold);
 }
 
 bool LidarTag::isWithinClusterHorizon(
   const LidarPoints_t & point, ClusterFamily_t & cluster, double threshold)
 {
   return (point.point.x < cluster.front_most_point.x + threshold) &&
-         (cluster.back_most_point.x - threshold < point.point.x) &&
-         (point.point.y < cluster.left_most_point.y + threshold) &&
-         (cluster.right_most_point.y - params_.linkage_threshold < point.point.y);
+    (cluster.back_most_point.x - threshold < point.point.x) &&
+    (point.point.y < cluster.left_most_point.y + threshold) &&
+    (cluster.right_most_point.y - params_.linkage_threshold < point.point.y);
 }
 
   void LidarTag::fixClusters(

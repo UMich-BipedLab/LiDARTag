@@ -319,6 +319,9 @@ void LidarTag::clusterToPclVectorAndMarkerPublisher(
       }
     }
 
+    // Add the initial corners obtained through either line or rectangle estimation
+    *initial_corners += cluster.initial_corners;
+
     if (cluster.valid != 1 && cluster.detail_valid != LidartagErrorCode::DecodingErrorCriteria){ 
       continue;
     }

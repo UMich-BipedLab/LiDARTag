@@ -227,7 +227,6 @@ rcl_interfaces::msg::SetParametersResult LidarTag::paramCallback(
     UPDATE_LIDARTAG_PARAM(params, num_points_for_plane_feature);
     UPDATE_LIDARTAG_PARAM(params, nearby_factor);
     UPDATE_LIDARTAG_PARAM(params, minimum_ring_boundary_points);
-    UPDATE_LIDARTAG_PARAM(params, np_ring);
     UPDATE_LIDARTAG_PARAM(params, linkage_tunable);
     UPDATE_LIDARTAG_PARAM(params, cluster_max_index);
     UPDATE_LIDARTAG_PARAM(params, cluster_min_index);
@@ -506,6 +505,7 @@ void LidarTag::getParameters() {
   this->declare_parameter<double>("nearby_factor");
   this->declare_parameter<int>("number_points_ring");
   this->declare_parameter<double>("linkage_tunable");
+  this->declare_parameter<int>("linkage_ring_max_dist");
   this->declare_parameter("tag_size_list");
   this->declare_parameter<bool>("euler_derivative");
   this->declare_parameter<int>("num_threads");
@@ -597,8 +597,9 @@ void LidarTag::getParameters() {
   bool GotNumPoints =
     this->get_parameter("num_points_for_plane_feature", params_.num_points_for_plane_feature);
   bool GotNearBound = this->get_parameter("nearby_factor", params_.nearby_factor);
-  bool GotNumPointsRing = this->get_parameter("number_points_ring", params_.np_ring);
   bool GotCoefficient = this->get_parameter("linkage_tunable", params_.linkage_tunable);
+  bool GotLinkageRing = this->get_parameter("linkage_ring_max_dist", params_.linkage_ring_max_dist);
+
   bool GotTagSizeList = this->get_parameter<std::vector<double>>("tag_size_list", tag_size_list_);
   bool GotDerivativeMethod = this->get_parameter("euler_derivative", derivative_method_);
   bool GotNumThreads = this->get_parameter("num_threads", num_threads_);
@@ -675,8 +676,8 @@ void LidarTag::getParameters() {
     GotAdaptiveThresholding, GotCollectData, GotSleepToDisplay, GotSleepTimeForVis,
     GotValgrindCheck, GotPayloadIntensityThreshold, GotBlackBorder, GotMinPerGrid,
     GotDecodeMethod, GotDecodeMode, GotOptimizationMethod, GotGridViz, GotThreshold, GotNumPoints,
-    GotNearBound, GotNumPointsRing, GotCoefficient, GotTagSizeList, GotNumThreads, GotPrintInfo,
-    GotOptimizePercent, GotDebuginfo, GotDebugtime, GotLogData, GotDebugDecodingtime,
+    GotNearBound, GotCoefficient, GotLinkageRing, GotTagSizeList, GotNumThreads,
+    GotPrintInfo, GotOptimizePercent, GotDebuginfo, GotDebugtime, GotLogData, GotDebugDecodingtime,
     GotLibraryPath, GotNumCodes, GotCalibration, GotMinimumRingPoints, GotRingState,
     GotRingEstimation, GotNumAccumulation, GotDerivativeMethod, GotUpbound, GotLowbound,
     GotCoaTunable, GotTagsizeTunable, GotMaxClusterIndex, GotMinClusterIndex,
@@ -2519,7 +2520,7 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
       "Actual Points: " << cluster.data.size() + cluster.edge_points.size());
   }
 
-  int num_edge_points = 3;
+  int num_edge_points = 2;
 
   if (
     cloud1->size() < num_edge_points || cloud2->size() < num_edge_points ||
@@ -2609,8 +2610,7 @@ bool LidarTag::transformSplitEdges(ClusterFamily_t & cluster)
   // This re estimated the rotation since the principal axis are only an estimation !
   // Using the rectangle model over line ransac can provide better results
   Eigen::Matrix3f R;
-  std::vector<Eigen::MatrixXf> mats;
-  mats = utils::fitGridNew(vertices, R, ordered_payload_vertices);
+  utils::fitGridNew(vertices, R, ordered_payload_vertices);
 
   // used for visualization for corner points
   PointXYZRI showpoint;

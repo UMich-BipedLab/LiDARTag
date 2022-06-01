@@ -36,7 +36,7 @@
   <arg name="use_intensity_channel" default="true" />
   <arg name="launch_pandar_driver" default="false" />
 
-  <include file="$(find-pkg-share lidartag)/launch/lidartag_master_pandar.launch.xml" >
+  <include file="$(find-pkg-share lidartag)/launch/lidartag_master.launch.xml" >
 
     <arg name="pointcloud_topic" value="$(var pointcloud_topic)" />
     <arg name="use_intensity_channel" value="$(var use_intensity_channel)" />
@@ -48,6 +48,7 @@
     <!-- Tunable for PoI clustering -->
     <arg name="nearby_factor" value="4.0" />
     <arg name="linkage_tunable" value="0.25" />
+
     <!-- SQRT2 / 4 ==  0.35355339059-->
     <arg name="clearance" value="0.35355339059" />
 

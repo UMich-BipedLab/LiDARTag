@@ -34,8 +34,8 @@
 
   <!-- Common parameters to be set externally -->
   <arg name="pointcloud_topic" default="/pointcloud_raw" />
-  <arg name="lidartag_detections_topic" default="/lidartag/detection_array" />
-  <arg name="corners_array_topic" default="/lidartag/corners_array" />
+  <arg name="use_intensity_channel" default="true" />
+  <arg name="use_borders_as_corners" default="false" />
   <arg name="beam_number" default="40" />
   <arg name="tag_size_list" />
 
@@ -48,6 +48,7 @@
   <!-- Tunable for PoI clustering -->
   <arg name="nearby_factor" />
   <arg name="linkage_tunable" />
+  <arg name="linkage_ring_max_dist" default="1" />
 
   <!-- Tunable for cluster validation -->
   <arg name="max_outlier_ratio" />
@@ -116,7 +117,7 @@
       <!-- Decode Method -->
       <param name="decode_method" value="2" />
       <param name="decode_mode" value="5" />
-      <param name="min_rkhs_score" value="11.0" /> <!--default is 12.0 -->
+      <param name="min_rkhs_score" value="3.0" /> <!--default is 12.0 -->
 
 
       <!--  visulization  -->
@@ -135,7 +136,7 @@
       <param name="optimize_percentage" value="$(var optimize_percentage)" /> <!-- 10.0 -->
       <param name="payload_intensity_threshold" value="1.0" />
       <param name="points_threshold_factor" value="1.5" />
-      <param name="distance_to_plane_threshold" value="$(var distance_to_plane_threshold)" /> <!--0.05 -->
+      <param name="distance_to_plane_threshold" value="$(var optimize_percentage)" /> <!--0.05 -->
       <param name="minimum_ring_boundary_points" value="1" />
       <param name="tagsize_tunable" value="0.1" />
       <param name="coa_tunable" value="0.75" />
@@ -188,6 +189,7 @@
       <!-- Tunable for PoI clustering -->
       <param name="nearby_factor" value="$(var nearby_factor)" />
       <param name="linkage_tunable" value="$(var linkage_tunable)" />
+      <param name="linkage_ring_max_dist" value="$(var linkage_ring_max_dist)" />
 
       <!-- Tunable for cluster validation -->
       <param name="max_outlier_ratio" value="$(var max_outlier_ratio)" />

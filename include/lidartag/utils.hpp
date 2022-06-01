@@ -177,7 +177,7 @@ void fitGrid(
   const velodyne_pointcloud::PointXYZIR & t_p2, const velodyne_pointcloud::PointXYZIR & t_p3,
   const velodyne_pointcloud::PointXYZIR & t_p4);
 
-std::vector<Eigen::MatrixXf> fitGridNew(
+void fitGridNew(
   const Eigen::MatrixXf & t_vertices, Eigen::Matrix3f & H,
   const Eigen::MatrixXf & t_payload_vertices);
 
