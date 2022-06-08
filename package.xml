@@ -12,6 +12,7 @@
   <license>BSD</license>
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
+  <buildtool_depend>eigen3_cmake_module</buildtool_depend>
 
   <depend>libnlopt-cxx-dev</depend>
   <depend>tbb</depend>

@@ -760,7 +760,8 @@ void LidarTag::test(
   // // cout << "test" << endl;
 }
 
-void LidarTag::computeFunctionVectorInnerProductThreading(
+// TODO: currently unused. May be deleted once we decide our current decoding scheme. Needs Eigen 3.4 due to the slicing api
+/*void LidarTag::computeFunctionVectorInnerProductThreading(
   const Eigen::MatrixXf & pc1, const int & num_pc1, const Eigen::MatrixXf & pc2,
   const int & num_pc2, const float & geo_sig, const float & feature_ell, const float & geo_ell,
   float & score)
@@ -798,7 +799,7 @@ void LidarTag::computeFunctionVectorInnerProductThreading(
     // Eigen::MatrixXf test_mat = pc1.block(0, start_task, 4, num_tasks);
     std::vector<int> indices(num_tasks);
     std::iota(indices.begin(), indices.end(), start_task);
-    Eigen::MatrixXf test_mat = pc1(Eigen::all, indices);
+    Eigen::MatrixXf test_mat = pc1(Eigen::placeholders::all, indices);
     // thread_vec_->enqueueTask(std::bind(&LidarTag::test, this, pc1));
 
     thread_vec_->enqueueTask(std::bind(
@@ -913,7 +914,7 @@ void LidarTag::computeFunctionVectorInnerProductThreading(
   // }
   // thread_vec_->wait_until_finished(num_tasks);
   // score = score_vec.sum()/num_pc1/num_pc2;
-}
+} */
 
 void LidarTag::computeFunctionOriginalInnerProductTBB(
   const Eigen::MatrixXf & pc1, const float & num_pc1, const Eigen::MatrixXf & pc2,
@@ -943,7 +944,8 @@ void LidarTag::computeFunctionOriginalInnerProductTBB(
   score = inner_prod.sum() / num_pc1 / num_pc2;
 }
 
-void LidarTag::computeFunctionVectorInnerProductTBBThreadingManualScheduling(
+// TODO: currently unused. May be deleted once we decide our current decoding scheme. Needs Eigen 3.4 due to the slicing api
+/*void LidarTag::computeFunctionVectorInnerProductTBBThreadingManualScheduling(
   const Eigen::MatrixXf & pc1, const int & num_pc1, const Eigen::MatrixXf & pc2,
   const int & num_pc2, const float & geo_sig, const float & feature_ell, const float & geo_ell,
   float & score)
@@ -980,7 +982,7 @@ void LidarTag::computeFunctionVectorInnerProductTBBThreadingManualScheduling(
   });
 
   score = score_vec.sum() / num_pc1 / num_pc2;
-}
+} */
 
 void LidarTag::computeFunctionVectorInnerProductTBBThreadingNoScheduling(
   const Eigen::MatrixXf & pc1, const int & num_pc1, const Eigen::MatrixXf & pc2,
