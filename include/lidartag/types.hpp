@@ -37,6 +37,7 @@
 #include <chrono> // high_resolution_clock
 #include <pcl/point_types.h>
 #include <velodyne_pointcloud/point_types.h>
+#include <filesystem>
 
 namespace BipedLab {
 typedef velodyne_pointcloud::PointXYZIR PointXYZRI;
@@ -413,8 +414,8 @@ typedef struct Debug {
 
 typedef struct PathLeafString {
   std::string
-  operator()(const boost::filesystem::directory_entry &entry) const {
-    return entry.path().leaf().string();
+  operator()(const std::filesystem::directory_entry &entry) const {
+    return entry.path().filename().string();
   }
 } PathLeafString_t;
 

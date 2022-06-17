@@ -761,9 +761,9 @@ Eigen::Vector3f crossProduct(const Eigen::Vector3f & v1, const Eigen::Vector3f &
 
 void readDirectory(const std::string & name, std::vector<std::string> & v)
 {
-  boost::filesystem::path p(name);
-  boost::filesystem::directory_iterator start(p);
-  boost::filesystem::directory_iterator end;
+  std::filesystem::path p(name);
+  std::filesystem::directory_iterator start(p);
+  std::filesystem::directory_iterator end;
   std::transform(start, end, std::back_inserter(v), PathLeafString());
   std::sort(v.begin(), v.end());
 }

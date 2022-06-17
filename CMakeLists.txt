@@ -7,7 +7,6 @@ set(CMAKE_CXX_STANDARD 17)
 #set( CMAKE_VERBOSE_MAKEFILE on )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3 -DEIGEN_NO_DEBUG -march=native -Wl,--no-as-needed")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -DEIGEN_NO_DEBUG -Wl,--no-as-needed")
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 message(STATUS "=============================================CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
 find_package(ament_cmake_auto REQUIRED)
