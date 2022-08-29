@@ -542,19 +542,22 @@ void LidarTag::clusterToPclVectorAndMarkerPublisher(
     }
 
     if (id_decoding_ && params_.use_intensity_channel) {
-      for (int i = 0; i < cluster.rkhs_decoding.associated_pattern_3d->cols(); ++i) {
-        PointXYZRI point;
-        point.x = cluster.rkhs_decoding.associated_pattern_3d->col(i)(0);
-        point.y = cluster.rkhs_decoding.associated_pattern_3d->col(i)(1);
-        point.z = cluster.rkhs_decoding.associated_pattern_3d->col(i)(2);
+      
+      if(decode_method_ == 2) { // only for prue rkhs
+        for (int i = 0; i < cluster.rkhs_decoding.associated_pattern_3d->cols(); ++i) {
+          PointXYZRI point;
+          point.x = cluster.rkhs_decoding.associated_pattern_3d->col(i)(0);
+          point.y = cluster.rkhs_decoding.associated_pattern_3d->col(i)(1);
+          point.z = cluster.rkhs_decoding.associated_pattern_3d->col(i)(2);
 
-        if (point.x >= 0) {
-          point.intensity = 200;
-        } else {
-          point.intensity = 50;
+          if (point.x >= 0) {
+            point.intensity = 200;
+          } else {
+            point.intensity = 50;
+          }
+
+          out_payload->push_back(point);
         }
-
-        out_payload->push_back(point);
       }
       for (int i = 0; i < cluster.rkhs_decoding.template_points_3d.cols(); ++i) {
         PointXYZRI point;

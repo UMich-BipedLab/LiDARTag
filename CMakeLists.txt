@@ -41,8 +41,6 @@ endif()
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
-
 ament_auto_find_build_dependencies()
 
 
@@ -68,7 +66,8 @@ ament_auto_add_executable(lidartag_main
     src/lidartag_rviz.cpp
     src/lidartag_cluster.cpp
     src/lidartag_prune.cpp
-    src/rectangle_estimator.cpp)
+    src/rectangle_estimator.cpp
+    src/decoding/naive_hamming_decoding.cpp)
 
 target_link_libraries(lidartag_main
     ${PCL_LIBRARIES}
@@ -78,29 +77,37 @@ target_link_libraries(lidartag_main
     Boost::thread
 )
 
-#if(BUILD_TESTING)
-#  find_package(ament_cmake_gtest REQUIRED)
-#
-#  include_directories(
-#    include
-#  )
-#
-#  # Unit tests
-#  set(TEST_SOURCES
-#    test/test_rectangle_estimation.cpp
-#    src/rectangle_estimator.cpp
-#    #test/test_pid.cpp
-#  )
-#
-#  #set(TEST_VELOCITY_CONTROLLER test_velocity_controller)
-#  ament_add_gtest(sometest_name ${TEST_SOURCES})
-#  #target_link_libraries(${TEST_VELOCITY_CONTROLLER} velocity_controller_core)
-#
-#  target_link_libraries(sometest_name
-#    ${PCL_LIBRARIES}
-#)
-#
-#endif()
+
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  #find_package(OpenCV REQUIRED)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+
+  include_directories(
+    include
+    ${Boost_INCLUDE_DIRS}
+    ${EIGEN3_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
+  )
+
+  # Unit tests
+  set(TEST_SOURCES
+    #test/test_rectangle_estimation.cpp
+    #src/rectangle_estimator.cpp
+    test/test_hamming_decoding.cpp
+    src/decoding/naive_hamming_decoding.cpp
+  )
+
+  ament_add_gtest(test_decoding ${TEST_SOURCES})
+
+  target_link_libraries(test_decoding
+    ${PCL_LIBRARIES}
+    ${OpenCV_LIBRARIES}
+)
+
+endif()
 
 
 ament_auto_package(
