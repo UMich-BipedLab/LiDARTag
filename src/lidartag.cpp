@@ -106,8 +106,8 @@ LidarTag::LidarTag(const rclcpp::NodeOptions & options) :
     LidarTag::initDecoder();
   }
 
-  if (decode_method_ != 0 && decode_method_ != 1 && decode_method_ != 2) {
-    RCLCPP_ERROR(get_logger(), "Please use 0, 1 or 2 for decode_method in the launch file");
+  if (decode_method_ != 0 && decode_method_ != 1 && decode_method_ != 2 && decode_method_ != 3) {
+    RCLCPP_ERROR(get_logger(), "Please use 0, 1, 2, or 3 for decode_method in the launch file");
     RCLCPP_INFO_STREAM(get_logger(), "currently using: "<< decode_method_);
   }
 
