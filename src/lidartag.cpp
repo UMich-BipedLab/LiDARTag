@@ -695,7 +695,7 @@ void LidarTag::getParameters() {
   rectangle_estimator_->setMaxIterations(params_.rectangle_model_max_iterations);
   rectangle_estimator_->setRANSAC(params_.rectangle_model_use_ransac);
 
-  hamming_decoding_ = std::make_shared<NaiveHammingDecoding>(std::to_string(tag_family_), 
+  hamming_decoding_ = std::make_shared<NaiveHammingDecoding>(std::to_string(tag_family_),
     library_path_ + "/templates", hamming_decoding_min_white_border_bits, hamming_decoding_min_black_boder_bits,
     hamming_decoding_min_payload_bits, hamming_decoding_min_payload_margin,
     hamming_decoding_intensity_threshold, hamming_decoding_rbf_sigma,
@@ -1385,7 +1385,7 @@ void LidarTag::gradientAndGroupEdges(
 
       if (params_.use_borders_as_corners && (j == 0 || j == size - 1)) {
         edge_flag = 4;
-      } else if (j < size - n) {
+      } else if (j + n - 2 >= 0 && j < size - n) {
         edge_flag = LidarTag::getEdgePoints(ordered_buff, i, j, n);
       }
 
