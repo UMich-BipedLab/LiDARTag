@@ -40,7 +40,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/clock.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Transform.h>
 #include "tf2/transform_datatypes.h" // KL: why does this not work with <>
@@ -75,6 +75,7 @@
 #include <lidartag_msgs/msg/lidar_tag_detection.hpp>
 #include <lidartag_msgs/msg/lidar_tag_detection_array.hpp>
 
+#include <lidartag/decoding/naive_hamming_decoding.hpp>
 #include <lidartag/rectangle_estimator.hpp>
 #include <lidartag/thread_pool.hpp>
 #include <lidartag/types.hpp>
@@ -294,6 +295,9 @@ private:
   // Corner estimation
   std::shared_ptr<RectangleEstimator> rectangle_estimator_;
 
+  // Naive decoding
+  std::shared_ptr<NaiveHammingDecoding> hamming_decoding_;
+
   /* [Main loop]
    * main loop of process
    */
@@ -478,7 +482,7 @@ private:
    */
   bool detectPayloadBoundries(ClusterFamily_t & t_cluster);
 
-  /* [Payload extraction] <A cluster>
+  /* [Payload extraction] <A cluster> --> UNUSED
    * A function to extract the payload points from a valid cluster.
    * Let's say we have 10 points on the left boundary (line) of the tag and 9
    * points on the right boundary (line) of the tag. It is separated into two
@@ -625,6 +629,11 @@ private:
    * 3)
    */
   int getCodeRKHS(RKHSDecoding_t & rkhs_decoding, const double & tag_size);
+
+  /* [Decoder]
+   * 1) Cluster
+   */
+  int getCodeNaiveHamming(ClusterFamily_t & cluster);
 
   Eigen::MatrixXf construct3DShapeMarker(RKHSDecoding_t & rkhs_decoding, const double & ell);
 

@@ -42,7 +42,7 @@
   <!-- Default value corresponds to sqrt(2)/4 -> Geometrical meaning. Added as a debug variable -->
   <arg name="clearance" default="0.35355339059" />
 
-  <arg name="optimize_percentage" default="10.0" /> <!-- Regulates how much it can deviate from the initial solution -->
+  <arg name="optimize_percentage" default="20.0" /> <!-- Regulates how much it can deviate from the initial solution -->
   <arg name="distance_to_plane_threshold" default="0.05" /> <!-- Determines outliers for the plane ransac -->
 
   <!-- Tunable for PoI clustering -->
@@ -115,7 +115,7 @@
 
 
       <!-- Decode Method -->
-      <param name="decode_method" value="2" />
+      <param name="decode_method" value="3" />
       <param name="decode_mode" value="5" />
       <param name="min_rkhs_score" value="3.0" /> <!--default is 12.0 -->
 
@@ -136,7 +136,7 @@
       <param name="optimize_percentage" value="$(var optimize_percentage)" /> <!-- 10.0 -->
       <param name="payload_intensity_threshold" value="1.0" />
       <param name="points_threshold_factor" value="1.5" />
-      <param name="distance_to_plane_threshold" value="$(var optimize_percentage)" /> <!--0.05 -->
+      <param name="distance_to_plane_threshold" value="$(var distance_to_plane_threshold)" /> <!--0.05 -->
       <param name="minimum_ring_boundary_points" value="1" />
       <param name="tagsize_tunable" value="0.1" />
       <param name="coa_tunable" value="0.75" />
@@ -218,6 +218,13 @@
       <param name="rectangle_fix_point_groups" value="true" />
       <param name="refine_cluster_with_intersections" value="true" /> <!--have not checked its effect on the fine points of calibration -->
 
+      <param name="hamming_decoding_min_white_border_bits" value="5.0" />
+      <param name="hamming_decoding_min_black_boder_bits" value="5.0" />
+      <param name="hamming_decoding_min_payload_bits" value="10.0" />
+      <param name="hamming_decoding_min_payload_margin" value="2.0" />
+      <param name="hamming_decoding_intensity_threshold" value="0.5" />
+      <param name="hamming_decoding_rbf_sigma" value="0.25" />
+      <param name="hamming_decoding_decoding_bit_threshold" value="0.6" />
     </node>
 
   </group>

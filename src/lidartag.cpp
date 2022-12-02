@@ -50,7 +50,7 @@
 #include <lidartag/ultra_puck.hpp>
 
 #include <tf2/utils.h>
-#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 #include <math.h>   /* sqrt, pow(a,b) */
 #include <stdlib.h> /* srand, rand */
@@ -106,8 +106,8 @@ LidarTag::LidarTag(const rclcpp::NodeOptions & options) :
     LidarTag::initDecoder();
   }
 
-  if (decode_method_ != 0 && decode_method_ != 1 && decode_method_ != 2) {
-    RCLCPP_ERROR(get_logger(), "Please use 0, 1 or 2 for decode_method in the launch file");
+  if (decode_method_ != 0 && decode_method_ != 1 && decode_method_ != 2 && decode_method_ != 3) {
+    RCLCPP_ERROR(get_logger(), "Please use 0, 1, 2, or 3 for decode_method in the launch file");
     RCLCPP_INFO_STREAM(get_logger(), "currently using: "<< decode_method_);
   }
 
@@ -547,6 +547,15 @@ void LidarTag::getParameters() {
   this->declare_parameter<bool>("use_borders_as_corners");
   this->declare_parameter<double>("min_rkhs_score");
 
+  // Naive hamming decoding
+  this->declare_parameter<double>("hamming_decoding_min_white_border_bits");
+  this->declare_parameter<double>("hamming_decoding_min_black_boder_bits");
+  this->declare_parameter<double>("hamming_decoding_min_payload_bits");
+  this->declare_parameter<double>("hamming_decoding_min_payload_margin");
+  this->declare_parameter<double>("hamming_decoding_intensity_threshold");
+  this->declare_parameter<double>("hamming_decoding_rbf_sigma");
+  this->declare_parameter<double>("hamming_decoding_decoding_bit_threshold");
+
   bool GotThreshold = this->get_parameter("distance_threshold", distance_threshold_);
   bool GotSleepToDisplay = this->get_parameter("sleep_to_display", sleep_to_display_);
   bool GotSleepTimeForVis = this->get_parameter("sleep_time_for_visulization", sleep_time_for_vis_);
@@ -660,6 +669,25 @@ void LidarTag::getParameters() {
     params_.use_borders_as_corners);
   bool GotMinRKHSScore = this->get_parameter("min_rkhs_score", params_.min_rkhs_score);
 
+  double hamming_decoding_min_white_border_bits, hamming_decoding_min_black_boder_bits,
+    hamming_decoding_min_payload_bits, hamming_decoding_min_payload_margin,
+    hamming_decoding_intensity_threshold, hamming_decoding_rbf_sigma,
+    hamming_decoding_decoding_bit_threshold;
+
+  bool GotHammingDecodingMinWhiteBorderBits = this->get_parameter(
+    "hamming_decoding_min_white_border_bits", hamming_decoding_min_white_border_bits);
+  bool GotHammingDecodingMinBlackBoderBits = this->get_parameter(
+    "hamming_decoding_min_black_boder_bits", hamming_decoding_min_black_boder_bits);
+  bool GotHammingDecodingMinPayloadBits =
+    this->get_parameter("hamming_decoding_min_payload_bits", hamming_decoding_min_payload_bits);
+  bool GotHammingDecodingMinPayloadMargin =
+    this->get_parameter("hamming_decoding_min_payload_margin", hamming_decoding_min_payload_margin);
+  bool GotHammingDecodingIntensityThreshold = this->get_parameter(
+    "hamming_decoding_intensity_threshold", hamming_decoding_intensity_threshold);
+  bool GotHammingDecodingRbfSigma =
+    this->get_parameter("hamming_decoding_rbf_sigma", hamming_decoding_rbf_sigma);
+  bool GotHammingDecodingDecodingBitThreshold = this->get_parameter(
+    "hamming_decoding_decoding_bit_threshold", hamming_decoding_decoding_bit_threshold);
 
   rectangle_estimator_ = std::make_shared<RectangleEstimator>();
   rectangle_estimator_->setFilterByCoefficients(false);
@@ -668,26 +696,97 @@ void LidarTag::getParameters() {
   rectangle_estimator_->setMaxIterations(params_.rectangle_model_max_iterations);
   rectangle_estimator_->setRANSAC(params_.rectangle_model_use_ransac);
 
+  hamming_decoding_ = std::make_shared<NaiveHammingDecoding>(std::to_string(tag_family_),
+    library_path_ + "/templates", hamming_decoding_min_white_border_bits, hamming_decoding_min_black_boder_bits,
+    hamming_decoding_min_payload_bits, hamming_decoding_min_payload_margin,
+    hamming_decoding_intensity_threshold, hamming_decoding_rbf_sigma,
+    hamming_decoding_decoding_bit_threshold);
 
   bool pass = utils::checkParameters(
-    {GotFakeTag, GotMaxQueueSize, GotBeamNum, GotOptPose, GotDecodeId, GotPlaneFitting,
-    GotOutPutPath, GotDistanceBound, GotDepthBound, GotTagFamily, GotTagHamming,
-    GotMaxDecodeHamming, GotFineClusterThreshold, GotVerticalFOV, GotFillInGapThreshold,
-    GotMaxOutlierRatio, GotPointsThresholdFactor, GotDistanceToPlaneThreshold,
-    GotAdaptiveThresholding, GotCollectData, GotSleepToDisplay, GotSleepTimeForVis,
-    GotValgrindCheck, GotPayloadIntensityThreshold, GotBlackBorder, GotMinPerGrid,
-    GotDecodeMethod, GotDecodeMode, GotOptimizationMethod, GotGridViz, GotThreshold, GotNumPoints,
-    GotNearBound, GotCoefficient, GotLinkageRing, GotTagSizeList, GotNumThreads,
-    GotPrintInfo, GotOptimizePercent, GotDebuginfo, GotDebugtime, GotLogData, GotDebugDecodingtime,
-    GotLibraryPath, GotNumCodes, GotCalibration, GotMinimumRingPoints, GotRingState,
-    GotRingEstimation, GotNumAccumulation, GotDerivativeMethod, GotUpbound, GotLowbound,
-    GotCoaTunable, GotTagsizeTunable, GotMaxClusterIndex, GotMinClusterIndex,
-    GotMaxClusterPointsSize, GotMinClusterPointsSize, GotDebugSinglePointcloud, GotDebugPointX,
-    GotDebugPointY, GotDebugPointZ, GotDebugClusterId, GotDebugRingId, GotDebugScanId,
-    GotVisualizeCluster, GotClearance, GotOptionalFixCluster, GotUSeRectangleModel,
-    GotRectangleModelUseRansac, GotRectangleModelMaxIterations, GotRectangleMaxError,
-    GotRefineClusterWithInteractions, GotUseIntensityChannel, GotUseBordersAsCorners,
-    GotMinRKHSScore});
+    {GotFakeTag,
+     GotMaxQueueSize,
+     GotBeamNum,
+     GotOptPose,
+     GotDecodeId,
+     GotPlaneFitting,
+     GotOutPutPath,
+     GotDistanceBound,
+     GotDepthBound,
+     GotTagFamily,
+     GotTagHamming,
+     GotMaxDecodeHamming,
+     GotFineClusterThreshold,
+     GotVerticalFOV,
+     GotFillInGapThreshold,
+     GotMaxOutlierRatio,
+     GotPointsThresholdFactor,
+     GotDistanceToPlaneThreshold,
+     GotAdaptiveThresholding,
+     GotCollectData,
+     GotSleepToDisplay,
+     GotSleepTimeForVis,
+     GotValgrindCheck,
+     GotPayloadIntensityThreshold,
+     GotBlackBorder,
+     GotMinPerGrid,
+     GotDecodeMethod,
+     GotDecodeMode,
+     GotOptimizationMethod,
+     GotGridViz,
+     GotThreshold,
+     GotNumPoints,
+     GotNearBound,
+     GotCoefficient,
+     GotLinkageRing,
+     GotTagSizeList,
+     GotNumThreads,
+     GotPrintInfo,
+     GotOptimizePercent,
+     GotDebuginfo,
+     GotDebugtime,
+     GotLogData,
+     GotDebugDecodingtime,
+     GotLibraryPath,
+     GotNumCodes,
+     GotCalibration,
+     GotMinimumRingPoints,
+     GotRingState,
+     GotRingEstimation,
+     GotNumAccumulation,
+     GotDerivativeMethod,
+     GotUpbound,
+     GotLowbound,
+     GotCoaTunable,
+     GotTagsizeTunable,
+     GotMaxClusterIndex,
+     GotMinClusterIndex,
+     GotMaxClusterPointsSize,
+     GotMinClusterPointsSize,
+     GotDebugSinglePointcloud,
+     GotDebugPointX,
+     GotDebugPointY,
+     GotDebugPointZ,
+     GotDebugClusterId,
+     GotDebugRingId,
+     GotDebugScanId,
+     GotVisualizeCluster,
+     GotClearance,
+     GotOptionalFixCluster,
+     GotUSeRectangleModel,
+     GotRectangleModelUseRansac,
+     GotRectangleModelMaxIterations,
+     GotRectangleMaxError,
+     GotRefineClusterWithInteractions,
+     GotUseIntensityChannel,
+     GotUseBordersAsCorners,
+     GotMinRKHSScore,
+     GotHammingDecodingMinWhiteBorderBits,
+     GotHammingDecodingMinBlackBoderBits,
+     GotHammingDecodingMinPayloadBits,
+     GotHammingDecodingMinPayloadMargin,
+     GotHammingDecodingIntensityThreshold,
+     GotHammingDecodingRbfSigma,
+     GotHammingDecodingDecodingBitThreshold});
 
   if (!pass) {
     rclcpp::shutdown();
@@ -1287,7 +1386,7 @@ void LidarTag::gradientAndGroupEdges(
 
       if (params_.use_borders_as_corners && (j == 0 || j == size - 1)) {
         edge_flag = 4;
-      } else if (j < size - n) {
+      } else if (j + n - 2 >= 0 && j < size - n) {
         edge_flag = LidarTag::getEdgePoints(ordered_buff, i, j, n);
       }
 
