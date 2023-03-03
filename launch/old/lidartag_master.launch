@@ -1,0 +1,175 @@
+<!--
+ * Copyright (C) 2013-2025, The Regents of The University of Michigan.
+ * All rights reserved.
+ * This software was developed in the Biped Lab (https://www.biped.solutions/)
+ * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may
+ * be available under alternative licensing terms; contact the address above.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies,
+ * either expressed or implied, of the Regents of The University of Michigan.
+ *
+ * AUTHOR: Bruce JK Huang (bjhuang[at]umich.edu)
+ * WEBSITE: https://www.brucerobot.com/
+-->
+
+<launch>
+
+  <arg name="library_path" default="$(find lidartag)/lib/origin/" />
+  <!-- lidartag node -->
+  <group ns="lidartag">
+    <!-- valgrind /-/-tool=callgrind /-/-callgrind-out-file='callgrind.lidar_tag.%p'  -->
+    <node pkg="lidartag" launch-prefix="" type="lidartag_main" name="lidartag_main" output="screen" respawn="true" />
+
+    <!-- ========= General Parameters ========= -->
+    <!-- Path for Analysis Files -->
+    <param name="library_path" type="string" value="$(arg library_path)" />
+    <param name="outputs_path" type="string" value="$(find lidartag)/outputs/" />
+
+
+    <!--
+            <param name="library_path" type="string" value="$(find lidartag)/lib_/" />
+            <param name="outputs_path" type="string" value="$(find lidartag)/matlab/paper_data/outdoor/" />
+            <param name="outputs_path" type="string" value="$(find lidartag)/matlab/paper_data/indoor/" />
+            <param name="outputs_path" type="string" value="$(find lidartag)/matlab/paper_data/lidartag_estimates/ccw1-7/" />
+            <param name="outputs_path" type="string" value="$(find lidartag)/matlab/paper_data/lidartag_estimates/front1/" />
+            <param name="outputs_path" type="string" value="$(find lidartag)/matlab/paper_data/lidartag_estimates/Oct13-2020/ccw1-1/" />
+            <param name="outputs_path" type="string" value="$(find lidartag)/matlab/paper_data/lidartag_estimates/Oct13-2020/front2/" />
+            <param name="outputs_path" type="string" value="$(find lidartag)/matlab/paper_data/lidartag_estimates/lab-small-middle/" />
+            <param name="outputs_path" type="string" value="$(find lidartag)/matlab/paper_data/lidartag_estimates/front2/" />
+            <param name="outputs_path" type="string" value="$(find lidartag)/matlab/paper_data/lidartag_estimates/new-lab2/" />
+            <param name="outputs_path" type="string" value="$(find lidartag)/matlab/paper_data/lidartag_estimates/ccw1-8/" />
+            -->
+
+
+    <!--  System Mode  -->
+    <param name="mark_cluster_validity" type="bool" value="true" />
+    <param name="plane_fitting" type="bool" value="true" />
+    <param name="optimize_pose" type="bool" value="true" />
+    <param name="decode_id" type="bool" value="true" />
+    <param name="collect_data" type="int" value="0" />
+    <param name="num_threads" type="int" value="10" />
+    <param name="print_info" type="bool" value="false" />
+
+
+    <!--  Debugging Mode  -->
+    <param name="debug_info" type="bool" value="true" />
+    <param name="debug_time" type="bool" value="true" />
+    <param name="debug_decoding_time" type="bool" value="false" />
+    <param name="log_data" type="bool" value="true" />
+
+
+    <!--  LiDAR System  -->
+    <param name="frame_name" type="string" value="velodyne" />
+    <param name="pointcloud_topic" type="string" value="/velodyne_points" />
+    <param name="lidartag_detection_topic" value="/lidartag/lidar_tag/lidartagDetectionArray" />
+    <param name="beam_number" type="int" value="32" />
+    <param name="vertical_fov" type="int" value="40" />
+    <param name="num_accumulation" type="int" value="1" />
+    <param name="has_ring" type="bool" value="true" />
+    <param name="estimate_ring" type="bool" value="true" />
+
+
+    <!--  Tag Family  -->
+    <param name="tag_family" type="int" value="16" />
+    <param name="black_border" type="int" value="1" />
+    <param name="num_codes" type="int" value="5" />
+
+
+    <!-- Solvers for Pose Optimizatin-->
+    <param name="optimization_solver" type="int" value="8" />
+    <param name="euler_derivative" type="bool" value="true" />
+    <param name="optimize_up_bound" type="double" value="0.8" />
+    <param name="optimize_low_bound" type="double" value="0.8" />
+
+
+    <!-- Decode Method -->
+    <param name="decode_method" type="int" value="2" />
+    <param name="decode_mode" type="int" value="5" />
+
+
+    <!--  visulization  -->
+    <param name="sleep_to_display" type="int" value="1" />
+    <param name="sleep_time_for_visulization" type="double" value="0.05" />
+
+    <!-- ========= Tunable (usually don't need to change) ========= -->
+    <!-- Tunable for PoI clustering -->
+    <param name="distance_bound" type="double" value="20" />
+    <param name="depth_bound" type="double" value="0.5" />
+    <param name="num_points_for_plane_feature" type="int" value="3" />
+
+
+    <!-- Tunable for cluster validation -->
+    <!--  2*16 in this case, stands for expects 2 points for each cell  -->
+    <param name="min_retrun_per_grid" type="int" value="2" />
+    <param name="optimize_percentage" type="double" value="10" />
+    <param name="payload_intensity_threshold" type="double" value="1.0" />
+    <param name="points_threshold_factor" type="double" value="1.5" />
+    <param name="distance_to_plane_threshold" type="double" value="0.05" />
+    <param name="minimum_ring_boundary_points" type="int" value="0" />
+    <param name="tagsize_tunable" type="double" value="0.2" />
+    <param name="coa_tunable" type="double" value="0.75" />
+
+
+    <!-- Calibration -->
+    <param name="calibration" type="bool" value="false" />
+    <param name="distance_threshold" type="double" value="12" />
+
+
+    <!-- Debugging and visulization -->
+    <param name="number_points_ring" type="int" value="20" />
+    <param name="adaptive_thresholding" type="int" value="0" />
+    <param name="valgrind_check" type="int" value="0" />
+
+
+    <!--  ============NOT USE SO FAR=========  -->
+    <param name="fine_cluster_threshold" type="int" value="20" />
+    <param name="fill_in_max_points_threshold" type="int" value="4500" />
+    <param name="line_intensity_bound" type="double" value="1000" />
+    <param name="intensity_bound" type="double" value="2" />
+    <param name="write_csv" type="bool" value="true" />
+    <param name="fill_in_gap_threshold" type="int" value="400" />
+
+    <!-- network -->
+    <param name="latest_model" type="string" value="-17655" />
+    <param name="weight_path" type="string" value="/weight/" />
+    <param name="max_points_on_payload" type="int" value="450" />
+    <param name="xyzri" type="int" value="4" />
+
+    <!-- parameters for old decoding methods -->
+    <param name="max_decode_hamming" type="int" value="2" />
+    <param name="assign_id" type="string" value="0010111011100111UL" />
+
+    <!-- To add to the giant hash table as well as request messive memory-->
+    <param name="tag_hamming_distance" type="int" value="5" />
+
+    <!-- for weighted Gaussian decoding -->
+    <param name="grid_viz" type="int" value="1" />
+
+    <!-- for naive decoding -->
+    <param name="fake_data" type="int" value="0" />
+
+
+    <!--  ============ back up =========  -->
+    <!-- <param name="pointcloud_topic" type="string" value="/rslidar_points" />  -->
+    <!-- <param name="pointcloud_topic" type="string" value="/sync_cam_lidar/velodyne_points_sync" />  -->
+    <!-- <param name="camera_topic" type="string" value="/sync_cam_lidar/image_sync" />  -->
+
+  </group>
+</launch>

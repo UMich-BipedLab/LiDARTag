@@ -4,7 +4,7 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
-AdaptiveThresholding_	griz_tag.cc	/^    bool GrizTag::AdaptiveThresholding_(ClusterFamily_t &Cluster){$/;"	f	class:BipedLab::GrizTag
+AdaptiveThresholding_	griz_tag.cc	/^    bool GrizTag::AdaptiveThresholding_(ClusterFamily_t & cluster){$/;"	f	class:BipedLab::GrizTag
 AnalyzeSystem_	griz_tag.cc	/^    void GrizTag::AnalyzeSystem_(){$/;"	f	class:BipedLab::GrizTag
 AreaPoints	griz_tag.cc	/^    int GrizTag::AreaPoints(const double Distance, const double ObjWidth, const double ObjHeight){$/;"	f	class:BipedLab::GrizTag
 AssignLine	griz_tag.cc	/^    void GrizTag::AssignLine(visualization_msgs::Marker &Marker, visualization_msgs::MarkerArray MarkArray,$/;"	f	class:BipedLab::GrizTag
@@ -13,48 +13,48 @@ BipedAprilLab	apriltag_utils.cc	/^namespace BipedAprilLab{$/;"	n	file:
 BipedLab	griz_tag.cc	/^namespace BipedLab {$/;"	n	file:
 BipedLab	utils.cc	/^namespace BipedLab{$/;"	n	file:
 BitShift	utils.cc	/^		uint64_t BitShift(std::string const& value) {$/;"	f	namespace:BipedLab::utils
-BuffToPclVector	griz_tag.cc	/^    void GrizTag::BuffToPclVector(const std::vector<std::vector<LiDARPoints_t>> &EdgeBuff,$/;"	f	class:BipedLab::GrizTag
+BuffToPclVector	griz_tag.cc	/^    void GrizTag::BuffToPclVector(const std::vector<std::vector<LidarPoints_t>> &EdgeBuff,$/;"	f	class:BipedLab::GrizTag
 COUT	utils.cc	/^		void COUT(const velodyne_pointcloud::PointXYZIR& p) {$/;"	f	namespace:BipedLab::utils
-ClusterClassifier_	griz_tag.cc	/^    void GrizTag::ClusterClassifier_(const LiDARPoints_t &Point, vector<ClusterFamily_t> &ClusterBuff){$/;"	f	class:BipedLab::GrizTag
-ClusterPointsCheck_	griz_tag.cc	/^    bool GrizTag::ClusterPointsCheck_(ClusterFamily_t &Cluster){ $/;"	f	class:BipedLab::GrizTag
+ClusterClassifier_	griz_tag.cc	/^    void GrizTag::ClusterClassifier_(const LidarPoints_t &Point, vector<ClusterFamily_t> &ClusterBuff){$/;"	f	class:BipedLab::GrizTag
+ClusterPointsCheck_	griz_tag.cc	/^    bool GrizTag::ClusterPointsCheck_(ClusterFamily_t & cluster){ $/;"	f	class:BipedLab::GrizTag
 ClusterToPclVectorAndMarkerPublisher_	griz_tag.cc	/^    void GrizTag::ClusterToPclVectorAndMarkerPublisher_(const std::vector<ClusterFamily_t> &Cluster,$/;"	f	class:BipedLab::GrizTag
 Codewords_	lib.cc	/^	vector<int> Codewords_;$/;"	m	class:LoadWeight::impl	file:
-CompareIndex	utils.cc	/^        bool CompareIndex(LiDARPoints_t *A, LiDARPoints_t *B){$/;"	f	namespace:BipedLab::utils
-ComputeRANSAC_	griz_tag.cc	/^    Eigen::VectorXf GrizTag::ComputeRANSAC_(std::vector<LiDARPoints_t*> &Line){ $/;"	f	class:BipedLab::GrizTag
+CompareIndex	utils.cc	/^        bool CompareIndex(LidarPoints_t *A, LidarPoints_t *B){$/;"	f	namespace:BipedLab::utils
+ComputeRANSAC_	griz_tag.cc	/^    Eigen::VectorXf GrizTag::ComputeRANSAC_(std::vector<LidarPoints_t*> &Line){ $/;"	f	class:BipedLab::GrizTag
 Decoder	griz_tag.cc	/^    void GrizTag::Decoder(){$/;"	f	class:BipedLab::GrizTag
 DecoderTest	griz_tag.cc	/^    void GrizTag::DecoderTest(){$/;"	f	class:BipedLab::GrizTag
 DegToRad	utils.cc	/^		double DegToRad(double Degree){$/;"	f	namespace:BipedLab::utils
 Dot	utils.cc	/^        float Dot$/;"	f	namespace:BipedLab::utils
-EdgeDetection_	griz_tag.cc	/^	GrizTag::EdgeDetection_(const std::vector<std::vector<LiDARPoints_t>>& OrderedBuff, $/;"	f	class:BipedLab::GrizTag
+EdgeDetection_	griz_tag.cc	/^	GrizTag::EdgeDetection_(const std::vector<std::vector<LidarPoints_t>>& OrderedBuff, $/;"	f	class:BipedLab::GrizTag
 EigenVectorToPointXYZRI_	griz_tag.cc	/^    void GrizTag::EigenVectorToPointXYZRI_(const Eigen::Vector4f &Vector, PointXYZRI &Point){$/;"	f	class:BipedLab::GrizTag
-ExtractPayload	griz_tag.cc	/^    void GrizTag::ExtractPayload(ClusterFamily_t &Cluster){$/;"	f	class:BipedLab::GrizTag
-ExtractPayloadWOThreshold_	griz_tag.cc	/^    void GrizTag::ExtractPayloadWOThreshold_(ClusterFamily_t &Cluster){$/;"	f	class:BipedLab::GrizTag
-FillInCluster_	griz_tag.cc	/^	void GrizTag::FillInCluster_(const std::vector<std::vector<LiDARPoints_t>>& OrderedBuff, $/;"	f	class:BipedLab::GrizTag
+ExtractPayload	griz_tag.cc	/^    void GrizTag::ExtractPayload(ClusterFamily_t & cluster){$/;"	f	class:BipedLab::GrizTag
+ExtractPayloadWOThreshold_	griz_tag.cc	/^    void GrizTag::ExtractPayloadWOThreshold_(ClusterFamily_t & cluster){$/;"	f	class:BipedLab::GrizTag
+FillInCluster_	griz_tag.cc	/^	void GrizTag::FillInCluster_(const std::vector<std::vector<LidarPoints_t>>& OrderedBuff, $/;"	f	class:BipedLab::GrizTag
 FillInOrderedPc_	griz_tag.cc	/^    void GrizTag::FillInOrderedPc_(const pcl::PointCloud<PointXYZRI>::Ptr PclPointcloud, $/;"	f	class:BipedLab::GrizTag
 FitGrid	utils.cc	/^        void FitGrid(Eigen::MatrixXf &GridVertices,$/;"	f	namespace:BipedLab::utils
 FormGrid	utils.cc	/^        void FormGrid(Eigen::MatrixXf &vertices, $/;"	f	namespace:BipedLab::utils
 Forward	lib.cc	/^void LoadWeight::Forward(const float *x, const float *y, const float *z, $/;"	f	class:LoadWeight
 ForwardInternally	lib.cc	/^	void ForwardInternally(const float *x, const float *y, const float *z, const float *I, $/;"	f	class:LoadWeight::impl
-FreeCluster	griz_tag.cc	/^    void GrizTag::FreeCluster(ClusterFamily_t &Cluster){$/;"	f	class:BipedLab::GrizTag
-FreePCL	griz_tag.cc	/^    void GrizTag::FreePCL(pcl::PointCloud<LiDARPoints_t*> &vec){$/;"	f	class:BipedLab::GrizTag
+FreeCluster	griz_tag.cc	/^    void GrizTag::FreeCluster(ClusterFamily_t & cluster){$/;"	f	class:BipedLab::GrizTag
+FreePCL	griz_tag.cc	/^    void GrizTag::FreePCL(pcl::PointCloud<LidarPoints_t*> &vec){$/;"	f	class:BipedLab::GrizTag
 FreeTagLineStruc	griz_tag.cc	/^    void GrizTag::FreeTagLineStruc(TagLines_t &TagEdges){$/;"	f	class:BipedLab::GrizTag
 FreeUp	griz_tag.cc	/^    void GrizTag::FreeUp(vector<ClusterFamily_t> &ClusterBuff){$/;"	f	class:BipedLab::GrizTag
 FreeVec	griz_tag.cc	/^    void GrizTag::FreeVec(Container& c) { $/;"	f	class:BipedLab::GrizTag
-GetCode	griz_tag.cc	/^    bool GrizTag::GetCode(string &Code, const pcl::PointCloud<LiDARPoints_t*> Payload){$/;"	f	class:BipedLab::GrizTag
-GetCodeNaive	griz_tag.cc	/^    void GrizTag::GetCodeNaive(string &Code, pcl::PointCloud<LiDARPoints_t*> Payload){$/;"	f	class:BipedLab::GrizTag
+GetCode	griz_tag.cc	/^    bool GrizTag::GetCode(string &Code, const pcl::PointCloud<LidarPoints_t*> Payload){$/;"	f	class:BipedLab::GrizTag
+GetCodeNaive	griz_tag.cc	/^    void GrizTag::GetCodeNaive(string &Code, pcl::PointCloud<LidarPoints_t*> Payload){$/;"	f	class:BipedLab::GrizTag
 GetInnerOutputs	lib.cc	/^    float* GetInnerOutputs(){$/;"	f	class:LoadWeight::impl
-GetOrderBuff	griz_tag.cc	/^    std::vector<std::vector<LiDARPoints_t>> GrizTag::GetOrderBuff(){$/;"	f	class:BipedLab::GrizTag
+GetOrderBuff	griz_tag.cc	/^    std::vector<std::vector<LidarPoints_t>> GrizTag::GetOrderBuff(){$/;"	f	class:BipedLab::GrizTag
 GetOutput	lib.cc	/^float* LoadWeight::GetOutput(){$/;"	f	class:LoadWeight
 GetParameters_	griz_tag.cc	/^    void GrizTag::GetParameters_(){$/;"	f	class:BipedLab::GrizTag
 GetProjection	utils.cc	/^        void GetProjection(const velodyne_pointcloud::PointXYZIR &p1, $/;"	f	namespace:BipedLab::utils
 GetStep	utils.cc	/^        float GetStep(const velodyne_pointcloud::PointXYZIR &p1, const velodyne_pointcloud::PointXYZIR &p2, const int d){$/;"	f	namespace:BipedLab::utils
 GetWeightAssignGrid	utils.cc	/^        void GetWeightAssignGrid(const int d, PayloadVoting_t &Vote, float &SumWeight, $/;"	f	namespace:BipedLab::utils
 GotAllParameters	utils.cc	/^        bool GotAllParameters(int n, ...){$/;"	f	namespace:BipedLab::utils
-GradientAndGroupEdges_	griz_tag.cc	/^	void GrizTag::GradientAndGroupEdges_(const std::vector<std::vector<LiDARPoints_t>>& OrderedBuff, $/;"	f	class:BipedLab::GrizTag
+GradientAndGroupEdges_	griz_tag.cc	/^	void GrizTag::GradientAndGroupEdges_(const std::vector<std::vector<LidarPoints_t>>& OrderedBuff, $/;"	f	class:BipedLab::GrizTag
 GrizTag	griz_tag.cc	/^    GrizTag::GrizTag():$/;"	f	class:BipedLab::GrizTag
 GroupEdges_	griz_tag.cc	/^    void GrizTag::GroupEdges_(std::vector<std::vector<PointXYZRI>> &EdgeBuff){$/;"	f	class:BipedLab::GrizTag
-LineFittingWOThreshold_	griz_tag.cc	/^    bool GrizTag::LineFittingWOThreshold_(ClusterFamily_t &Cluster){$/;"	f	class:BipedLab::GrizTag
-LineFitting_	griz_tag.cc	/^    bool GrizTag::LineFitting_(ClusterFamily_t &Cluster){$/;"	f	class:BipedLab::GrizTag
+LineFittingWOThreshold_	griz_tag.cc	/^    bool GrizTag::LineFittingWOThreshold_(ClusterFamily_t & cluster){$/;"	f	class:BipedLab::GrizTag
+LineFitting_	griz_tag.cc	/^    bool GrizTag::LineFitting_(ClusterFamily_t & cluster){$/;"	f	class:BipedLab::GrizTag
 LoadInternally	lib.cc	/^    void LoadInternally(const char *ModelPath, const char *CkptPath, const int TagFamily, float *result = nullptr) {$/;"	f	class:LoadWeight::impl
 LoadWeight	lib.cc	/^LoadWeight::LoadWeight(const char *model_path, const char *ckpt_path, const int TagFamily)$/;"	f	class:LoadWeight
 LoadWeight_	lib.cc	/^int LoadWeight_(const char *ModelPath, const char *CheckpointPath, float *result) {$/;"	f
@@ -62,10 +62,10 @@ MAX_INTENSITY	griz_tag.cc	35;"	d	file:
 MIN_INTENSITY	griz_tag.cc	36;"	d	file:
 MVN	utils.cc	/^        double MVN(const Eigen::Vector2f &X, const Eigen::Vector2f Mean){$/;"	f	namespace:BipedLab::utils
 MaxMinPtsInAScan_	griz_tag.cc	/^    void GrizTag::MaxMinPtsInAScan_(std::vector<int> &PointCountTable, $/;"	f	class:BipedLab::GrizTag
-MergeCluster_	griz_tag.cc	/^	void GrizTag::MergeCluster_(std::vector<ClusterFamily_t> &ClusterBuff) {$/;"	f	class:BipedLab::GrizTag
+MergeCluster_	griz_tag.cc	/^	void GrizTag::MergeCluster_(std::vector<ClusterFamily_t> & clusterBuff) {$/;"	f	class:BipedLab::GrizTag
 Norm	utils.cc	/^        float Norm $/;"	f	namespace:BipedLab::utils
-NormalEstimation	griz_tag.cc	/^    GrizTag::NormalEstimation(ClusterFamily_t &Cluster){$/;"	f	class:BipedLab::GrizTag
-PayloadDecoder	griz_tag.cc	/^    void GrizTag::PayloadDecoder(ClusterFamily_t &Cluster){$/;"	f	class:BipedLab::GrizTag
+NormalEstimation	griz_tag.cc	/^    GrizTag::NormalEstimation(ClusterFamily_t & cluster){$/;"	f	class:BipedLab::GrizTag
+PayloadDecoder	griz_tag.cc	/^    void GrizTag::PayloadDecoder(ClusterFamily_t & cluster){$/;"	f	class:BipedLab::GrizTag
 PointCloudCallBack_	griz_tag.cc	/^    void GrizTag::PointCloudCallBack_(const sensor_msgs::PointCloud2ConstPtr &pc){$/;"	f	class:BipedLab::GrizTag
 PointXYZRI	test.cc	/^typedef velodyne_pointcloud::PointXYZIR PointXYZRI;$/;"	t	file:
 PointsPerSquareMeterAtOneMeter	griz_tag.cc	/^    void GrizTag::PointsPerSquareMeterAtOneMeter(){$/;"	f	class:BipedLab::GrizTag
@@ -74,9 +74,9 @@ PublishPC_	griz_tag.cc	/^	void GrizTag::PublishPC_(const pcl::PointCloud<PointXY
 QuickDecodeAdd	apriltag_utils.cc	/^	void QuickDecodeAdd(BipedLab::QuickDecode_t *qd, uint64_t code, int id, int hamming) {$/;"	f	namespace:BipedAprilLab
 QuickDecodeCodeword	apriltag_utils.cc	/^	void QuickDecodeCodeword(BipedLab::GrizTagFamily_t *tf, uint64_t rcode,$/;"	f	namespace:BipedAprilLab
 QuickDecodeInit	apriltag_utils.cc	/^	void QuickDecodeInit(BipedLab::GrizTagFamily_t *family, int maxhamming){$/;"	f	namespace:BipedAprilLab
-ROSToDecoder	griz_tag.cc	/^    void GrizTag::ROSToDecoder(std::vector<ClusterFamily_t> &ClusterBuff){$/;"	f	class:BipedLab::GrizTag
+ROSToDecoder	griz_tag.cc	/^    void GrizTag::ROSToDecoder(std::vector<ClusterFamily_t> & clusterBuff){$/;"	f	class:BipedLab::GrizTag
 RadToDeg	utils.cc	/^		double RadToDeg(double Radian){$/;"	f	namespace:BipedLab::utils
-RefineCluster_	griz_tag.cc	/^	void GrizTag::RefineCluster_(std::vector<ClusterFamily_t> &ClusterBuff) { $/;"	f	class:BipedLab::GrizTag
+RefineCluster_	griz_tag.cc	/^	void GrizTag::RefineCluster_(std::vector<ClusterFamily_t> & clusterBuff) { $/;"	f	class:BipedLab::GrizTag
 RosSpin_	griz_tag.cc	/^    void GrizTag::RosSpin_(){$/;"	f	class:BipedLab::GrizTag
 SQRT2	griz_tag.cc	34;"	d	file:
 SortNormalizeWeight	utils.cc	/^        void SortNormalizeWeight(std::vector<std::vector<PayloadVoting_t*>> &Grid, $/;"	f	namespace:BipedLab::utils
@@ -85,7 +85,7 @@ TagFamily_	lib.cc	/^	int TagFamily_;$/;"	m	class:LoadWeight::impl	file:
 TagToRobot	griz_tag.cc	/^    void GrizTag::TagToRobot(const int ClusterID, const Eigen::Vector3f NormalVec, Homogeneous_t &Pose, $/;"	f	class:BipedLab::GrizTag
 ToVelodyne	utils.cc	/^        velodyne_pointcloud::PointXYZIR ToVelodyne(const Eigen::Vector3f &p){$/;"	f	namespace:BipedLab::utils
 TranferToLowercase	utils.cc	/^        std::string TranferToLowercase(std::string &data){$/;"	f	namespace:BipedLab::utils
-UpdateCluster_	griz_tag.cc	/^    void GrizTag::UpdateCluster_(const LiDARPoints_t &Point, ClusterFamily_t &OldCluster, TestCluster_t *NewCluster){$/;"	f	class:BipedLab::GrizTag
+UpdateCluster_	griz_tag.cc	/^    void GrizTag::UpdateCluster_(const LidarPoints_t &Point, ClusterFamily_t &OldCluster, TestCluster_t *NewCluster){$/;"	f	class:BipedLab::GrizTag
 Vectorize	utils.cc	/^        velodyne_pointcloud::PointXYZIR Vectorize$/;"	f	namespace:BipedLab::utils
 WaitForPC_	griz_tag.cc	/^    void GrizTag::WaitForPC_(){$/;"	f	class:BipedLab::GrizTag
 WeightedDecode	griz_tag.cc	/^    bool GrizTag::WeightedDecode(string &Code, const PointXYZRI &Average, $/;"	f	class:BipedLab::GrizTag

@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * Copyright (C) 2013-2025, The Regents of The University of Michigan.
+ * All rights reserved.
+ * This software was developed in the Biped Lab (https://www.biped.solutions/)
+ * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may
+ * be available under alternative licensing terms; contact the address above.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies,
+ * either expressed or implied, of the Regents of The University of Michigan.
+ *
+ * AUTHOR: Bruce JK Huang (bjhuang[at]umich.edu)
+ * WEBSITE: https://www.brucerobot.com/
+-->
+
+<launch>
+
+  <!-- Common parameters to be set externally -->
+  <arg name="pointcloud_topic" default="/pointcloud_raw" />
+  <arg name="use_intensity_channel" default="true" />
+  <arg name="use_borders_as_corners" default="false" />
+  <arg name="beam_number" default="40" />
+  <arg name="horizontal_fov" default="360.0" />
+  <arg name="use_organized_pointcloud" default="false" />
+
+  <arg name="tag_size_list" />
+
+  <!-- Default value corresponds to sqrt(2)/4 -> Geometrical meaning. Added as a debug variable -->
+  <arg name="clearance" default="0.35355339059" />
+
+  <arg name="optimize_percentage" default="20.0" /> <!-- Regulates how much it can deviate from the initial solution -->
+  <arg name="payload_intensity_threshold" default="1.0" /> 
+  <arg name="distance_to_plane_threshold" default="0.05" /> <!-- Determines outliers for the plane ransac -->
+
+  <!-- Tunable for PoI clustering -->
+  <arg name="nearby_factor" />
+  <arg name="linkage_tunable" />
+  <arg name="linkage_ring_max_dist" default="1" />
+
+  <!-- Tunable for cluster validation -->
+  <arg name="max_outlier_ratio" />
+
+  <arg name="cluster_min_index" />
+  <arg name="cluster_max_index" />
+  <arg name="cluster_min_points_size" />
+  <arg name="cluster_max_points_size" />
+  <arg name="cluster_check_max_points" default="true"/>
+  <arg name="pcl_visualize_cluster" />
+
+  <!-- Basic hamming decoding parameters. They usually are common to most lidars and setups -->
+  <arg name="hamming_decoding_min_white_border_bits" default="5.0" />
+  <arg name="hamming_decoding_min_black_boder_bits" default="5.0" />
+  <arg name="hamming_decoding_min_payload_bits" default="10.0" />
+  <arg name="hamming_decoding_min_payload_margin" default="2.0" />
+  <arg name="hamming_decoding_intensity_threshold" default="0.5" />
+  <arg name="hamming_decoding_rbf_sigma" default="0.25" />
+  <arg name="hamming_decoding_decoding_bit_threshold" default="0.6" />
+
+  <!-- LidarTag node -->
+  <group>
+    <push-ros-namespace namespace="lidartag" />
+    <!-- valgrind /-/-tool=callgrind /-/-callgrind-out-file='callgrind.lidar_tag.%p'  -->
+    <node pkg="lidartag" exec="lidartag_main" name="lidartag_main" output="screen" >
+
+      <remap from="pointcloud_input" to="$(var pointcloud_topic)" />
+      <param name="use_intensity_channel" value="$(var use_intensity_channel)" />
+      <param name="use_borders_as_corners" value="$(var use_borders_as_corners)" />
+
+      <!-- ========= General Parameters ========= -->
+      <!-- Path for Analysis Files -->
+      <param name="library_path" value="$(find-pkg-share lidartag)/lib/aip_x2/" />
+      <param name="outputs_path" value="$(find-pkg-share lidartag)/outputs/" />
+
+      <!--  System Mode  -->
+      <param name="mark_cluster_validity" value="true" />
+      <param name="plane_fitting" value="true" />
+      <param name="optimize_pose" value="true" />
+      <param name="decode_id" value="true" />
+      <param name="collect_data" value="0" />
+      <param name="num_threads" value="12" />
+      <param name="print_info" value="false" />
+
+
+      <!--  Debugging Mode  -->
+      <param name="debug_info" value="false" />
+      <param name="debug_time" value="false" />
+      <param name="debug_decoding_time" value="false" />
+      <param name="log_data" value="false" />
+
+
+      <!--  LiDAR System  -->
+      <param name="pointcloud_topic" value="$(var pointcloud_topic)" />
+      <param name="max_queue_size" value="1" />
+      <param name="beam_number" value="$(var beam_number)" />
+      <param name="horizontal_fov" value="$(var horizontal_fov)" /> <!-- degrees -->
+      <param name="vertical_fov" value="40.0" /> <!-- unused -->
+      <param name="use_organized_pointcloud" value="$(var use_organized_pointcloud)" />
+      <param name="num_accumulation" value="1" />
+      <param name="has_ring" value="true" />
+      <param name="estimate_ring" value="true" />
+
+
+      <!--  Tag Family  -->
+      <param name="tag_family" value="16" />
+      <param name="black_border" value="1"/>
+      <param name="num_codes" value="5" />
+
+
+      <!-- Solvers for Pose Optimizatin-->
+      <param name="optimization_solver" value="3" /> <!--8-->
+      <param name="euler_derivative" value="true" />
+      <param name="optimize_up_bound" value="0.8" />
+      <param name="optimize_low_bound" value="0.8" />
+
+
+      <!-- Decode Method -->
+      <param name="decode_method" value="3" />
+      <param name="decode_mode" value="5" />
+      <param name="min_rkhs_score" value="3.0" /> <!--default is 12.0 -->
+
+
+      <!--  visulization  -->
+      <param name="sleep_to_display" value="1" />
+      <param name="sleep_time_for_visulization" value="0.1" />
+
+      <!-- ========= Tunable (usually they don't need to be changed) ========= -->
+      <!-- Tunable for PoI clustering -->
+      <param name="distance_bound" value="20.0" />
+      <param name="depth_bound" value="0.3" />
+      <param name="num_points_for_plane_feature" value="1" />
+
+      <!-- Tunable for cluster validation -->
+      <!--  2*16 in this case, stands for expects 2 points for each cell  -->
+      <param name="min_retrun_per_grid" value="0" />
+      <param name="optimize_percentage" value="$(var optimize_percentage)" /> <!-- 10.0 -->
+      <param name="payload_intensity_threshold" value="$(var payload_intensity_threshold)" />
+      <param name="points_threshold_factor" value="1.5" />
+      <param name="distance_to_plane_threshold" value="$(var distance_to_plane_threshold)" /> <!--0.05 -->
+      <param name="minimum_ring_boundary_points" value="1" />
+      <param name="tagsize_tunable" value="0.1" />
+      <param name="coa_tunable" value="0.75" />
+
+
+      <!-- Calibration -->
+      <param name="calibration" value="false" />
+      <param name="distance_threshold" value="12.0" />
+
+
+      <!-- Debugging and visulization -->
+      <param name="number_points_ring" value="20" />
+      <param name="adaptive_thresholding" value="0" />
+      <param name="valgrind_check" value="0" />
+
+
+      <!--  ============NOT USED SO FAR=========  -->
+      <param name="fine_cluster_threshold" value="20" />
+      <param name="fill_in_max_points_threshold" value="4500" />
+      <param name="line_intensity_bound" value="1000.0" />
+      <param name="intensity_bound" value="2.0" />
+      <param name="write_csv" value="true" />
+      <param name="fill_in_gap_threshold" value="400" />
+
+      <!-- network -->
+      <param name="latest_model" value="'-17655'" />
+      <param name="weight_path" value="/weight/" />
+      <param name="max_points_on_payload" value="450" />
+      <param name="xyzri" value="4" />
+
+      <!-- parameters for old decoding methods -->
+      <param name="max_decode_hamming" value="2" />
+      <param name="assign_id" value="0010111011100111UL" />
+
+      <!-- To add to the giant hash table as well as request messive memory-->
+      <param name="tag_hamming_distance" value="5" />
+
+      <!-- for weighted Gaussian decoding -->
+      <param name="grid_viz" value="1" />
+
+      <!-- for naive decoding -->
+      <param name="fake_data" value="0" />
+
+      <!-- Common parameters to be set externally -->
+      <!--param name="tag_size_list" value="$(var tag_size_list)"/-->
+      <param name="tag_size_list" value="$(var tag_size_list)" />
+      <!--param name="tag_size_list" value="0.61, 0.8051" value-sep=", "/-->
+      <!--param name="tag_size_list" value="false"/-->
+
+      <!-- Tunable for PoI clustering -->
+      <param name="nearby_factor" value="$(var nearby_factor)" />
+      <param name="linkage_tunable" value="$(var linkage_tunable)" />
+      <param name="linkage_ring_max_dist" value="$(var linkage_ring_max_dist)" />
+
+      <!-- Tunable for cluster validation -->
+      <param name="max_outlier_ratio" value="$(var max_outlier_ratio)" />
+
+      <param name="cluster_min_index" value="$(var cluster_min_index)" />
+      <param name="cluster_max_index" value="$(var cluster_max_index)" />
+      <param name="cluster_min_points_size" value="$(var cluster_min_points_size)" />
+      <param name="cluster_max_points_size" value="$(var cluster_max_points_size)" />
+      <param name="cluster_check_max_points" value="$(var cluster_check_max_points)" />
+      
+      <!-- debug pipeline to isolate a single cluster / point -->
+      <param name="debug_single_pointcloud" value="false" />
+      <param name="debug_point_x" value="0.12678179144859314" />
+      <param name="debug_point_y" value="-11.972125053405762" />
+      <param name="debug_point_z" value="-5.0" />
+      <param name="debug_cluster_id" value="-1" />
+      <param name="debug_ring_id" value="-1" />
+      <param name="debug_scan_id" value="-1" />
+
+      <param name="pcl_visualize_cluster" value="$(var pcl_visualize_cluster)" />
+      <param name="clearance" value="$(var clearance)" />
+      <param name="optional_fix_cluster" value="true" />
+
+      <param name="use_rectangle_model" value="true" />
+      <param name="rectangle_model_use_ransac" value="true" />
+      <param name="rectangle_model_max_iterations" value="50" />
+      <param name="rectangle_model_max_error" value="0.03" />
+      <param name="rectangle_fix_point_groups" value="true" />
+      <param name="refine_cluster_with_intersections" value="true" /> <!--have not checked its effect on the fine points of calibration -->
+
+      <param name="hamming_decoding_min_white_border_bits" value="$(var hamming_decoding_min_white_border_bits)" />
+      <param name="hamming_decoding_min_black_boder_bits" value="$(var hamming_decoding_min_black_boder_bits)" />
+      <param name="hamming_decoding_min_payload_bits" value="$(var hamming_decoding_min_payload_bits)" />
+      <param name="hamming_decoding_min_payload_margin" value="$(var hamming_decoding_min_payload_margin)" />
+      <param name="hamming_decoding_intensity_threshold" value="$(var hamming_decoding_intensity_threshold)" />
+      <param name="hamming_decoding_rbf_sigma" value="$(var hamming_decoding_rbf_sigma)" />
+      <param name="hamming_decoding_decoding_bit_threshold" value="$(var hamming_decoding_decoding_bit_threshold)" />
+    </node>
+
+  </group>
+</launch>
