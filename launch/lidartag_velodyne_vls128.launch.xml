@@ -34,7 +34,6 @@
 
   <arg name="pointcloud_topic" default="/pointcloud_raw" />
   <arg name="use_intensity_channel" default="true" />
-  <arg name="launch_pandar_driver" default="false" />
 
   <include file="$(find-pkg-share lidartag)/launch/lidartag_master.launch.xml" >
 

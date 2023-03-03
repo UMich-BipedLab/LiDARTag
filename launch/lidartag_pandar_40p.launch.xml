@@ -34,7 +34,6 @@
 
   <arg name="pointcloud_topic" default="/pointcloud_raw" />
   <arg name="use_intensity_channel" default="true" />
-  <arg name="launch_pandar_driver" default="false" />
 
   <include file="$(find-pkg-share lidartag)/launch/lidartag_master.launch.xml" >
 
@@ -61,10 +60,6 @@
     <arg name="cluster_max_points_size" value="10000" />
     <arg name="pcl_visualize_cluster" value="false" />
 
-  </include>
-
-  <include if="$(var launch_pandar_driver)" file="$(find-pkg-share pandar_pointcloud)/launch/pandar_cloud.launch.xml" >
-    <arg name="override_timestamp" value="true"/>
   </include>
 
 </launch>

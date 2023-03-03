@@ -33,26 +33,25 @@
 <launch>
 
   <arg name="pointcloud_topic" default="/pointcloud_raw" />
-  <arg name="use_intensity_channel" default="false" /> <!-- Comment: this lidar does not have intensity-->
-  <arg name="use_borders_as_corners" default="true" />
-
+  <arg name="use_intensity_channel" default="true" />
+  
   <include file="$(find-pkg-share lidartag)/launch/lidartag_master.launch.xml" >
 
     <arg name="pointcloud_topic" value="$(var pointcloud_topic)" />
     <arg name="use_intensity_channel" value="$(var use_intensity_channel)" />
-    <arg name="use_borders_as_corners" value="$(var use_borders_as_corners)" />
     <arg name="beam_number" value="64" />
+    <!--arg name="payload_intensity_threshold" value="0.001"/-->
+    <arg name="use_organized_pointcloud" value="true"/>
 
     <!-- list for marker sizes -->
-    <arg name="tag_size_list" value="[0.8]" />
+    <arg name="tag_size_list" value="[0.61]" />
 
     <!-- Tunable for PoI clustering -->
     <arg name="nearby_factor" value="4.0" />
-    <arg name="linkage_tunable" value="0.35" />
+    <arg name="linkage_tunable" value="0.22" />
+
     <!-- SQRT2 / 4 ==  0.35355339059-->
     <arg name="clearance" value="0.35355339059" />
-    <arg name="optimize_percentage" value="15.0" />  <!--The optimization starts with a worse initial solution -->
-    <arg name="distance_to_plane_threshold" value="0.15" /> <!--The edges of the tag appear as outliers in this lidar -->
 
     <!-- Tunable for cluster validation -->
     <arg name="max_outlier_ratio" value="0.25" />

@@ -232,6 +232,7 @@ rcl_interfaces::msg::SetParametersResult LidarTag::paramCallback(
     UPDATE_LIDARTAG_PARAM(params, cluster_min_index);
     UPDATE_LIDARTAG_PARAM(params, cluster_max_points_size);
     UPDATE_LIDARTAG_PARAM(params, cluster_min_points_size);
+    UPDATE_LIDARTAG_PARAM(params, cluster_check_max_points);
     UPDATE_LIDARTAG_PARAM(params, depth_bound);
     UPDATE_LIDARTAG_PARAM(params, min_rkhs_score);
     UPDATE_LIDARTAG_PARAM(params, optional_fix_cluster);
@@ -483,7 +484,9 @@ void LidarTag::getParameters() {
   this->declare_parameter<double>("intensity_bound");
   this->declare_parameter<double>("depth_bound");
   this->declare_parameter<int>("fine_cluster_threshold");
+  this->declare_parameter<double>("horizontal_fov");
   this->declare_parameter<double>("vertical_fov");
+  this->declare_parameter<bool>("use_organized_pointcloud");
   this->declare_parameter<int>("fill_in_gap_threshold");
   this->declare_parameter<double>("points_threshold_factor");
   this->declare_parameter<double>("line_intensity_bound");
@@ -527,6 +530,7 @@ void LidarTag::getParameters() {
   this->declare_parameter<int>("cluster_min_index");
   this->declare_parameter<int>("cluster_max_points_size");
   this->declare_parameter<int>("cluster_min_points_size");
+  this->declare_parameter<bool>("cluster_check_max_points");
   this->declare_parameter<bool>("debug_single_pointcloud");
   this->declare_parameter<double>("debug_point_x");
   this->declare_parameter<double>("debug_point_y");
@@ -583,7 +587,9 @@ void LidarTag::getParameters() {
   bool GotDepthBound = this->get_parameter("depth_bound", params_.depth_bound);
   bool GotFineClusterThreshold =
     this->get_parameter("fine_cluster_threshold", params_.fine_cluster_threshold);
+  bool GotHorizontalFOV = this->get_parameter("horizontal_fov", horizontal_fov_);
   bool GotVerticalFOV = this->get_parameter("vertical_fov", vertical_fov_);
+  bool GotUseOrganizedPointcloud = this->get_parameter("use_organized_pointcloud", use_organized_pointcloud_);
   bool GotFillInGapThreshold =
     this->get_parameter("fill_in_gap_threshold", params_.filling_gap_max_index);
   bool GotPointsThresholdFactor =
@@ -633,6 +639,8 @@ void LidarTag::getParameters() {
     this->get_parameter("cluster_max_points_size", params_.cluster_max_points_size);
   bool GotMinClusterPointsSize =
     this->get_parameter("cluster_min_points_size", params_.cluster_min_points_size);
+  bool GotClusterCheckMaxPoints =
+    this->get_parameter("cluster_check_max_points", params_.cluster_check_max_points);
   bool GotDebugSinglePointcloud =
     this->get_parameter("debug_single_pointcloud", params_.debug_single_pointcloud);
   bool GotDebugPointX =
@@ -717,6 +725,7 @@ void LidarTag::getParameters() {
      GotMaxDecodeHamming,
      GotFineClusterThreshold,
      GotVerticalFOV,
+     GotUseOrganizedPointcloud,
      GotFillInGapThreshold,
      GotMaxOutlierRatio,
      GotPointsThresholdFactor,
@@ -762,6 +771,7 @@ void LidarTag::getParameters() {
      GotMinClusterIndex,
      GotMaxClusterPointsSize,
      GotMinClusterPointsSize,
+     GotClusterCheckMaxPoints,
      GotDebugSinglePointcloud,
      GotDebugPointX,
      GotDebugPointY,
@@ -813,6 +823,7 @@ void LidarTag::getParameters() {
   RCLCPP_INFO(get_logger(), "Use %i threads\n", num_threads_);
   RCLCPP_INFO(get_logger(), "depth_bound: %f \n", params_.depth_bound);
   RCLCPP_INFO(get_logger(), "payload_size_: %f \n", payload_size_);
+  RCLCPP_INFO(get_logger(), "horizontal_fov_: %f \n", horizontal_fov_);
   RCLCPP_INFO(get_logger(), "vertical_fov_: %f \n", vertical_fov_);
   RCLCPP_INFO(get_logger(), "fine_cluster_threshold: %i \n", params_.fine_cluster_threshold);
   RCLCPP_INFO(get_logger(), "filling_gap_max_index: %i \n", params_.filling_gap_max_index);
@@ -885,7 +896,14 @@ std::vector<std::vector<LidarPoints_t>> LidarTag::getOrderBuff()
 
   // Ordered pointcloud with respect to its own ring number
   std::vector<std::vector<LidarPoints_t>> ordered_buff(beam_num_);
-  fillInOrderedPointcloud(pcl_pointcloud, ordered_buff);
+  
+  if (use_organized_pointcloud_) {
+    fillInOrderedPointcloudFromOrganizedPointcloud(pcl_pointcloud, ordered_buff);
+  }
+  else {
+    fillInOrderedPointcloudFromUnorganizedPointcloud(pcl_pointcloud, ordered_buff);
+  }
+  
   point_cloud_size_ = pcl_pointcloud->size();
 
   return ordered_buff;
@@ -1007,7 +1025,7 @@ void LidarTag::pointsPerSquareMeterAtOneMeter()
 
   system_average /= lidar_system_.ring_average_table.size();
   lidar_system_.beam_per_vertical_radian = beam_num_ / utils::deg2Rad(vertical_fov_);
-  lidar_system_.point_per_horizontal_radian = system_average / utils::deg2Rad(360.0);
+  lidar_system_.point_per_horizontal_radian = system_average / utils::deg2Rad(horizontal_fov_);
 }
 
 /*
@@ -1173,7 +1191,7 @@ void LidarTag::pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr
  * A function to slice the Veloydyne full points to sliced pointed
  * based on ring number
  * */
-inline void LidarTag::fillInOrderedPointcloud(
+inline void LidarTag::fillInOrderedPointcloudFromUnorganizedPointcloud(
   const pcl::PointCloud<PointXYZRI>::Ptr & pcl_pointcloud,
   std::vector<std::vector<LidarPoints_t>> & ordered_buff)
 {
@@ -1195,18 +1213,12 @@ inline void LidarTag::fillInOrderedPointcloud(
   std::set<float>::iterator it;
 
   for (auto && p : *pcl_pointcloud) {
-    if (p.x == 0 && p.y == 0 && p.z == 0) {
-      continue;
-    }
 
     if (!has_ring_ && ring_estimated_) {
       float angle = getAnglefromPt(p);
       it = lidar_system_.angle_list.find(angle);
       p.ring = std::distance(lidar_system_.angle_list.begin(), it);
     }
-
-    if(p.z < params_.debug_point_z)
-      continue;
 
     assert(("Ring Estimation Error", p.ring < beam_num_));
 
@@ -1215,6 +1227,45 @@ inline void LidarTag::fillInOrderedPointcloud(
     lidar_point.valid = 1;
     ordered_buff[p.ring].push_back(lidar_point);
     index[p.ring] += 1;
+  }
+
+  addOrderedPointcloudMarkers(ordered_buff);
+}
+
+/*
+ * A function to slice the Veloydyne full points to sliced pointed
+ * based on ring number
+ * */
+inline void LidarTag::fillInOrderedPointcloudFromOrganizedPointcloud(
+  const pcl::PointCloud<PointXYZRI>::Ptr & pcl_pointcloud,
+  std::vector<std::vector<LidarPoints_t>> & ordered_buff)
+{
+  if (pcl_pointcloud->points.size() != pcl_pointcloud->width * pcl_pointcloud->height) {
+    RCLCPP_ERROR(get_logger(), "The number of points does not coincide with the pointcloud structure");
+  }
+
+  if (pcl_pointcloud->height == 1) {
+    RCLCPP_ERROR(get_logger(), "The pointcloud has a singleton height. It is probably not an organized pointcloud");
+  }
+
+  LidarPoints_t lidar_point;
+  std::set<float>::iterator it;
+
+  const int width = pcl_pointcloud->width;
+  const int height = pcl_pointcloud->height;
+  int pointcloud_index = 0;
+
+  for (auto && p : *pcl_pointcloud) {
+
+    lidar_point.point = p;
+    lidar_point.point.ring = pointcloud_index / width;
+    lidar_point.index = pointcloud_index % width;
+
+    assert(("Ring Estimation Error", lidar_point.point.ring < beam_num_));
+    
+    lidar_point.valid = 1;
+    ordered_buff[lidar_point.point.ring].push_back(lidar_point);
+    pointcloud_index++;
   }
 
   addOrderedPointcloudMarkers(ordered_buff);
@@ -1666,7 +1717,10 @@ void LidarTag::fillInCluster(
     }
 
     // Mark cluster as invalid if too many points in cluster
-    cluster.expected_points = maxPointsCheck(cluster);
+    if (params_.cluster_check_max_points)
+    {
+      cluster.expected_points = maxPointsCheck(cluster);
+    }    
 
     if (cluster.valid == false) {
       // tbb::task::self().cancel_group_execution();

@@ -33,14 +33,12 @@
 <launch>
 
   <arg name="pointcloud_topic" default="/pointcloud_raw" />
-  <arg name="use_intensity_channel" default="false" /> <!-- Comment: this lidar does not have intensity-->
-  <arg name="use_borders_as_corners" default="true" />
+  <arg name="use_intensity_channel" default="true" />
 
   <include file="$(find-pkg-share lidartag)/launch/lidartag_master.launch.xml" >
 
     <arg name="pointcloud_topic" value="$(var pointcloud_topic)" />
     <arg name="use_intensity_channel" value="$(var use_intensity_channel)" />
-    <arg name="use_borders_as_corners" value="$(var use_borders_as_corners)" />
     <arg name="beam_number" value="64" />
 
     <!-- list for marker sizes -->
@@ -48,11 +46,11 @@
 
     <!-- Tunable for PoI clustering -->
     <arg name="nearby_factor" value="4.0" />
-    <arg name="linkage_tunable" value="0.35" />
+    <arg name="linkage_tunable" value="0.35" /> <!-- default valur 0.25 -->
+    <!--arg name="linkage_ring_max_dist" value="4" /--> <!-- TODO: This parameter be 1, but our lidar is missing one channel and this work as a hotfix -->
     <!-- SQRT2 / 4 ==  0.35355339059-->
     <arg name="clearance" value="0.35355339059" />
-    <arg name="optimize_percentage" value="15.0" />  <!--The optimization starts with a worse initial solution -->
-    <arg name="distance_to_plane_threshold" value="0.15" /> <!--The edges of the tag appear as outliers in this lidar -->
+    <arg name="optimize_percentage" value="30.0" />
 
     <!-- Tunable for cluster validation -->
     <arg name="max_outlier_ratio" value="0.25" />
@@ -61,8 +59,10 @@
     <arg name="cluster_max_index" value="10000" />
     <arg name="cluster_min_points_size" value="0" />
     <arg name="cluster_max_points_size" value="10000" />
+    <arg name="cluster_check_max_points" value="false"/>
     <arg name="pcl_visualize_cluster" value="false" />
 
   </include>
+
 
 </launch>

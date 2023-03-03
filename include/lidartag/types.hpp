@@ -202,10 +202,10 @@ enum class LidartagErrorCode //C++11 scoped enum
 {
   NoError = 0,
   ClusterMinPointsCriteria = 1,
-  ClusterMinPointsCriteria2 = 2,
+  ClusterMaxPointsCriteria = 2, // Related parameters: cluster_check_max_points (do not use on mems)
   PlanarCheckCriteria = 3,
   PlanarOutliersCriteria = 4,
-  DecodingPointsCriteria = 5,
+  DecodingPointsCriteria = 5, // Related parameters: payload_intensity_threshold
   DecodingRingsCriteria = 6,
   CornerEstimationMinPointsCriteria = 7,
   Line1EstimationCriteria = 8,

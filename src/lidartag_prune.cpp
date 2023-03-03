@@ -129,7 +129,7 @@ int LidarTag::maxPointsCheck(ClusterFamily_t & cluster)
 {
   int ring = std::round(beam_num_ / 2);
   int longer_side_ring = std::round((cluster.top_ring + cluster.bottom_ring) / 2);
-  double point_resolution = 2 * M_PI / lidar_system_.ring_average_table[longer_side_ring].average;
+  double point_resolution = utils::deg2Rad(horizontal_fov_) / lidar_system_.ring_average_table[longer_side_ring].average;
   auto distance =
     std::sqrt(pow(cluster.average.x, 2) + pow(cluster.average.y, 2) + pow(cluster.average.z, 2));
   float payload_w = SQRT2 * payload_size_;
@@ -143,7 +143,7 @@ int LidarTag::maxPointsCheck(ClusterFamily_t & cluster)
 
     if (mark_cluster_validity_) {
       cluster.valid = false;
-      cluster.detail_valid = LidartagErrorCode::ClusterMinPointsCriteria2;
+      cluster.detail_valid = LidartagErrorCode::ClusterMaxPointsCriteria;
     }
   }
 

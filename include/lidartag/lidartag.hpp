@@ -108,6 +108,7 @@ private:
     int cluster_min_index;
     int cluster_max_points_size;
     int cluster_min_points_size;
+    bool cluster_check_max_points;
     double depth_bound; // Edge detection parameters
     double min_rkhs_score;
     bool optional_fix_cluster;
@@ -231,7 +232,9 @@ private:
   LiDARSystem_t lidar_system_;
   int max_queue_size_;
   int beam_num_;
+  double horizontal_fov_;
   double vertical_fov_;
+  bool use_organized_pointcloud_;
 
   // PointCould data (for a single scan)
   int point_cloud_size_;
@@ -340,7 +343,12 @@ private:
    * A function to slice the Veloydyne full points to sliced pointed
    * based on ring number
    */
-  inline void fillInOrderedPointcloud(const pcl::PointCloud<PointXYZRI>::Ptr & t_pcl_pointcloud,
+  inline void fillInOrderedPointcloudFromUnorganizedPointcloud(const pcl::PointCloud<PointXYZRI>::Ptr & t_pcl_pointcloud,
+    std::vector<std::vector<LidarPoints_t>> & t_ordered_buff);
+  /* [Pre-Processing]
+   * A function to slice the pointclouds based on the organized pointcloud structure
+   */
+  inline void fillInOrderedPointcloudFromOrganizedPointcloud(const pcl::PointCloud<PointXYZRI>::Ptr & t_pcl_pointcloud,
     std::vector<std::vector<LidarPoints_t>> & t_ordered_buff);
   /*
    * A function to compute angle between the line from origin to this point

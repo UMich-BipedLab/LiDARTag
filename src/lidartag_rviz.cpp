@@ -763,17 +763,18 @@ void LidarTag::addCornersAux(
 
 void LidarTag::colorClusters(const std::vector<ClusterFamily_t> & clusters)
 {
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored_cluster_buff(
-    new pcl::PointCloud<pcl::PointXYZRGB>);
-  pcl::PointXYZRGB colored_point;
+  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr colored_cluster_buff(
+    new pcl::PointCloud<pcl::PointXYZRGBA>);
+  pcl::PointXYZRGBA colored_point;
   colored_cluster_buff->reserve(point_cloud_size_);
   int r, g, b;
   srand(100);
 
   for (int key = 0; key < clusters.size(); ++key) {
 
+    colored_point.a = 255;
     if (params_.debug_cluster_id != -1 && params_.debug_cluster_id != key) {
-      continue;
+      colored_point.a = 16;
     }
 
     const ClusterFamily_t & cluster = clusters[key];

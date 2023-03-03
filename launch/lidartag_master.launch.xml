@@ -37,12 +37,16 @@
   <arg name="use_intensity_channel" default="true" />
   <arg name="use_borders_as_corners" default="false" />
   <arg name="beam_number" default="40" />
+  <arg name="horizontal_fov" default="360.0" />
+  <arg name="use_organized_pointcloud" default="false" />
+
   <arg name="tag_size_list" />
 
   <!-- Default value corresponds to sqrt(2)/4 -> Geometrical meaning. Added as a debug variable -->
   <arg name="clearance" default="0.35355339059" />
 
   <arg name="optimize_percentage" default="20.0" /> <!-- Regulates how much it can deviate from the initial solution -->
+  <arg name="payload_intensity_threshold" default="1.0" /> 
   <arg name="distance_to_plane_threshold" default="0.05" /> <!-- Determines outliers for the plane ransac -->
 
   <!-- Tunable for PoI clustering -->
@@ -57,7 +61,17 @@
   <arg name="cluster_max_index" />
   <arg name="cluster_min_points_size" />
   <arg name="cluster_max_points_size" />
+  <arg name="cluster_check_max_points" default="true"/>
   <arg name="pcl_visualize_cluster" />
+
+  <!-- Basic hamming decoding parameters. They usually are common to most lidars and setups -->
+  <arg name="hamming_decoding_min_white_border_bits" default="5.0" />
+  <arg name="hamming_decoding_min_black_boder_bits" default="5.0" />
+  <arg name="hamming_decoding_min_payload_bits" default="10.0" />
+  <arg name="hamming_decoding_min_payload_margin" default="2.0" />
+  <arg name="hamming_decoding_intensity_threshold" default="0.5" />
+  <arg name="hamming_decoding_rbf_sigma" default="0.25" />
+  <arg name="hamming_decoding_decoding_bit_threshold" default="0.6" />
 
   <!-- LidarTag node -->
   <group>
@@ -95,7 +109,9 @@
       <param name="pointcloud_topic" value="$(var pointcloud_topic)" />
       <param name="max_queue_size" value="1" />
       <param name="beam_number" value="$(var beam_number)" />
+      <param name="horizontal_fov" value="$(var horizontal_fov)" /> <!-- degrees -->
       <param name="vertical_fov" value="40.0" /> <!-- unused -->
+      <param name="use_organized_pointcloud" value="$(var use_organized_pointcloud)" />
       <param name="num_accumulation" value="1" />
       <param name="has_ring" value="true" />
       <param name="estimate_ring" value="true" />
@@ -134,7 +150,7 @@
       <!--  2*16 in this case, stands for expects 2 points for each cell  -->
       <param name="min_retrun_per_grid" value="0" />
       <param name="optimize_percentage" value="$(var optimize_percentage)" /> <!-- 10.0 -->
-      <param name="payload_intensity_threshold" value="1.0" />
+      <param name="payload_intensity_threshold" value="$(var payload_intensity_threshold)" />
       <param name="points_threshold_factor" value="1.5" />
       <param name="distance_to_plane_threshold" value="$(var distance_to_plane_threshold)" /> <!--0.05 -->
       <param name="minimum_ring_boundary_points" value="1" />
@@ -198,11 +214,13 @@
       <param name="cluster_max_index" value="$(var cluster_max_index)" />
       <param name="cluster_min_points_size" value="$(var cluster_min_points_size)" />
       <param name="cluster_max_points_size" value="$(var cluster_max_points_size)" />
+      <param name="cluster_check_max_points" value="$(var cluster_check_max_points)" />
+      
+      <!-- debug pipeline to isolate a single cluster / point -->
       <param name="debug_single_pointcloud" value="false" />
       <param name="debug_point_x" value="0.12678179144859314" />
       <param name="debug_point_y" value="-11.972125053405762" />
       <param name="debug_point_z" value="-5.0" />
-
       <param name="debug_cluster_id" value="-1" />
       <param name="debug_ring_id" value="-1" />
       <param name="debug_scan_id" value="-1" />
@@ -218,13 +236,13 @@
       <param name="rectangle_fix_point_groups" value="true" />
       <param name="refine_cluster_with_intersections" value="true" /> <!--have not checked its effect on the fine points of calibration -->
 
-      <param name="hamming_decoding_min_white_border_bits" value="5.0" />
-      <param name="hamming_decoding_min_black_boder_bits" value="5.0" />
-      <param name="hamming_decoding_min_payload_bits" value="10.0" />
-      <param name="hamming_decoding_min_payload_margin" value="2.0" />
-      <param name="hamming_decoding_intensity_threshold" value="0.5" />
-      <param name="hamming_decoding_rbf_sigma" value="0.25" />
-      <param name="hamming_decoding_decoding_bit_threshold" value="0.6" />
+      <param name="hamming_decoding_min_white_border_bits" value="$(var hamming_decoding_min_white_border_bits)" />
+      <param name="hamming_decoding_min_black_boder_bits" value="$(var hamming_decoding_min_black_boder_bits)" />
+      <param name="hamming_decoding_min_payload_bits" value="$(var hamming_decoding_min_payload_bits)" />
+      <param name="hamming_decoding_min_payload_margin" value="$(var hamming_decoding_min_payload_margin)" />
+      <param name="hamming_decoding_intensity_threshold" value="$(var hamming_decoding_intensity_threshold)" />
+      <param name="hamming_decoding_rbf_sigma" value="$(var hamming_decoding_rbf_sigma)" />
+      <param name="hamming_decoding_decoding_bit_threshold" value="$(var hamming_decoding_decoding_bit_threshold)" />
     </node>
 
   </group>
