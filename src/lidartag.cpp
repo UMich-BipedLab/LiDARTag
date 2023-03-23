@@ -335,12 +335,14 @@ void LidarTag::mainLoop()
       ordered_buff = LidarTag::getOrderBuff();
 
       if (ordered_buff.empty()) {
+        rclcpp::sleep_for(std::chrono::milliseconds(1));
         continue;
       }
     } else {
       std::vector<std::vector<LidarPoints_t>> ordered_buff_cur = LidarTag::getOrderBuff();
 
       if (ordered_buff_cur.empty()) {
+        rclcpp::sleep_for(std::chrono::milliseconds(1));
         continue;
       }
 

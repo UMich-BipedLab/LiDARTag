@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * Copyright (C) 2013-2025, The Regents of The University of Michigan.
+ * All rights reserved.
+ * This software was developed in the Biped Lab (https://www.biped.solutions/)
+ * under the direction of Jessy Grizzle, grizzle@umich.edu. This software may
+ * be available under alternative licensing terms; contact the address above.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies,
+ * either expressed or implied, of the Regents of The University of Michigan.
+ *
+ * AUTHOR: Bruce JK Huang (bjhuang[at]umich.edu)
+ * WEBSITE: https://www.brucerobot.com/
+-->
+
+<launch>
+
+  <arg name="pointcloud_topic" default="/pointcloud_raw" />
+  <arg name="use_intensity_channel" default="true" />
+
+  <include file="$(find-pkg-share lidartag)/launch/lidartag_master.launch.xml" >
+
+    <arg name="pointcloud_topic" value="$(var pointcloud_topic)" />
+    <arg name="use_intensity_channel" value="$(var use_intensity_channel)" />
+    <arg name="beam_number" value="16" />
+
+    <!-- list for marker sizes -->
+    <arg name="tag_size_list" value="[0.8]" />
+
+    <!-- Tunable for PoI clustering -->
+    <arg name="nearby_factor" value="4.0" />
+    <arg name="linkage_tunable" value="0.5" />
+
+    <!-- SQRT2 / 4 ==  0.35355339059-->
+    <arg name="clearance" value="0.35355339059" />
+
+    <!-- Tunable for cluster validation -->
+    <arg name="max_outlier_ratio" value="0.25" />
+
+    <arg name="cluster_min_index" value="0" />
+    <arg name="cluster_max_index" value="10000" />
+    <arg name="cluster_min_points_size" value="0" />
+    <arg name="cluster_max_points_size" value="10000" />
+    <arg name="pcl_visualize_cluster" value="false" />
+
+  </include>
+
+</launch>
