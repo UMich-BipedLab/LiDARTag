@@ -707,7 +707,7 @@ void LidarTag::getParameters() {
   rectangle_estimator_->setRANSAC(params_.rectangle_model_use_ransac);
 
   hamming_decoding_ = std::make_shared<NaiveHammingDecoding>(std::to_string(tag_family_),
-    library_path_ + "/templates", hamming_decoding_min_white_border_bits, hamming_decoding_min_black_boder_bits,
+    library_path_ + "/imgs", hamming_decoding_min_white_border_bits, hamming_decoding_min_black_boder_bits,
     hamming_decoding_min_payload_bits, hamming_decoding_min_payload_margin,
     hamming_decoding_intensity_threshold, hamming_decoding_rbf_sigma,
     hamming_decoding_decoding_bit_threshold);

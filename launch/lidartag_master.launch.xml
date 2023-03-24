@@ -85,7 +85,7 @@
 
       <!-- ========= General Parameters ========= -->
       <!-- Path for Analysis Files -->
-      <param name="library_path" value="$(find-pkg-share lidartag)/lib/aip_x2/" />
+      <param name="library_path" value="$(find-pkg-share lidartag)/lib/decoding_templates/" />
       <param name="outputs_path" value="$(find-pkg-share lidartag)/outputs/" />
 
       <!--  System Mode  -->
