@@ -36,11 +36,31 @@
 #include <Eigen/Sparse>
 #include <chrono> // high_resolution_clock
 #include <pcl/point_types.h>
-#include <velodyne_pointcloud/point_types.h>
 #include <filesystem>
 
+namespace pcl
+{
+  /** Euclidean Velodyne coordinate, including intensity and ring number. */
+  struct PointXYZIR
+  {
+    PCL_ADD_POINT4D;                    // quad-word XYZ
+    float    intensity;                 ///< laser intensity reading
+    uint16_t ring;                      ///< laser ring number
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW     // ensure proper alignment
+  } EIGEN_ALIGN16;
+
+}; // namespace pcl
+
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(pcl::PointXYZIR,
+                                  (float, x, x)
+                                  (float, y, y)
+                                  (float, z, z)
+                                  (float, intensity, intensity)
+                                  (uint16_t, ring, ring))
+
 namespace BipedLab {
-typedef velodyne_pointcloud::PointXYZIR PointXYZRI;
+typedef pcl::PointXYZIR PointXYZRI;
 typedef struct QuickDecodeEntry {
   uint64_t rcode;    // the queried code
   uint16_t id;       // the tag id (a small integer)

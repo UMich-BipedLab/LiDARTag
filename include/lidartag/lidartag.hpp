@@ -67,9 +67,6 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include "pcl/PCLPointCloud2.h"
 
-#include <velodyne_pointcloud/point_types.h>
-#include <velodyne_pointcloud/pointcloudXYZIR.h>
-
 #include <lidartag_msgs/msg/corners.hpp>
 #include <lidartag_msgs/msg/corners_array.hpp>
 #include <lidartag_msgs/msg/lidar_tag_detection.hpp>

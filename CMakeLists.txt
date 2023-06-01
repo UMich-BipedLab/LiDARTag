@@ -13,8 +13,8 @@ find_package(ament_cmake_auto REQUIRED)
 
 # CHECK THE DEPENDENCIES
 find_package(NLopt REQUIRED)
-
 find_package(Boost REQUIRED COMPONENTS atomic filesystem system regex date_time program_options thread)
+find_package(OpenCV REQUIRED)
 
 message(STATUS "=============================================Boost")
 message(STATUS "===============================Boost include_dirs: ${Boost_INCLUDE_DIRS}")
@@ -48,6 +48,7 @@ ament_export_include_directories(
   ${Boost_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
   ${TBB_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 
@@ -73,13 +74,13 @@ target_link_libraries(lidartag_main
     ${NLOPT_LIBRARIES}
     ${TBB_LIBRARIES}
     ${Boost_LIBRARIES}
+    ${OpenCV_LIBS}
     Boost::thread
 )
 
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
-  #find_package(OpenCV REQUIRED)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 

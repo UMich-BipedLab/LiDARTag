@@ -37,8 +37,6 @@
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
-#include <velodyne_pointcloud/point_types.h>
-#include <velodyne_pointcloud/pointcloudXYZIR.h>
 
 #include <fstream>
 
